@@ -5,7 +5,7 @@ import os
 import json
 import base64
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, tuple
 
 import streamlit as st
 import google.generativeai as genai
@@ -359,4 +359,3 @@ if module:
             col_dl1, col_dl2 = st.columns(2)
             col_dl1.download_button("📥 下載 PDF 版", data=pdf_bytes, file_name=f"{module}.pdf", mime="application/pdf")
             col_dl2.download_button("📥 下載純文字版", data=result.encode("utf-8"), file_name=f"{module}.txt")
-```
