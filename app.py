@@ -5,7 +5,7 @@ import os
 import json
 import base64
 from dataclasses import dataclass
-from typing import Any, tuple
+from typing import Any
 
 import streamlit as st
 import google.generativeai as genai
