@@ -1,0 +1,5 @@
+streamlit
+google-generativeai
+borax
+fpdf2
+iztro-py
