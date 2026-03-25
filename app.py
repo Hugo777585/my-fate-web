@@ -241,7 +241,15 @@ def generate_ai_text(api_key: str, model_name: str, module_name: str, payload: d
     genai.configure(api_key=api_key)
     model = genai.GenerativeModel(model_name=model_name, system_instruction=_ai_system_prompt(selected_books, module_name))
     star_info = f"\n\n【紫微斗數星曜總表】\n{_ziwei_star_table_text(payload.get('ziwei_chart'))}\n" if "紫微" in module_name else ""
-    user_prompt = f"【模組】{module_name}\n【資料】\n{json.dumps(payload, ensure_ascii=False, indent=2)}{star_info}"
+    
+    # 確保 payload 中的內容可以被 JSON 序列化（將無法識別的物件轉為字串）
+    def json_serial(obj):
+        if hasattr(obj, 'isoformat'): return obj.isoformat()
+        if hasattr(obj, 'text'): return obj.text # 處理 GZ 等物件
+        return str(obj)
+
+    safe_payload_json = json.dumps(payload, default=json_serial, ensure_ascii=False, indent=2)
+    user_prompt = f"【模組】{module_name}\n【資料】\n{safe_payload_json}{star_info}"
     try:
         response = model.generate_content(user_prompt, generation_config=genai.types.GenerationConfig(temperature=0.7))
         text = (response.text or "").strip()
