@@ -345,7 +345,7 @@ module = None
 if btn_cols[0].button("八字乾坤：深度解析"): module = "八字乾坤：深度能量解析"
 if btn_cols[1].button("紫微精論：十二宮位"): module = "紫微精論：人生十二宮位"
 if btn_cols[2].button("命理大滿貫：旗艦合參"): module = "命理大滿貫：八字紫微合參"
-if btn_cols[3].button("匯出 PDF 命書"): module = "PDF_EXPORT"
+# if btn_cols[3].button("匯出 PDF 命書"): module = "PDF_EXPORT"
 
 if module:
     p = Person(name, bday, btime, gender, occ, unknown)
@@ -354,16 +354,17 @@ if module:
     if module == "PDF_EXPORT":
         with st.spinner("正在撰寫大師命書..."):
             full_body = generate_ai_text(api_key, model_name, "一般版命書", report, books)
-            pdf_bytes = create_pdf(name, full_body)
-            st.success("命書已撰寫完成！")
-            st.download_button("📥 下載 PDF 命書", data=pdf_bytes, file_name=f"{name}_Fate.pdf", mime="application/pdf")
+            # pdf_bytes = create_pdf(name, full_body)
+            st.success("命書已撰寫內容如下：")
+            st.markdown(f"<div class='report-card'>{full_body}</div>", unsafe_allow_html=True)
+            # st.download_button("📥 下載 PDF 命書", data=pdf_bytes, file_name=f"{name}_Fate.pdf", mime="application/pdf")
     else:
         with st.spinner(f"大師正在解析【{module}】..."):
             result = generate_ai_text(api_key, model_name, module, report, books)
             st.markdown(f"### 🖋️ 大師論斷：{module}")
             st.markdown(f"<div class='report-card'>{result}</div>", unsafe_allow_html=True)
             
-            pdf_bytes = create_pdf(name, result)
-            col_dl1, col_dl2 = st.columns(2)
-            col_dl1.download_button("📥 下載 PDF 版", data=pdf_bytes, file_name=f"{module}.pdf", mime="application/pdf")
-            col_dl2.download_button("📥 下載純文字版", data=result.encode("utf-8"), file_name=f"{module}.txt")
+            # pdf_bytes = create_pdf(name, result)
+            # col_dl1, col_dl2 = st.columns(2)
+            # col_dl1.download_button("📥 下載 PDF 版", data=pdf_bytes, file_name=f"{module}.pdf", mime="application/pdf")
+            st.download_button("📥 下載純文字版", data=result.encode("utf-8"), file_name=f"{module}.txt")
