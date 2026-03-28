@@ -3,3 +3,5 @@ google-generativeai
 borax
 fpdf2
 iztro-py
+gspread
+google-auth
