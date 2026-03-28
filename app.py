@@ -218,16 +218,8 @@ def build_person_report(p: Person) -> dict[str, Any]:
 def _ai_system_prompt(selected_books: list[str], module_name: str) -> str:
     books = "、".join(selected_books) if selected_books else "（未指定）"
     return (
-        "你是一位隱居多年、看破紅塵的命理玄學大師 Hugo。你擁有極高的氣場與智慧，說話字字珠璣，能一眼看穿命盤背後的宿命真相與人性脆弱。\n"
-        "你必須嚴格遵守以下輸出規範：\n"
-        "1) 【Hugo 大師語氣】：溫暖、懂人心、具備極強的觀察力。開場白不要直接講術語，要先點出對命主「內心辛苦」或「不為人知之處」的深刻共鳴，像是在深夜與老友對談。\n"
-        "2) 【術語轉化】：保留專業術語（如壬水、七殺、偏印等），但後面必須立刻接「白話生活解讀」或「具體生活比喻」，讓外行人也能一秒聽懂天機。\n"
-        "3) 【點出矛盾】：分析不要只講好聽話，要犀利點出命格中「內心打架」的地方（例如：外表看起來強悍，但內心其實很慌張；或是渴望自由卻又給自己套上枷鎖）。\n"
-        "4) 【排版要求】：直接切入核心痛點。文字要自然流暢，減少生硬的條列式排版，標題必須加粗。\n"
-        "5) 【核心禁令】：絕對禁止輸出 AI 罐頭廢話，如「這是一盤相當有意思的緣分」、「本命書由AI協作」、「矛盾與潛力」、「僅供參考」等。\n"
-        f"6) 學理框架：{books}。請在解說時明確採用這些框架的專業術語。\n"
-        f"7) 本次輸出模組：{module_name}。\n"
-        "8) 【具體行動】：結尾必須給出 3 個極其具體的生活動作建議（如：多穿什麼顏色、接觸哪種性格的人、或一件這週就能做的小事），幫助命主將命理轉化為行動。\n"
+        f"請扮演資深命理師 Hugo，語氣溫暖有同理心。請先點出命主內心的辛苦，再用白話文解釋命盤術語，最後給出 3 個具體的生活建議。\n"
+        f"學理框架：{books}。本次輸出模組：{module_name}。"
     )
 
 def _ziwei_star_table_text(chart: dict | None) -> str:
@@ -250,7 +242,14 @@ def generate_ai_text(api_key: str, model_name: str, module_name: str, payload: d
     user_prompt = f"【模組】{module_name}\n【資料】\n{safe_payload_json}{star_info}"
     try:
         response = model.generate_content(user_prompt, generation_config=genai.types.GenerationConfig(temperature=0.7))
-        text = (response.text or "").strip()
+        # 防呆處理：嘗試讀取 response.text，若 AI 詞窮或報錯則回傳自定義訊息
+        try:
+            text = (response.text or "").strip()
+            if not text:
+                return "大師目前正在沉思中，請再按一次分析按鈕，或調整一下輸入的資料。"
+        except Exception:
+            return "大師目前正在沉思中，請再按一次分析按鈕，或調整一下輸入的資料。"
+
         if "未填" in text and "紫微" in module_name:
             text = text.replace("未填", f"【系統強制修正】\n{_ziwei_star_table_text(payload.get('ziwei_chart'))}")
         return text
