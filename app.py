@@ -285,11 +285,12 @@ def generate_ai_text(api_key: str, model_name: str, module_name: str, payload: d
         return f"API 呼叫失敗：{str(e)}"
 
 def extract_summary(text: str) -> str:
-    """從 AI 回傳文字中擷取懶人包內容"""
-    marker = "【Hugo 大師重點懶人包】："
-    if marker in text:
-        parts = text.split(marker)
-        return parts[-1].strip()
+    """從 AI 回傳文字中擷取懶人包內容，處理全形/半形冒號"""
+    markers = ["【Hugo 大師重點懶人包】：", "【Hugo 大師重點懶人包】:"]
+    for marker in markers:
+        if marker in text:
+            parts = text.split(marker)
+            return parts[-1].strip()
     return "（未產出懶人包）"
 
 def save_to_google_sheet(person: Person, summary: str):
