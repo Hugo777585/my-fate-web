@@ -260,41 +260,41 @@ def generate_ai_text(api_key: str, model_name: str, module_name: str, payload: d
         return f"API 呼叫失敗：{str(e)}"
 
 # ==========================================
-# PDF 匯出
+# PDF 匯出 (已停用)
 # ==========================================
-class ReportPDF(FPDF):
-    def footer(self):
-        self.set_y(-15); self.set_font("Helvetica", size=9)
-        self.cell(0, 10, "執此命書，願你洞悉天機，行穩致遠。", align="C")
+# class ReportPDF(FPDF):
+#     def footer(self):
+#         self.set_y(-15); self.set_font("Helvetica", size=9)
+#         self.cell(0, 10, "執此命書，願你洞悉天機，行穩致遠。", align="C")
 
-def _find_cjk_font() -> str:
-    candidates = [
-        r"C:\Windows\Fonts\msyh.ttc", r"C:\Windows\Fonts\msjh.ttc",
-        r"C:\Windows\Fonts\simsun.ttc", r"C:\Windows\Fonts\simhei.ttf",
-    ]
-    for p in candidates:
-        if os.path.exists(p): return p
-    return ""
+# def _find_cjk_font() -> str:
+#     candidates = [
+#         r"C:\Windows\Fonts\msyh.ttc", r"C:\Windows\Fonts\msjh.ttc",
+#         r"C:\Windows\Fonts\simsun.ttc", r"C:\Windows\Fonts\simhei.ttf",
+#     ]
+#     for p in candidates:
+#         if os.path.exists(p): return p
+#     return ""
 
-def create_pdf(user_name: str, body: str):
-    pdf = ReportPDF()
-    font_path = _find_cjk_font()
-    if font_path:
-        pdf.add_font("CJK", "", font_path)
-        pdf.add_font("CJK", "B", font_path)
-        pdf.set_font("CJK", size=16)
-    else:
-        pdf.set_font("Helvetica", size=16)
+# def create_pdf(user_name: str, body: str):
+#     pdf = ReportPDF()
+#     font_path = _find_cjk_font()
+#     if font_path:
+#         pdf.add_font("CJK", "", font_path)
+#         pdf.add_font("CJK", "B", font_path)
+#         pdf.set_font("CJK", size=16)
+#     else:
+#         pdf.set_font("Helvetica", size=16)
     
-    pdf.add_page()
-    pdf.cell(0, 10, f"{user_name} - 人生宿命乾坤論斷", ln=True, align="C")
+#     pdf.add_page()
+#     pdf.cell(0, 10, f"{user_name} - 人生宿命乾坤論斷", ln=True, align="C")
     
-    if font_path: pdf.set_font("CJK", size=12)
-    else: pdf.set_font("Helvetica", size=12)
+#     if font_path: pdf.set_font("CJK", size=12)
+#     else: pdf.set_font("Helvetica", size=12)
     
-    clean_body = body.replace("**", "")
-    pdf.multi_cell(0, 8, clean_body)
-    return pdf.output()
+#     clean_body = body.replace("**", "")
+#     pdf.multi_cell(0, 8, clean_body)
+#     return pdf.output()
 
 # ==========================================
 # Streamlit UI
@@ -313,7 +313,13 @@ st.title("🔮 My Fate Web: 大師靈魂命理系統")
 
 with st.sidebar:
     st.header("⚙️ 設定")
-    api_key = st.text_input("Gemini API Key", type="password")
+    # 直接讀取 secrets 裡的 GEMINI_API_KEY
+    try:
+        api_key = st.secrets["GEMINI_API_KEY"]
+    except KeyError:
+        api_key = ""
+        st.warning("⚠️ 找不到 GEMINI_API_KEY。請在 .streamlit/secrets.toml 中設定。")
+    
     model_name = st.selectbox("模型版本", ["gemini-2.5-flash", "gemini-2.0-flash"])
     st.info("已鎖定大師靈魂提示詞，強制輸出權威斷言。")
     st.sidebar.markdown("---")
