@@ -9,6 +9,8 @@ from typing import Any
 
 import streamlit as st
 import google.generativeai as genai
+import gspread
+from google.oauth2.service_account import Credentials
 from borax.calendars.festivals2 import TermFestival
 from borax.calendars.lunardate import LunarDate
 from iztro_py import astro
@@ -282,6 +284,50 @@ def generate_ai_text(api_key: str, model_name: str, module_name: str, payload: d
     except Exception as e:
         return f"API 呼叫失敗：{str(e)}"
 
+def extract_summary(text: str) -> str:
+    """從 AI 回傳文字中擷取懶人包內容"""
+    marker = "【Hugo 大師重點懶人包】："
+    if marker in text:
+        parts = text.split(marker)
+        return parts[-1].strip()
+    return "（未產出懶人包）"
+
+def save_to_google_sheet(person: Person, summary: str):
+    """將資料非同步寫入 Google Sheet"""
+    try:
+        # 從 st.secrets 讀取 GCP Service Account 資料
+        # 預期格式為 st.secrets["GCP_SERVICE_ACCOUNT"] (一個 dict)
+        if "GCP_SERVICE_ACCOUNT" not in st.secrets:
+            print("無法存檔：st.secrets 中找不到 GCP_SERVICE_ACCOUNT 設定。")
+            return
+
+        scopes = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
+        creds = Credentials.from_service_account_info(st.secrets["GCP_SERVICE_ACCOUNT"], scopes=scopes)
+        client = gspread.authorize(creds)
+        
+        # 開啟試算表
+        sheet_name = "Hugo 命理館：客戶紀錄總表"
+        sh = client.open(sheet_name)
+        worksheet = sh.get_worksheet(0) # 第一個工作表
+        
+        # 準備資料行 (台北時間)
+        now_tw = (_dt.datetime.utcnow() + _dt.timedelta(hours=8)).strftime("%Y-%m-%d %H:%M:%S")
+        row = [
+            now_tw,
+            person.name,
+            "男" if person.gender == "male" else "女",
+            person.date.isoformat(),
+            person.time.strftime("%H:%M"),
+            person.occupation,
+            summary
+        ]
+        
+        worksheet.append_row(row)
+        print(f"成功存檔至 Google Sheet: {person.name}")
+    except Exception as e:
+        # 靜默失敗，僅在後台列印
+        print(f"Google Sheet 存檔失敗：{str(e)}")
+
 # ==========================================
 # Streamlit UI
 # ==========================================
@@ -347,3 +393,7 @@ if module:
         st.markdown(f"### 🖋️ Hugo 大師論斷：{module}")
         st.markdown(f"<div class='report-card'>{result}</div>", unsafe_allow_html=True)
         st.download_button("📥 下載此段論斷 (TXT)", data=result.encode("utf-8"), file_name=f"{module}.txt")
+        
+        # 存檔至 Google Sheet (非同步效果：即使失敗也不影響 UI)
+        summary = extract_summary(result)
+        save_to_google_sheet(p, summary)
