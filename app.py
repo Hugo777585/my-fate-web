@@ -9,7 +9,6 @@ from typing import Any
 
 import streamlit as st
 import google.generativeai as genai
-from fpdf import FPDF
 from borax.calendars.festivals2 import TermFestival
 from borax.calendars.lunardate import LunarDate
 from iztro_py import astro
@@ -219,17 +218,16 @@ def build_person_report(p: Person) -> dict[str, Any]:
 def _ai_system_prompt(selected_books: list[str], module_name: str) -> str:
     books = "、".join(selected_books) if selected_books else "（未指定）"
     return (
-        "你是一位隱居多年、看破紅塵的命理玄學老手。你擁有極高的氣場與智慧，說話字字珠璣，能一眼看穿命盤背後的宿命真相。\n"
+        "你是一位隱居多年、看破紅塵的命理玄學大師 Hugo。你擁有極高的氣場與智慧，說話字字珠璣，能一眼看穿命盤背後的宿命真相與人性脆弱。\n"
         "你必須嚴格遵守以下輸出規範：\n"
-        "1) 【語氣要求】：極度自信、鐵口直斷、一針見血、徹底拒絕廢話。文字要有老手傅當面指點的氣場與溫度，充滿威嚴感。\n"
-        "2) 【排版要求】：直接切入命盤核心痛點與解法。文字要自然流暢，減少生硬的條列式排版，標題必須加粗。\n"
-        "3) 【核心禁令（違者視為嚴重錯誤）】：絕對禁止輸出以下 AI 常用罐頭廢話：\n"
-        "   - 「這是一盤相當有意思的緣分」\n   - 「本命書由AI協作生成」\n   - 「矛盾與潛力」\n   - 「僅供參考」\n   - 「你要靠規則」\n"
-        "4) 重要關鍵字（如 忌、喜、命門、轉折、格局）必須用 **...** 標示。\n"
-        "5) 禁止輸出「未填」「未知」；如資料不足，請明確說明缺少哪個欄位。\n"
+        "1) 【Hugo 大師語氣】：溫暖、懂人心、具備極強的觀察力。開場白不要直接講術語，要先點出對命主「內心辛苦」或「不為人知之處」的深刻共鳴，像是在深夜與老友對談。\n"
+        "2) 【術語轉化】：保留專業術語（如壬水、七殺、偏印等），但後面必須立刻接「白話生活解讀」或「具體生活比喻」，讓外行人也能一秒聽懂天機。\n"
+        "3) 【點出矛盾】：分析不要只講好聽話，要犀利點出命格中「內心打架」的地方（例如：外表看起來強悍，但內心其實很慌張；或是渴望自由卻又給自己套上枷鎖）。\n"
+        "4) 【排版要求】：直接切入核心痛點。文字要自然流暢，減少生硬的條列式排版，標題必須加粗。\n"
+        "5) 【核心禁令】：絕對禁止輸出 AI 罐頭廢話，如「這是一盤相當有意思的緣分」、「本命書由AI協作」、「矛盾與潛力」、「僅供參考」等。\n"
         f"6) 學理框架：{books}。請在解說時明確採用這些框架的專業術語。\n"
         f"7) 本次輸出模組：{module_name}。\n"
-        "8) 【核心禁令】：絕對禁止在不同章節或宮位使用相同的結語模板或重複的文案！\n"
+        "8) 【具體行動】：結尾必須給出 3 個極其具體的生活動作建議（如：多穿什麼顏色、接觸哪種性格的人、或一件這週就能做的小事），幫助命主將命理轉化為行動。\n"
     )
 
 def _ziwei_star_table_text(chart: dict | None) -> str:
@@ -260,46 +258,9 @@ def generate_ai_text(api_key: str, model_name: str, module_name: str, payload: d
         return f"API 呼叫失敗：{str(e)}"
 
 # ==========================================
-# PDF 匯出 (已停用)
-# ==========================================
-# class ReportPDF(FPDF):
-#     def footer(self):
-#         self.set_y(-15); self.set_font("Helvetica", size=9)
-#         self.cell(0, 10, "執此命書，願你洞悉天機，行穩致遠。", align="C")
-
-# def _find_cjk_font() -> str:
-#     candidates = [
-#         r"C:\Windows\Fonts\msyh.ttc", r"C:\Windows\Fonts\msjh.ttc",
-#         r"C:\Windows\Fonts\simsun.ttc", r"C:\Windows\Fonts\simhei.ttf",
-#     ]
-#     for p in candidates:
-#         if os.path.exists(p): return p
-#     return ""
-
-# def create_pdf(user_name: str, body: str):
-#     pdf = ReportPDF()
-#     font_path = _find_cjk_font()
-#     if font_path:
-#         pdf.add_font("CJK", "", font_path)
-#         pdf.add_font("CJK", "B", font_path)
-#         pdf.set_font("CJK", size=16)
-#     else:
-#         pdf.set_font("Helvetica", size=16)
-    
-#     pdf.add_page()
-#     pdf.cell(0, 10, f"{user_name} - 人生宿命乾坤論斷", ln=True, align="C")
-    
-#     if font_path: pdf.set_font("CJK", size=12)
-#     else: pdf.set_font("Helvetica", size=12)
-    
-#     clean_body = body.replace("**", "")
-#     pdf.multi_cell(0, 8, clean_body)
-#     return pdf.output()
-
-# ==========================================
 # Streamlit UI
 # ==========================================
-st.set_page_config(page_title="My Fate Web - 大師靈魂版", layout="wide")
+st.set_page_config(page_title="My Fate Web - Hugo 大師版", layout="wide")
 
 st.markdown("""
 <style>
@@ -309,7 +270,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.title("🔮 My Fate Web: 大師靈魂命理系統")
+st.title("🔮 My Fate Web: Hugo 大師命理系統")
 
 with st.sidebar:
     st.header("⚙️ 設定")
@@ -321,7 +282,7 @@ with st.sidebar:
         st.warning("⚠️ 找不到 GEMINI_API_KEY。請在 .streamlit/secrets.toml 中設定。")
     
     model_name = st.selectbox("模型版本", ["gemini-2.5-flash", "gemini-2.0-flash"])
-    st.info("已鎖定大師靈魂提示詞，強制輸出權威斷言。")
+    st.info("已鎖定 Hugo 大師靈魂提示詞，提供溫暖且犀利的洞察。")
     st.sidebar.markdown("---")
     st.sidebar.caption("Powered by Gemini 2.5 Flash & Borax")
 
@@ -346,31 +307,18 @@ with col2:
 st.divider()
 
 # 按鈕區
-btn_cols = st.columns(4)
+btn_cols = st.columns(3)
 module = None
 if btn_cols[0].button("八字乾坤：深度解析"): module = "八字乾坤：深度能量解析"
 if btn_cols[1].button("紫微精論：十二宮位"): module = "紫微精論：人生十二宮位"
 if btn_cols[2].button("命理大滿貫：旗艦合參"): module = "命理大滿貫：八字紫微合參"
-# if btn_cols[3].button("匯出 PDF 命書"): module = "PDF_EXPORT"
 
 if module:
     p = Person(name, bday, btime, gender, occ, unknown)
     report = build_person_report(p)
     
-    if module == "PDF_EXPORT":
-        with st.spinner("正在撰寫大師命書..."):
-            full_body = generate_ai_text(api_key, model_name, "一般版命書", report, books)
-            # pdf_bytes = create_pdf(name, full_body)
-            st.success("命書已撰寫內容如下：")
-            st.markdown(f"<div class='report-card'>{full_body}</div>", unsafe_allow_html=True)
-            # st.download_button("📥 下載 PDF 命書", data=pdf_bytes, file_name=f"{name}_Fate.pdf", mime="application/pdf")
-    else:
-        with st.spinner(f"大師正在解析【{module}】..."):
-            result = generate_ai_text(api_key, model_name, module, report, books)
-            st.markdown(f"### 🖋️ 大師論斷：{module}")
-            st.markdown(f"<div class='report-card'>{result}</div>", unsafe_allow_html=True)
-            
-            # pdf_bytes = create_pdf(name, result)
-            # col_dl1, col_dl2 = st.columns(2)
-            # col_dl1.download_button("📥 下載 PDF 版", data=pdf_bytes, file_name=f"{module}.pdf", mime="application/pdf")
-            st.download_button("📥 下載純文字版", data=result.encode("utf-8"), file_name=f"{module}.txt")
+    with st.spinner(f"Hugo 大師正在為您解析【{module}】..."):
+        result = generate_ai_text(api_key, model_name, module, report, books)
+        st.markdown(f"### 🖋️ Hugo 大師論斷：{module}")
+        st.markdown(f"<div class='report-card'>{result}</div>", unsafe_allow_html=True)
+        st.download_button("📥 下載此段論斷 (TXT)", data=result.encode("utf-8"), file_name=f"{module}.txt")
