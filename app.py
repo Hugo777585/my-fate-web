@@ -422,7 +422,7 @@ with st.sidebar:
     except KeyError:
         api_key = ""
         st.warning("⚠️ 找不到 GEMINI_API_KEY。請在 .streamlit/secrets.toml 中設定。")
-    model_name = st.selectbox("模型版本", ["gemini-1.5-flash", "gemini-2.0-flash""])
+    model_name = st.selectbox("模型版本", ["gemini-1.5-flash", "gemini-2.0-flash"])
     st.info("已鎖定 Hugo 大師靈魂提示詞，提供溫慢且犀利的洞察。")
     
     st.markdown("---")
