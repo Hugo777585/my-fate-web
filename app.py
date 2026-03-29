@@ -446,24 +446,13 @@ with col1:
         name = st.text_input("姓名/標籤", value="命主A")
         gender = st.selectbox("性別", ["male", "female"], format_func=lambda x: "男" if x=="male" else "女")
         
-        # 中文化生日選擇器
-        st.write("出生日期")
-        date_cols = st.columns(3)
-        with date_cols[0]:
-            sel_year = st.selectbox("年", range(1930, 2027), index=1980-1930, format_func=lambda x: f"{x}年")
-        with date_cols[1]:
-            sel_month = st.selectbox("月", range(1, 13), index=0, format_func=lambda x: f"{x}月")
-        with date_cols[2]:
-            sel_day = st.selectbox("日", range(1, 32), index=0, format_func=lambda x: f"{x}日")
-        
-        # 組合日期並防呆（處理如 2/31 的情況）
-        try:
-            bday = _dt.date(sel_year, sel_month, sel_day)
-        except ValueError:
-            # 如果日期無效（如 2/30），自動調整為該月最後一天
-            last_day = calendar.monthrange(sel_year, sel_month)[1]
-            bday = _dt.date(sel_year, sel_month, last_day)
-            st.warning(f"⚠️ 日期已自動調整為該月最後一天：{bday.strftime('%Y-%m-%d')}")
+        # 把起始年份設為 1940，最大年份設為 2026
+        bday = st.date_input(
+            "您的生日",
+            value=_dt.date(1980, 1, 1),
+            min_value=_dt.date(1940, 1, 1),
+            max_value=_dt.date(2026, 12, 31)
+        )
 
         btime = st.time_input("出生時間", value=_dt.time(12, 0))
         occ = st.selectbox("職業屬性", OCCUPATIONS)
