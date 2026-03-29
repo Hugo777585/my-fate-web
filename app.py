@@ -103,6 +103,9 @@ class Person:
     job_status: str # 新增：目前職業狀態
     relationship: str # 新增：感情婚姻現況
     children: str # 新增：子女狀況
+    partner_name: str = "" # 新增：對象姓名
+    partner_date: _dt.date = None # 新增：對象生日
+    partner_time_str: str = "" # 新增：對象時辰文字
 
 def _parse_gz(gz: str) -> GZ:
     tg = GAN.index(gz[0]); dz = ZHI.index(gz[1])
@@ -119,6 +122,17 @@ def _hour_gz(day_gan_index: int, hour: int) -> GZ:
     dz = _hour_branch_index(int(hour))
     tg = (base + dz) % 10
     return GZ(tg=tg, dz=dz)
+
+def _time_from_branch_str(branch_str: str) -> _dt.time:
+    """將時辰文字轉為概略時間"""
+    mapping = {
+        "子時": _dt.time(0, 0), "丑時": _dt.time(1, 0), "寅時": _dt.time(3, 0),
+        "卯時": _dt.time(5, 0), "辰時": _dt.time(7, 0), "巳時": _dt.time(9, 0),
+        "午時": _dt.time(11, 0), "未時": _dt.time(13, 0), "申時": _dt.time(15, 0),
+        "酉時": _dt.time(17, 0), "戌時": _dt.time(19, 0), "亥時": _dt.time(21, 0),
+        "不清楚": _dt.time(12, 0)
+    }
+    return mapping.get(branch_str, _dt.time(12, 0))
 
 def _term_date(year: int, name: str) -> _dt.date:
     return TermFestival(name).at(year=year)
@@ -215,11 +229,24 @@ def build_person_report(p: Person) -> dict[str, Any]:
     dayun = calc_dayun(base["birth_dt"], pillars["year"], pillars["month"], p.gender)
     age = (_dt.datetime.now() - base["birth_dt"]).total_seconds() / (365.2425 * 86400.0)
     current = next((it for it in dayun["items"] if it["start_age_years"] <= age < it["end_age_years"]), None)
-    return {
+    
+    report = {
         "person": p, "pillars": pillars, "lunar": lunar, "counts": five_element_counts(pillars),
         "dayun": dayun, "current_dayun": current, "liunian": calc_liunian(_dt.date.today().year, 5),
         "shensha": shensha(pillars), "ziwei_chart": _ziwei_chart_from_iztro(p)
     }
+
+    # 處理對象配對資訊 (若有填寫)
+    if p.partner_name and p.partner_date:
+        p_time = _time_from_branch_str(p.partner_time_str)
+        p_base = bazi_from_borax(p.partner_date, p_time)
+        report["partner"] = {
+            "name": p.partner_name,
+            "pillars": p_base["pillars"],
+            "lunar": p_base["lunar"]
+        }
+    
+    return report
 
 # ==========================================
 # AI 邏輯 (大師靈魂)
@@ -245,8 +272,19 @@ def _ai_system_prompt(selected_books: list[str], module_name: str, is_master_mod
         return _get_public_prompt(module_name)
     
     books = "、".join(selected_books) if selected_books else "（未指定）"
+    
+    partner_instruction = ""
+    if "partner" in module_name or "配對" in module_name:
+        partner_instruction = (
+            "【兩人配對專屬要求】：\n"
+            "1. 必須分析兩人的八字合契度（合、沖、刑、害）。\n"
+            "2. 分析兩人的性格是否互補或存在衝突點。\n"
+            "3. 給予這段關係具體的經營建議與未來走向預測。\n"
+        )
+
     return (
         "請扮演資深命理大師 Hugo。你的語氣要氣勢磅礴、直指人心，同時帶著對命主的深刻理解。請使用一般大眾能懂的日常比喻（如天氣、航海等，絕不可使用餐飲比喻）。\n\n"
+        f"{partner_instruction}"
         "【排版與輸出格式嚴格要求】：\n"
         "1. 必須分段落，並使用大標題（例如：### 【事業與財富軌跡】）。\n"
         "2. 每個大標題下，『必須使用條列式（*）與粗體』來標示專業術語，接著緊跟白話解釋與比喻。\n"
@@ -339,23 +377,19 @@ def save_to_google_sheet(person: Person, summary: str):
         client = gspread.authorize(creds)
         
         # 開啟試算表
-        sheet_name = "Hugo 命理館：客戶紀錄總表"
-        sh = client.open(sheet_name)
-        worksheet = sh.get_worksheet(0) # 第一個工作表
+        sh = client.open("Hugo 命理館：客戶紀錄總表")
+        worksheet = sh.worksheet("工作表1")
         
         # 準備資料行 (台北時間)
         now_tw = (_dt.datetime.utcnow() + _dt.timedelta(hours=8)).strftime("%Y-%m-%d %H:%M:%S")
         row = [
             now_tw,
             person.name,
-            "男" if person.gender == "male" else "女",
-            person.date.isoformat(),
+            str(person.date),
             person.time.strftime("%H:%M"),
-            person.occupation,
-            person.job_status,    # 新增
-            person.relationship,  # 新增
-            person.children,      # 新增
-            summary
+            person.partner_name if person.partner_name else "",
+            str(person.partner_date) if person.partner_date else "",
+            "解析成功"
         ]
         
         worksheet.append_row(row)
@@ -378,6 +412,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.title("🔮 Hugo 乾坤命理館：流年造化推演")
+module = None
 
 with st.sidebar:
     st.header("⚙️ 設定")
@@ -440,6 +475,19 @@ with col1:
         rel_status = st.selectbox("感情婚姻現況", RELATIONSHIP_STATUS)
         children_info = st.text_input("子女狀況", placeholder="例如：無，或 1個，17歲")
 
+    with st.container(border=True):
+        st.subheader("🔮 兩人配對：解碼你們的命運密碼（選填）")
+        partner_name = st.text_input("對象姓名 (想算配對再填)", "")
+        col3, col4 = st.columns(2)
+        with col3:
+            partner_birthday = st.date_input("對象生日", value=None, key="p_date")
+        with col4:
+            partner_time = st.selectbox("對象時辰", ["不清楚", "子時", "丑時", "寅時", "卯時", "辰時", "巳時", "午時", "未時", "申時", "酉時", "戌時", "亥時"], key="p_time")
+        
+        # 兩人配對專屬按鈕 (配合使用者提供的程式碼)
+        if st.button("八字乾坤：深度解析", key="partner_btn_match"):
+            module = "八字乾坤：深度能量解析"
+
 with col2:
     with st.container(border=True):
         st.subheader("📚 解盤框架")
@@ -451,14 +499,20 @@ st.divider()
 
 # 按鈕區
 btn_cols = st.columns(3)
-module = None
 if btn_cols[0].button("八字乾坤：深度解析"): module = "八字乾坤：深度能量解析"
 if btn_cols[1].button("紫微精論：十二宮位"): module = "紫微精論：人生十二宮位"
 if btn_cols[2].button("命理大滿貫：旗艦合參"): module = "命理大滿貫：八字紫微合參"
 
 if module:
-    p = Person(name, bday, btime, gender, occ, unknown, job_status, rel_status, children_info)
+    p = Person(
+        name, bday, btime, gender, occ, unknown, job_status, rel_status, children_info,
+        partner_name=partner_name, partner_date=partner_birthday, partner_time_str=partner_time
+    )
     report = build_person_report(p)
+    
+    # 如果有對象資訊，修改 module 名稱以觸發配對提示詞
+    if partner_name and partner_birthday:
+        module = f"【兩人配對】{module}"
     
     with st.spinner(f"Hugo 大師正在為您解析【{module}】..."):
         result = generate_ai_text(api_key, model_name, module, report, books, is_master_mode=is_master_mode)
