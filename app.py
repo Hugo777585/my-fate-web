@@ -280,6 +280,7 @@ def _ai_system_prompt(selected_books: list[str], module_name: str, is_master_mod
             "1. 必須分析兩人的八字合契度（合、沖、刑、害）。\n"
             "2. 分析兩人的性格是否互補或存在衝突點。\n"
             "3. 給予這段關係具體的經營建議與未來走向預測。\n"
+            "4. 在解析的最後，必須明確給出一個 1~100 的「兩人契合度分數」，並用一句話總結這段關係。\n"
         )
 
     return (
