@@ -439,6 +439,11 @@ with st.sidebar:
     st.sidebar.markdown("---")
     st.sidebar.caption("Powered by Gemini 2.5 Flash & Borax")
 
+    # --- 瀏覽人次記錄器 ---
+    st.sidebar.markdown("---")
+    st.sidebar.write("🔥 命理館累積香客：")
+    st.sidebar.image("https://visitor-badge.laobi.icu/badge?page_id=hugo_fortune_master_2026&left_color=gray&right_color=red&left_text=來訪人次")
+
 col1, col2 = st.columns(2)
 with col1:
     with st.container(border=True):
@@ -467,10 +472,16 @@ with col1:
     with st.container(border=True):
         st.subheader("🔮 兩人配對：解碼你們的命運密碼（選填）")
         partner_name = st.text_input("對象姓名 (想算配對再填)", "")
-        col3, col4 = st.columns(2)
-        with col3:
-            partner_birthday = st.date_input("對象生日", value=None, key="p_date")
-        with col4:
+        p_col1, p_col2 = st.columns(2)
+        with p_col1:
+            partner_birthday = st.date_input(
+                "對象生日",
+                value=None,
+                min_value=_dt.date(1940, 1, 1),
+                max_value=_dt.date(2026, 12, 31),
+                key="p_date"
+            )
+        with p_col2:
             partner_time = st.selectbox("對象時辰", ["不清楚", "子時", "丑時", "寅時", "卯時", "辰時", "巳時", "午時", "未時", "申時", "酉時", "戌時", "亥時"], key="p_time")
         
         # 兩人配對專屬按鈕 (配合使用者提供的程式碼)
