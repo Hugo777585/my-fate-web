@@ -409,8 +409,8 @@ st.markdown("""
     .stApp { 
         background-color: #0e1117; 
         color: #ffffff; 
-        /* 將整個網頁背景換成重複排列的精緻浮水印 */
-        background-image: url("data:image/svg+xml,%3Csvg width='350' height='250' xmlns='http://www.w3.org/2000/svg'%3E%3Ctext x='50%25' y='50%25' font-size='22' font-weight='bold' fill='rgba(255, 255, 255, 0.06)' font-family='sans-serif' text-anchor='middle' dominant-baseline='middle' transform='rotate(-30, 175, 125)'%3EHugo 乾坤命理館%3C/text%3E%3C/svg%3E");
+        /* 將整個網頁背景換成更重複排列、更明顯的精緻浮水印 */
+        background-image: url("data:image/svg+xml,%3Csvg width='160' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Ctext x='50%25' y='50%25' font-size='16' font-weight='bold' fill='rgba(255, 255, 255, 0.15)' font-family='sans-serif' text-anchor='middle' dominant-baseline='middle' transform='rotate(-30, 80, 50)'%3EHugo 乾坤命理館%3C/text%3E%3C/svg%3E");
         background-repeat: repeat;
         background-position: top left;
     }
