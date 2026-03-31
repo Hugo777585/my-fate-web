@@ -409,7 +409,25 @@ st.markdown("""
     .stApp { background-color: #0e1117; color: #ffffff; }
     .stButton>button { width: 100%; border-radius: 8px; height: 3.5em; font-weight: bold; background-color: #262730; border: 1px solid #4a4a4a; }
     .report-card { background-color: #1e212b; padding: 25px; border-radius: 12px; border: 1px solid #30363d; font-size: 1.1em; line-height: 1.6; }
+    
+    /* 專屬防盜浮水印 */
+    .watermark {
+        position: fixed;
+        top: 35%;
+        left: 5%;
+        width: 90%;
+        opacity: 0.08; /* 透明度，數字越小越淡，目前設定 8% */
+        z-index: 9999; /* 浮在最上層 */
+        pointer-events: none; /* 滑鼠可穿透，不影響客人滑動網頁 */
+        text-align: center;
+        transform: rotate(-30deg); /* 斜角 30 度 */
+        font-size: 8vw; /* 隨著螢幕縮放的巨大字體 */
+        font-weight: bold;
+        color: #555555;
+        user-select: none; /* 防止被反白選取 */
+    }
 </style>
+<div class="watermark">Hugo 乾坤命理館 專屬解析</div>
 """, unsafe_allow_html=True)
 
 st.title("🔮 Hugo 乾坤命理館：流年造化推演")
