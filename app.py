@@ -406,28 +406,17 @@ st.set_page_config(page_title="Hugo 乾坤命理館：流年造化推演", layou
 
 st.markdown("""
 <style>
-    .stApp { background-color: #0e1117; color: #ffffff; }
+    .stApp { 
+        background-color: #0e1117; 
+        color: #ffffff; 
+        /* 將整個網頁背景換成重複排列的精緻浮水印 */
+        background-image: url("data:image/svg+xml,%3Csvg width='350' height='250' xmlns='http://www.w3.org/2000/svg'%3E%3Ctext x='50%25' y='50%25' font-size='22' font-weight='bold' fill='rgba(255, 255, 255, 0.06)' font-family='sans-serif' text-anchor='middle' dominant-baseline='middle' transform='rotate(-30, 175, 125)'%3EHugo 乾坤命理館%3C/text%3E%3C/svg%3E");
+        background-repeat: repeat;
+        background-position: top left;
+    }
     .stButton>button { width: 100%; border-radius: 8px; height: 3.5em; font-weight: bold; background-color: #262730; border: 1px solid #4a4a4a; }
     .report-card { background-color: #1e212b; padding: 25px; border-radius: 12px; border: 1px solid #30363d; font-size: 1.1em; line-height: 1.6; }
-    
-    /* 專屬防盜浮水印 */
-    .watermark {
-        position: fixed;
-        top: 35%;
-        left: 5%;
-        width: 90%;
-        opacity: 0.08; /* 透明度，數字越小越淡，目前設定 8% */
-        z-index: 9999; /* 浮在最上層 */
-        pointer-events: none; /* 滑鼠可穿透，不影響客人滑動網頁 */
-        text-align: center;
-        transform: rotate(-30deg); /* 斜角 30 度 */
-        font-size: 8vw; /* 隨著螢幕縮放的巨大字體 */
-        font-weight: bold;
-        color: #555555;
-        user-select: none; /* 防止被反白選取 */
-    }
 </style>
-<div class="watermark">Hugo 乾坤命理館 專屬解析</div>
 """, unsafe_allow_html=True)
 
 st.title("🔮 Hugo 乾坤命理館：流年造化推演")
@@ -537,7 +526,20 @@ if module:
         result = generate_ai_text(api_key, model_name, module, report, books, is_master_mode=is_master_mode)
         st.markdown(f"### 🖋️ Hugo 大師論斷：{module}")
         st.markdown(f"<div class='report-card'>{result}</div>", unsafe_allow_html=True)
-        st.download_button("📥 下載此段論斷 (TXT)", data=result.encode("utf-8"), file_name=f"{module}.txt")
+        
+        # --- 大師專屬下載暗門 ---
+        st.markdown("---")
+        unlock_pwd = st.text_input("🔒 系統指令（僅限管理員）", type="password")
+        
+        if unlock_pwd == "hugo888":
+            st.success("大師身分確認！已解鎖下載權限。")
+            st.download_button(
+                label="📥 下載此段論斷 (TXT)",
+                data=result,
+                file_name=f"{module}.txt"
+            )
+        elif unlock_pwd != "":
+            st.error("指令錯誤，請勿亂闖大師陣法！")
         
         # 存檔至 Google Sheet (不論模式皆存檔)
         summary = extract_summary(result)
