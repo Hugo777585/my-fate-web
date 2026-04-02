@@ -56,6 +56,7 @@ XING_GROUPS = [
 PALACE_BRANCHES = ["寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥", "子", "丑"]
 ZIWEI_PALACES = ["命宮", "兄弟", "夫妻", "子女", "財帛", "疾厄", "遷移", "仆役", "官祿", "田宅", "福德", "父母"]
 
+# --- 身分選項 ---
 OCCUPATIONS = [
     "上班族",
     "創業/自由業",
@@ -68,7 +69,7 @@ OCCUPATIONS = [
 ]
 
 # 新增選項定義
-OCCUPATION_STATUS = ["受聘上班族", "自己經營創業", "自由工作者", "目前待業中"]
+OCCURATION_STATUS = ["受聘上班族", "自己經營創業", "自由工作者", "目前待業中"]
 RELATIONSHIP_STATUS = ["單身", "穩定交往中", "已婚", "已離婚/分居"]
 
 BOOK_OPTIONS = [
@@ -415,8 +416,8 @@ st.markdown("""
     .stApp { 
         background-color: #0e1117; 
         color: #ffffff; 
-        /* 將整個網頁背景換成更重複排列、更明顯的精緻浮水印 */
-        background-image: url("data:image/svg+xml,%3Csvg width='160' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Ctext x='50%25' y='50%25' font-size='16' font-weight='bold' fill='rgba(255, 255, 255, 0.15)' font-family='sans-serif' text-anchor='middle' dominant-baseline='middle' transform='rotate(-30, 80, 50)'%3EHugo 乾坤命理館%3C/text%3E%3C/svg%3E");
+        /* 將整個網頁背景換成更重複排列、更明顯的精緻浮水印（緊密加深版） */
+        background-image: url("data:image/svg+xml,%3Csvg width='120' height='80' xmlns='http://www.w3.org/2000/svg'%3E%3Ctext x='50%25' y='50%25' font-size='14' font-weight='bold' fill='rgba(255, 255, 255, 0.18)' font-family='sans-serif' text-anchor='middle' dominant-baseline='middle' transform='rotate(-35, 60, 40)'%3EHugo 乾坤命理館 專屬解析%3C/text%3E%3C/svg%3E");
         background-repeat: repeat;
         background-position: top left;
     }
@@ -437,12 +438,12 @@ with st.sidebar:
         api_key = ""
         st.warning("⚠️ 找不到 GEMINI_API_KEY。請在 .streamlit/secrets.toml 中設定。")
     
-    model_name = st.selectbox("模型版本", ["gemini-2.5-flash", "gemini-2.0-flash"])
+    model_name = st.selectbox("模型版本", ["gemini-2.0-flash", "gemini-1.5-pro"])
     st.info("已鎖定 Hugo 大師靈魂提示詞，提供溫慢且犀利的洞察。")
     
     st.markdown("---")
     master_code = st.text_input("大師通關密語 (選填)", type="password")
-    is_master_mode = (master_code == "HUGO888")
+    is_master_mode = (master_code == "hugo888")
     if is_master_mode:
         st.success("✅ 已解鎖：宗師深度模式")
     elif master_code:
@@ -451,7 +452,7 @@ with st.sidebar:
         st.caption("輸入正確密語以解鎖深度流年分析")
 
     st.sidebar.markdown("---")
-    st.sidebar.caption("Powered by Gemini 2.5 Flash & Borax")
+    st.sidebar.caption("Powered by Gemini 2.0 Flash & Borax")
 
     # --- 瀏覽人次記錄器 ---
     st.sidebar.markdown("---")
@@ -479,7 +480,7 @@ with col1:
 
     with st.container(border=True):
         st.subheader("🏠 現實生活狀態")
-        job_status = st.selectbox("目前職業狀態", OCCUPATION_STATUS)
+        job_status = st.selectbox("目前職業狀態", OCCURATION_STATUS)
         rel_status = st.selectbox("感情婚姻現況", RELATIONSHIP_STATUS)
         children_info = st.text_input("子女狀況", placeholder="例如：無，或 1個，17歲")
 
@@ -498,9 +499,9 @@ with col1:
         with p_col2:
             partner_time = st.selectbox("對象時辰", ["不清楚", "子時", "丑時", "寅時", "卯時", "辰時", "巳時", "午時", "未時", "申時", "酉時", "戌時", "亥時"], key="p_time")
         
-        # 兩人配對專屬按鈕 (配合使用者提供的程式碼)
-        if st.button("八字乾坤：深度解析", key="partner_btn_match"):
-            module = "八字乾坤：深度能量解析"
+        # 兩人配對專屬按鈕
+        if st.button("兩人命運合盤：深度解析", key="partner_btn_match"):
+            module = "兩人命運合盤：深度解析"
 
 with col2:
     with st.container(border=True):
@@ -513,9 +514,9 @@ st.divider()
 
 # 按鈕區
 btn_cols = st.columns(3)
-if btn_cols[0].button("八字乾坤：深度解析"): module = "八字乾坤：深度能量解析"
-if btn_cols[1].button("紫微精論：十二宮位"): module = "紫微精論：人生十二宮位"
-if btn_cols[2].button("命理大滿貫：旗艦合參"): module = "命理大滿貫：八字紫微合參"
+if btn_cols[0].button("八字乾坤：深度能量解析"): module = "八字乾坤：深度能量解析"
+if btn_cols[1].button("紫微精論：人生十二宮位"): module = "紫微精論：人生十二宮位"
+if btn_cols[2].button("命理大滿貫：八字紫微合參"): module = "命理大滿貫：八字紫微合參"
 
 if module:
     p = Person(
@@ -557,4 +558,4 @@ if module:
         st.info("以上數據是初步評估推論每個人出生時候的原廠人生命盤格局，但因每個人生長環境、所遭遇到的人事物不同而有所變動。如果你的情況複雜，或者需要針對目前的僵局制定「專屬攻略」，請直接私下找我 Hugo。")
         
         # 老闆的專屬 LINE 預約連結
-        st.markdown("### `https://line.me/ti/p/~en777585` ")
+        st.markdown("### https://line.me/ti/p/~en777585 ")
