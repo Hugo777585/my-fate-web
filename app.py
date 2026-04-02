@@ -539,3 +539,11 @@ if module:
         # 存檔至 Google Sheet (不論模式皆存檔)
         summary = extract_summary(result)
         save_to_google_sheet(p, summary)
+
+        # --- 終極收網：聯絡大師 ---
+        st.markdown("---")
+        st.subheader("🔮 需要大師親自為你破局嗎？")
+        st.info("以上數據是初步評估推論每個人出生時候的原廠人生命盤格局，但因每個人生長環境、所遭遇到的人事物不同而有所變動。如果你的情況複雜，或者需要針對目前的僵局制定「專屬攻略」，請直接私下找我 Hugo。")
+        
+        # 老闆的專屬 LINE 預約連結
+        st.markdown("### `https://line.me/ti/p/~en777585` ")
