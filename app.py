@@ -1,4 +1,4 @@
-markdown("### https://line.me/ti/p/~en777585 ")import datetime as _dt
+import datetime as _dt
 import hashlib
 import calendar
 import os
@@ -106,12 +106,12 @@ class Person:
     gender: str
     occupation: str
     hour_unknown: bool
-    job_status: str # 新增：目前職業狀態
-    relationship: str # 新增：感情婚姻現況
-    children: str # 新增：子女狀況
-    partner_name: str = "" # 新增：對象姓名
-    partner_date: _dt.date = None # 新增：對象生日
-    partner_time_str: str = "" # 新增：對象時辰文字
+    job_status: str
+    relationship: str
+    children: str
+    partner_name: str = ""
+    partner_date: _dt.date = None
+    partner_time_str: str = ""
 
 def _parse_gz(gz: str) -> GZ:
     tg = GAN.index(gz[0]); dz = ZHI.index(gz[1])
@@ -130,7 +130,6 @@ def _hour_gz(day_gan_index: int, hour: int) -> GZ:
     return GZ(tg=tg, dz=dz)
 
 def _time_from_branch_str(branch_str: str) -> _dt.time:
-    """將時辰文字轉為概略時間"""
     mapping = {
         "子時": _dt.time(0, 0), "丑時": _dt.time(1, 0), "寅時": _dt.time(3, 0),
         "卯時": _dt.time(5, 0), "辰時": _dt.time(7, 0), "巳時": _dt.time(9, 0),
@@ -242,7 +241,6 @@ def build_person_report(p: Person) -> dict[str, Any]:
         "shensha": shensha(pillars), "ziwei_chart": _ziwei_chart_from_iztro(p)
     }
 
-    # 處理對象配對資訊 (若有填寫)
     if p.partner_name and p.partner_date:
         p_time = _time_from_branch_str(p.partner_time_str)
         p_base = bazi_from_borax(p.partner_date, p_time)
@@ -251,14 +249,9 @@ def build_person_report(p: Person) -> dict[str, Any]:
             "pillars": p_base["pillars"],
             "lunar": p_base["lunar"]
         }
-    
     return report
 
-# ==========================================
-# AI 邏輯 (大師靈魂)
-# ==========================================
 def _get_public_prompt(module_name: str) -> str:
-    """公眾引流模式提示詞"""
     return (
         "請扮演資深命理宗師 Hugo。你的語氣要氣勢磅礴、直指人心。\n\n"
         "【輸出規範】：\n"
@@ -276,9 +269,7 @@ def _get_public_prompt(module_name: str) -> str:
 def _ai_system_prompt(selected_books: list[str], module_name: str, is_master_mode: bool = False) -> str:
     if not is_master_mode:
         return _get_public_prompt(module_name)
-    
     books = "、".join(selected_books) if selected_books else "（未指定）"
-    
     partner_instruction = ""
     if "partner" in module_name or "配對" in module_name:
         partner_instruction = (
@@ -288,7 +279,6 @@ def _ai_system_prompt(selected_books: list[str], module_name: str, is_master_mod
             "3. 給予這段關係具體的經營建議與未來走向預測。\n"
             "4. 在解析的最後，必須明確給出一個 1~100 的「兩人契合度分數」，並用一句話總結這段關係。\n"
         )
-
     return (
         "【核心大腦：Hu go 大師商業決策引擎 5.0 (終極完全體)】\n\n"
         "【角色設定與靈魂賦予】\n"
@@ -299,179 +289,71 @@ def _ai_system_prompt(selected_books: list[str], module_name: str, is_master_mod
         "3. 家管：核心在於「重新找回自我價值、打破情感過度依賴、在家庭中重塑個人魅力」。\n"
         "4. 更生人：核心在於「重建關係平權、辨識『救世主情結』與真實接納、精準掌握自我揭露的時機與邊界，拒絕在關係中委曲求全」。\n\n"
         f"{partner_instruction}"
-        "【強制輸出結構（請嚴格依照以下三層架構輸出，並加上適當的 Emoji）】\n\n"
+        "【強制輸出結構】\n\n"
         "🔮 第一層：【靈魂共振（命運與痛點剖析）】\n"
         "寫出直擊痛點的心理描述。必須包含「關係風險解碼」，用極具穿透力的文字描述對方在以下五個維度的表現：\n"
-        "1. 曖昧擴散度（是否容易同時維持多對象？）\n"
-        "2. 承諾穩定度（會不會突然退縮或消失？）\n"
-        "3. 情緒波動（忽冷忽熱的程度？）\n"
-        "4. 投入落差（說跟做是否一致？）\n"
-        "5. 控制/逃避傾向（面對問題是處理還是閃躲？）\n"
+        "1. 曖昧擴散度、2. 承諾穩定度、3. 情緒波動、4. 投入落差、5. 控制/逃避傾向。\n"
         "📍 【致命總結】：請用一句話總結對方的感情模式。\n\n"
         "☯️ 第二層：【命理金箔與殘酷定位（降維打擊）】\n"
-        "這是建立大師權威感的關鍵！你必須先根據雙方命盤，拋出 1~2 個極度專業的八字或紫微術語（例如：日主受剋、化忌入交友宮、身弱逢殺等），然後「立刻翻譯成血淋淋的人性白話文」，點出兩人的真實互動機制。\n"
-        "接著明確給出以下三個量化決策指標：\n"
-        "- 情感順位評分：__%\n"
-        "- 替代可能性：(高/中/低)\n"
-        "- 穩定發展機率：__%\n"
+        "拋出 1~2 個極度專業的術語，翻譯成白話文。並給出：情感順位、替代可能性、穩定發展機率。\n"
         "📍 【清醒金句】：請用一句話點破用戶在對方心中的真實位置。\n\n"
         "🔥 第三層：【破局戰術（高階行動指引）】\n"
-        "這是全篇讓用戶離不開你的最高價值所在。根據目前的能量狀態與身分特質，給出 3 點「現在立刻該怎麼做」的具體戰術。\n"
-        "❌ 絕對不說「順其自然」這種廢話。\n"
-        "✅ 必須給出具體操作（例如：何時該主動？何時必須冷卻？絕對會踩雷的行為？如何讓他主動靠近？）\n\n"
+        "給出 3 點具體戰術。絕對不說「順其自然」。\n\n"
         "【學理引述強制要求】：\n"
-        "- 必須將以下古籍理論自然揉合在解析中：\n"
-        f"  1. 參考學理框架：{books}。\n"
-        "  2. 引用《滴天髓》：分析日主氣勢強弱與格局清濁。\n"
-        "  3. 引用紫微斗數：根據命盤星曜分析深層人性。\n\n"
+        f"1. 參考學理框架：{books}。2. 引用《滴天髓》。3. 引用紫微斗數。\n\n"
         f"目前解析模組：{module_name}。"
     )
-
-def _ziwei_star_table_text(chart: dict | None) -> str:
-    if not chart or not chart.get("palaces"): return ""
-    return "\n".join([f"{p['name']}：主星={'、'.join(p['major_stars']) or '無'}；輔星={'、'.join(p['minor_stars'][:5]) or '無'}" for p in chart["palaces"]])
 
 def generate_ai_text(api_key: str, model_name: str, module_name: str, payload: dict, selected_books: list[str], is_master_mode: bool = False) -> str:
     if not api_key: return "請先在左側輸入 API Key。"
     genai.configure(api_key=api_key)
     model = genai.GenerativeModel(model_name=model_name, system_instruction=_ai_system_prompt(selected_books, module_name, is_master_mode))
-    star_info = f"\n\n【紫微斗數星曜總表】\n{_ziwei_star_table_text(payload.get('ziwei_chart'))}\n" if "紫微" in module_name else ""
-    
-    # 確保 payload 中的內容可以被 JSON 序列化（將無法識別的物件轉為字串）
     def json_serial(obj):
         if hasattr(obj, 'isoformat'): return obj.isoformat()
-        if hasattr(obj, 'text'): return obj.text # 處理 GZ 等物件
+        if hasattr(obj, 'text'): return obj.text
         return str(obj)
-
     safe_payload_json = json.dumps(payload, default=json_serial, ensure_ascii=False, indent=2)
-    user_prompt = f"【模組】{module_name}\n【資料】\n{safe_payload_json}{star_info}"
+    user_prompt = f"【模組】{module_name}\n【資料】\n{safe_payload_json}"
     try:
-        response = model.generate_content(user_prompt, generation_config=genai.types.GenerationConfig(temperature=0.7))
-        # 防呆處理：嘗試讀取 response.text，若 AI 詞窮或報錯則回傳自定義訊息
-        try:
-            text = (response.text or "").strip()
-            if not text:
-                return "大師目前正在沉思中，請再按一次分析按鈕，或調整一下輸入的資料。"
-        except Exception:
-            return "大師目前正在沉思中，請再按一次分析按鈕，或調整一下輸入的資料。"
-
-        if "未填" in text and "紫微" in module_name:
-            text = text.replace("未填", f"【系統強制修正】\n{_ziwei_star_table_text(payload.get('ziwei_chart'))}")
-        return text
-    except Exception as e:
-        return f"API 呼叫失敗：{str(e)}"
-
-def extract_summary(text: str) -> str:
-    """從 AI 回傳文字中擷取懶人包內容，處理全形/半形冒號"""
-    markers = ["【Hugo 大師重點懶人包】：", "【Hugo 大師重點懶人包】:"]
-    for marker in markers:
-        if marker in text:
-            parts = text.split(marker)
-            return parts[-1].strip()
-    return "（未產出懶人包）"
+        response = model.generate_content(user_prompt)
+        return response.text
+    except Exception as e: return f"API 呼叫失敗：{str(e)}"
 
 def save_to_google_sheet(person: Person, summary: str):
-    """將資料非同步寫入 Google Sheet"""
     try:
-        if "GCP_SERVICE_ACCOUNT" not in st.secrets:
-            print("無法存檔：st.secrets 中找不到 GCP_SERVICE_ACCOUNT 設定。")
-            return
-
+        if "GCP_SERVICE_ACCOUNT" not in st.secrets: return
         scopes = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
         creds = Credentials.from_service_account_info(st.secrets["GCP_SERVICE_ACCOUNT"], scopes=scopes)
         client = gspread.authorize(creds)
-        
-        # 開啟試算表
         sh = client.open("Hugo 命理館：客戶紀錄總表")
         worksheet = sh.worksheet("工作表1")
-        
-        # 準備資料行 (台北時間)
         now_tw = (_dt.datetime.utcnow() + _dt.timedelta(hours=8)).strftime("%Y-%m-%d %H:%M:%S")
-        row = [
-            now_tw,
-            person.name,
-            person.occupation,  # 新增：目前的身份/狀態
-            str(person.date),
-            person.time.strftime("%H:%M"),
-            person.partner_name if person.partner_name else "",
-            str(person.partner_date) if person.partner_date else "",
-            "解析成功"
-        ]
-        
+        row = [now_tw, person.name, person.occupation, str(person.date), person.time.strftime("%H:%M"), "解析成功"]
         worksheet.append_row(row)
-        print(f"成功存檔至 Google Sheet: {person.name}")
-    except Exception as e:
-        # 靜默失敗，僅在後台列印
-        print(f"Google Sheet 存檔失敗：{str(e)}")
+    except: pass
 
 # ==========================================
 # Streamlit UI
 # ==========================================
-st.set_page_config(page_title="Hugo 乾坤命理館：流年造化推演", layout="wide")
-
-st.markdown("""
-<style>
-    .stApp { 
-        background-color: #0e1117; 
-        color: #ffffff; 
-        /* 將整個網頁背景換成更重複排列、更明顯的精緻浮水印（緊密加深版） */
-        background-image: url("data:image/svg+xml,%3Csvg width='120' height='80' xmlns='http://www.w3.org/2000/svg'%3E%3Ctext x='50%25' y='50%25' font-size='14' font-weight='bold' fill='rgba(255, 255, 255, 0.18)' font-family='sans-serif' text-anchor='middle' dominant-baseline='middle' transform='rotate(-35, 60, 40)'%3EHugo 乾坤命理館 專屬解析%3C/text%3E%3C/svg%3E");
-        background-repeat: repeat;
-        background-position: top left;
-    }
-    .stButton>button { width: 100%; border-radius: 8px; height: 3.5em; font-weight: bold; background-color: #262730; border: 1px solid #4a4a4a; }
-    .report-card { background-color: #1e212b; padding: 25px; border-radius: 12px; border: 1px solid #30363d; font-size: 1.1em; line-height: 1.6; }
-</style>
-""", unsafe_allow_html=True)
+st.set_page_config(page_title="Hugo 乾坤命理館", layout="wide")
 
 st.title("🔮 Hugo 乾坤命理館：流年造化推演")
 module = None
 
 with st.sidebar:
     st.header("⚙️ 設定")
-    # 直接讀取 secrets 裡的 GEMINI_API_KEY
-    try:
-        api_key = st.secrets["GEMINI_API_KEY"]
-    except KeyError:
-        api_key = ""
-        st.warning("⚠️ 找不到 GEMINI_API_KEY。請在 .streamlit/secrets.toml 中設定。")
-    
+    api_key = st.secrets.get("GEMINI_API_KEY", "")
     model_name = st.selectbox("模型版本", ["gemini-2.0-flash", "gemini-1.5-pro"])
-    st.info("已鎖定 Hugo 大師靈魂提示詞，提供溫慢且犀利的洞察。")
-    
-    st.markdown("---")
-    master_code = st.text_input("大師通關密語 (選填)", type="password")
+    master_code = st.text_input("大師通關密語", type="password")
     is_master_mode = (master_code == "hugo888")
-    if is_master_mode:
-        st.success("✅ 已解鎖：宗師深度模式")
-    elif master_code:
-        st.error("❌ 密語錯誤：啟動公眾引流模式")
-    else:
-        st.caption("輸入正確密語以解鎖深度流年分析")
-
-    st.sidebar.markdown("---")
-    st.sidebar.caption("Powered by Gemini 2.0 Flash & Borax")
-
-    # --- 瀏覽人次記錄器 ---
-    st.sidebar.markdown("---")
-    st.sidebar.write("🔥 命理館累積香客：")
-    st.sidebar.image("https://visitor-badge.laobi.icu/badge?page_id=hugo_fortune_master_2026&left_color=gray&right_color=red&left_text=來訪人次")
 
 col1, col2 = st.columns(2)
 with col1:
     with st.container(border=True):
         st.subheader("👤 主命主資料")
-        name = st.text_input("姓名/標籤", value="命主A")
+        name = st.text_input("姓名", value="命主A")
         gender = st.selectbox("性別", ["male", "female"], format_func=lambda x: "男" if x=="male" else "女")
-        
-        # 把起始年份設為 1940，最大年份設為 2026
-        user_birthday = st.date_input(
-            "您的生日",
-            value=_dt.date(1980, 1, 1),
-            min_value=_dt.date(1940, 1, 1),
-            max_value=_dt.date(2026, 12, 31)
-        )
-
+        user_birthday = st.date_input("生日", value=_dt.date(1980, 1, 1))
         btime = st.time_input("出生時間", value=_dt.time(12, 0))
         occupation = st.selectbox("目前的身份/狀態：", OCCUPATIONS)
         unknown = st.checkbox("不確定出生時辰")
@@ -480,80 +362,27 @@ with col1:
         st.subheader("🏠 現實生活狀態")
         job_status = st.selectbox("目前職業狀態", OCCURATION_STATUS)
         rel_status = st.selectbox("感情婚姻現況", RELATIONSHIP_STATUS)
-        children_info = st.text_input("子女狀況", placeholder="例如：無，或 1個，17歲")
+        children_info = st.text_input("子女狀況", placeholder="例如：無")
 
     with st.container(border=True):
-        st.subheader("🔮 兩人配對：解碼你們的命運密碼（選填）")
-        partner_name = st.text_input("對象姓名 (想算配對再填)", "")
-        p_col1, p_col2 = st.columns(2)
-        with p_col1:
-            partner_birthday = st.date_input(
-                "對象生日",
-                value=None,
-                min_value=_dt.date(1940, 1, 1),
-                max_value=_dt.date(2026, 12, 31),
-                key="p_date"
-            )
-        with p_col2:
-            partner_time = st.selectbox("對象時辰", ["不清楚", "子時", "丑時", "寅時", "卯時", "辰時", "巳時", "午時", "未時", "申時", "酉時", "戌時", "亥時"], key="p_time")
-        
-        # 兩人配對專屬按鈕
-        if st.button("兩人命運合盤：深度解析", key="partner_btn_match"):
-            module = "兩人命運合盤：深度解析"
+        st.subheader("🔮 兩人配對 (選填)")
+        partner_name = st.text_input("對象姓名", "")
+        partner_birthday = st.date_input("對象生日", value=None, key="p_date")
+        partner_time = st.selectbox("對象時辰", ["不清楚", "子時", "丑時", "寅時", "卯時", "辰時", "巳時", "午時", "未時", "申時", "酉時", "戌時", "亥時"], key="p_time")
 
 with col2:
-    with st.container(border=True):
-        st.subheader("📚 解盤框架")
-        books = st.multiselect("學理框架", [b[1] for b in BOOK_OPTIONS], default=[b[1] for b in BOOK_OPTIONS])
-        st.subheader("📅 行事曆設定")
-        cal_date = st.date_input("查詢月份", value=_dt.date.today())
+    books = st.multiselect("學理框架", [b[1] for b in BOOK_OPTIONS], default=[b[1] for b in BOOK_OPTIONS])
 
 st.divider()
-
-# 按鈕區
-btn_cols = st.columns(3)
-if btn_cols[0].button("八字乾坤：深度能量解析"): module = "八字乾坤：深度能量解析"
-if btn_cols[1].button("紫微精論：人生十二宮位"): module = "紫微精論：人生十二宮位"
-if btn_cols[2].button("命理大滿貫：八字紫微合參"): module = "命理大滿貫：八字紫微合參"
+if st.button("八字乾坤：深度解析"): module = "八字乾坤：深度解析"
 
 if module:
-    p = Person(
-        name, user_birthday, btime, gender, occupation, unknown, job_status, rel_status, children_info,
-        partner_name=partner_name, partner_date=partner_birthday, partner_time_str=partner_time
-    )
+    p = Person(name, user_birthday, btime, gender, occupation, unknown, job_status, rel_status, children_info, partner_name, partner_birthday, partner_time)
     report = build_person_report(p)
-    
-    # 如果有對象資訊，修改 module 名稱以觸發配對提示詞
-    if partner_name and partner_birthday:
-        module = f"【兩人配對】{module}"
-    
-    with st.spinner(f"Hugo 大師正在為您解析【{module}】..."):
-        result = generate_ai_text(api_key, model_name, module, report, books, is_master_mode=is_master_mode)
-        st.markdown(f"### 🖋️ Hugo 大師論斷：{module}")
-        st.markdown(f"<div class='report-card'>{result}</div>", unsafe_allow_html=True)
-        
-        # --- 大師專屬下載暗門 ---
+    with st.spinner("大師解析中..."):
+        result = generate_ai_text(api_key, model_name, module, report, books, is_master_mode)
+        st.markdown(f"### 🖋️ Hugo 大師論斷")
+        st.markdown(result)
+        save_to_google_sheet(p, result)
         st.markdown("---")
-        unlock_pwd = st.text_input("🔒 系統指令（僅限管理員）", type="password")
-        
-        if unlock_pwd == "hugo888":
-            st.success("大師身分確認！已解鎖下載權限。")
-            st.download_button(
-                label="📥 下載此段論斷 (TXT)",
-                data=result,
-                file_name=f"{module}.txt"
-            )
-        elif unlock_pwd != "":
-            st.error("指令錯誤，請勿亂闖大師陣法！")
-        
-        # 存檔至 Google Sheet (不論模式皆存檔)
-        summary = extract_summary(result)
-        save_to_google_sheet(p, summary)
-
-        # --- 終極收網：聯絡大師 ---
-        st.markdown("---")
-        st.subheader("🔮 需要大師親自為你破局嗎？")
-        st.info("以上數據是初步評估推論每個人出生時候的原廠人生命盤格局，但因每個人生長環境、所遭遇到的人事物不同而有所變動。如果你的情況複雜，或者需要針對目前的僵局制定「專屬攻略」，請直接私下找我 Hugo。")
-        
-        # 老闆的專屬 LINE 預約連結
         st.markdown("### https://line.me/ti/p/~en777585 ")
