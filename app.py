@@ -219,7 +219,11 @@ def build_person_report(p: Person) -> dict[str, Any]:
     }
 
 # ==========================================
+<<<<<<< HEAD
 # AI 邏輯 (大師靈魂)
+=======
+# AI 邏輯 (大師靈靈魂)
+>>>>>>> 10f96855738446a709762addd4e4d938fea0dcdc
 # ==========================================
 def _ai_system_prompt(selected_books: list[str], module_name: str) -> str:
     books = "、".join(selected_books) if selected_books else "（未指定）"
@@ -344,6 +348,10 @@ st.title("🔮 Hugo 乾坤命理館：流年造化推演")
 
 with st.sidebar:
     st.header("⚙️ 設定")
+<<<<<<< HEAD
+=======
+    # 直接讀取 secrets 裡的 GEMINI_API_KEY (如果有的話)
+>>>>>>> 10f96855738446a709762addd4e4d938fea0dcdc
     try:
         api_key = st.secrets["GEMINI_API_KEY"]
     except KeyError:
@@ -422,6 +430,7 @@ if module:
             col_dl1, col_dl2 = st.columns(2)
             col_dl1.download_button("📥 下載 PDF 版", data=pdf_bytes, file_name=f"{module}.pdf", mime="application/pdf")
             col_dl2.download_button("📥 下載純文字版", data=result.encode("utf-8"), file_name=f"{module}.txt")
+<<<<<<< HEAD
 
 # ==========================================
 # 底部聯絡資訊 (強制曝光)
@@ -429,3 +438,5 @@ if module:
 st.markdown("---")
 st.subheader("🔮 預約 Hugo 大師親自破局")
 st.markdown("### 📱 LINE 預約：https://line.me/ti/p/~en777585 ")
+=======
+>>>>>>> 10f96855738446a709762addd4e4d938fea0dcdc
