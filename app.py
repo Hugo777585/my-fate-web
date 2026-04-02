@@ -1,4 +1,4 @@
-import datetime as _dt
+markdown("### https://line.me/ti/p/~en777585 ")import datetime as _dt
 import hashlib
 import calendar
 import os
@@ -373,8 +373,6 @@ def extract_summary(text: str) -> str:
 def save_to_google_sheet(person: Person, summary: str):
     """將資料非同步寫入 Google Sheet"""
     try:
-        # 從 st.secrets 讀取 GCP Service Account 資料
-        # 預期格式為 st.secrets["GCP_SERVICE_ACCOUNT"] (一個 dict)
         if "GCP_SERVICE_ACCOUNT" not in st.secrets:
             print("無法存檔：st.secrets 中找不到 GCP_SERVICE_ACCOUNT 設定。")
             return
