@@ -369,10 +369,6 @@ with col1:
     b_data = bazi_from_borax(bday, btime)
     p_gz = b_data["pillars"]
     l_info = b_data["lunar"]
-    st.info(f"""
-    📅 **農曆生日**：{l_info['year']}年 {l_info['month']}月 {l_info['day']}日 {"(閏月)" if l_info['leap'] else ""}
-    📜 **命盤八字**：{p_gz['year'].text}年 {p_gz['month'].text}月 {p_gz['day'].text}日 {p_gz['hour'].text}時
-    """)
 
 with col2:
     with st.container(border=True):
