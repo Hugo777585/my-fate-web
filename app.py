@@ -224,7 +224,11 @@ def build_person_report(p: Person) -> dict[str, Any]:
     }
 
 # ==========================================
+<<<<<<< HEAD
 # AI 邏輯 (大師靈魂分流版)
+=======
+# AI 邏輯 (大師靈魂)
+>>>>>>> 6d95bc82acd2a334f920100baf202374e983fb10
 # ==========================================
 def generate_ai_text(api_key: str, model_name: str, module_name: str, payload: dict, selected_books: list[str], is_master: bool = False) -> str:
     if not api_key: return "請先在左側設定 API Key。"
@@ -408,7 +412,16 @@ if module:
             col_dl1.download_button("📥 下載 PDF 版", data=pdf_bytes, file_name=f"{module}.pdf", mime="application/pdf")
             col_dl2.download_button("📥 下載純文字版", data=result.encode("utf-8"), file_name=f"{module}.txt")
 
+<<<<<<< HEAD
 # 隨時可見的聯絡資訊
 st.markdown("---")
 st.subheader("🔮 預約 Hugo 大師親自破局")
 st.markdown("### 📱 LINE 預約： `https://line.me/ti/p/~en777585` ")
+=======
+# ==========================================
+# 底部聯絡資訊 (強制曝光)
+# ==========================================
+st.markdown("---")
+st.subheader("🔮 預約 Hugo 大師親自破局")
+st.markdown("### 📱 LINE 預約：https://line.me/ti/p/~en777585 ")
+>>>>>>> 6d95bc82acd2a334f920100baf202374e983fb10
