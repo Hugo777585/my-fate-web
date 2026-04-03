@@ -79,6 +79,33 @@ BORAX_TERMS = [
 ]
 
 # ==========================================
+# 來客人數統計系統
+# ==========================================
+def get_visitor_count():
+    count_file = "visitor_count.txt"
+    if "visited" not in st.session_state:
+        st.session_state.visited = True
+        try:
+            if os.path.exists(count_file):
+                with open(count_file, "r") as f:
+                    count = int(f.read().strip())
+            else:
+                count = 888 # 大師開張吉利數字
+            count += 1
+            with open(count_file, "w") as f:
+                f.write(str(count))
+        except:
+            count = 889
+        st.session_state.v_count = count
+    else:
+        try:
+            with open(count_file, "r") as f:
+                count = int(f.read().strip())
+        except:
+            count = st.session_state.get("v_count", 889)
+    return count
+
+# ==========================================
 # 核心資料結構與計算
 # ==========================================
 @dataclass(frozen=True)
@@ -186,15 +213,10 @@ def shensha(pillars: dict[str, GZ]) -> dict[str, Any]:
     branches = {p.zhi for p in pillars.values()}
     tianyi_map = {"甲":{"丑","未"}, "戊":{"丑","未"}, "庚":{"丑","未"}, "乙":{"子","申"}, "己":{"子","申"}, "丙":{"亥","酉"}, "丁":{"亥","酉"}, "壬":{"卯","巳"}, "癸":{"卯","巳"}, "辛":{"寅","午"}}
     tianyi = sorted(branches.intersection(tianyi_map.get(day_gan, set())))
-    def _group_key(z: str): 
-        if z in {"申","子","辰"}: return "申子辰"
-        if z in {"寅","午","戌"}: return "寅午戌"
-        if z in {"亥","卯","未"}: return "亥卯未"
-        if z in {"巳","酉","丑"}: return "巳酉丑"
-        return ""
+    def _group_key(z: str): return "申子辰" if z in {"申","子","辰"} else "寅午戌" if z in {"寅","午","戌"} else "亥卯未" if z in {"亥","卯","未"} else "巳酉丑"
     tm, ym = {"申子辰":"酉", "寅午戌":"卯", "亥卯未":"子", "巳酉丑":"午"}, {"申子辰":"寅", "寅午戌":"申", "亥卯未":"巳", "巳酉丑":"亥"}
     tk, yk = _group_key(year_zhi), _group_key(day_zhi)
-    return {"tianyi": tianyi, "taohua": {"by_year": tm.get(tk, ""), "hit_by_year": tm.get(tk, "") in branches, "by_day": tm.get(yk, ""), "hit_by_day": tm.get(yk, "") in branches}, "yima": {"by_year": ym.get(tk, ""), "hit_by_year": ym.get(tk, "") in branches, "by_day": ym.get(yk, ""), "hit_by_day": ym.get(yk, "") in branches}}
+    return {"tianyi": tianyi, "taohua": {"by_year": tm[tk], "hit_by_year": tm[tk] in branches, "by_day": tm[yk], "hit_by_day": tm[yk] in branches}, "yima": {"by_year": ym[tk], "hit_by_year": ym[tk] in branches, "by_day": ym[yk], "hit_by_day": ym[yk] in branches}}
 
 def _ziwei_chart_from_iztro(person: Person) -> dict[str, Any] | None:
     gender = "男" if person.gender == "male" else "女"
@@ -224,24 +246,38 @@ def build_person_report(p: Person) -> dict[str, Any]:
     }
 
 # ==========================================
-<<<<<<< HEAD
-# AI 邏輯 (大師靈魂分流版)
-=======
 # AI 邏輯 (大師靈魂)
->>>>>>> 6d95bc82acd2a334f920100baf202374e983fb10
 # ==========================================
+def _ai_system_prompt(selected_books: list[str], module_name: str) -> str:
+    books = "、".join(selected_books) if selected_books else "（未指定）"
+    return (
+        "你是一位隱居多年、看破紅塵的命理玄學老手。你擁有極高的氣場與智慧，說話字字珠璣，能一眼看穿命盤背後的宿命真相。\n"
+        "你必須嚴格遵守以下輸出規範：\n"
+        "1) 【語氣要求】：極度自信、鐵口直斷、一針見血、徹底拒絕廢話。文字要有老手傅當面指點的氣場與溫度，充滿威嚴感。\n"
+        "2) 【排版要求】：直接切入命盤核心痛點與解法。文字要自然流暢，減少生硬的條列式排版，標題必須加粗。\n"
+        "3) 【核心禁令（違者視為嚴重錯誤）】：絕對禁止輸出以下 AI 常用罐頭廢話：\n"
+        "   - 「這是一盤相當有意思的緣分」\n   - 「本命書由AI協作生成」\n   - 「矛盾與潛力」\n   - 「僅供參考」\n   - 「你要靠規則」\n"
+        "4) 重要關鍵字（如 忌、喜、命門、轉折、格局）必須用 **...** 標示。\n"
+        "5) 禁止輸出「未填」「未知」；如資料不足，請明確說明缺少哪個欄位。\n"
+        f"6) 學理框架：{books}。請在解說時明確採用這些框架的專業術語。\n"
+        f"7) 本次輸出模組：{module_name}。\n"
+        "8) 【核心禁令】：絕對禁止在不同章節或宮位使用相同的結語模板或重複的文案！\n"
+    )
+
+def _ziwei_star_table_text(chart: dict | None) -> str:
+    if not chart or not chart.get("palaces"): return ""
+    return "\n".join([f"{p['name']}：主星={'、'.join(p['major_stars']) or '無'}；輔星={'、'.join(p['minor_stars'][:5]) or '無'}" for p in chart["palaces"]])
+
 def generate_ai_text(api_key: str, model_name: str, module_name: str, payload: dict, selected_books: list[str], is_master: bool = False) -> str:
     if not api_key: return "請先在左側設定 API Key。"
     genai.configure(api_key=api_key)
     model = genai.GenerativeModel(model_name=model_name)
     
-    # 確保 payload 內容可序列化
     def json_serial(obj):
         if hasattr(obj, 'isoformat'): return obj.isoformat()
         if hasattr(obj, 'text'): return obj.text
         return str(obj)
 
-    # 訪客模式：產出勾魂大綱
     if not is_master:
         prompt = f"""
         你現在是命理大師 Hugo。這是一位剛進網站的客人。
@@ -255,7 +291,6 @@ def generate_ai_text(api_key: str, model_name: str, module_name: str, payload: d
         5. 最後強制加上：✨ **【想解鎖 2026 完整運勢密卷？】** ✨ 請截圖此畫面並點擊下方 LINE 連結預約大師！
         """
     else:
-        # 大師模式：深度解析
         books = "、".join(selected_books) if selected_books else "（未指定）"
         star_info = f"\n\n【紫微斗數星曜總表】\n{_ziwei_star_table_text(payload.get('ziwei_chart'))}\n" if "紫微" in module_name else ""
         prompt = f"""
@@ -278,10 +313,6 @@ def generate_ai_text(api_key: str, model_name: str, module_name: str, payload: d
         return res.text
     except Exception as e:
         return f"解析失敗：{str(e)}"
-
-def _ziwei_star_table_text(chart: dict | None) -> str:
-    if not chart or not chart.get("palaces"): return ""
-    return "\n".join([f"{p['name']}：主星={'、'.join(p['major_stars']) or '無'}；輔星={'、'.join(p['minor_stars'][:5]) or '無'}" for p in chart["palaces"]])
 
 # ==========================================
 # PDF 匯出
@@ -351,11 +382,15 @@ with st.sidebar:
     if is_master_mode:
         st.success("✅ 已解鎖：宗師深度模式")
     elif master_code:
-        st.error("❌ 密語錯誤：啟動公眾引流模式")
+        st.error("❌ 密語錯誤：啟提公眾引流模式")
     else:
         st.caption("輸入正確密語以解鎖深度流年分析")
 
     st.sidebar.markdown("---")
+    
+    # 統計人數顯示區
+    v_count = get_visitor_count()
+    st.sidebar.metric("📊 累計解盤人數", f"{v_count} 人")
     st.sidebar.caption("Powered by Gemini 2.0 Flash & Borax")
 
 col1, col2 = st.columns(2)
@@ -369,17 +404,10 @@ with col1:
         occ = st.selectbox("職業屬性", OCCUPATIONS)
         unknown = st.checkbox("不確定出生時辰")
 
-    # --- 基本大綱區 (即時顯示) ---
-    b_data = bazi_from_borax(bday, btime)
-    p_gz = b_data["pillars"]
-    l_info = b_data["lunar"]
-
 with col2:
     with st.container(border=True):
         st.subheader("📚 解盤框架")
         books = st.multiselect("學理框架", [b[1] for b in BOOK_OPTIONS], default=[b[1] for b in BOOK_OPTIONS])
-        st.subheader("📅 行事曆設定")
-        cal_date = st.date_input("查詢月份", value=_dt.date.today())
 
 st.divider()
 
@@ -412,16 +440,9 @@ if module:
             col_dl1.download_button("📥 下載 PDF 版", data=pdf_bytes, file_name=f"{module}.pdf", mime="application/pdf")
             col_dl2.download_button("📥 下載純文字版", data=result.encode("utf-8"), file_name=f"{module}.txt")
 
-<<<<<<< HEAD
-# 隨時可見的聯絡資訊
-st.markdown("---")
-st.subheader("🔮 預約 Hugo 大師親自破局")
-st.markdown("### 📱 LINE 預約： `https://line.me/ti/p/~en777585` ")
-=======
 # ==========================================
 # 底部聯絡資訊 (強制曝光)
 # ==========================================
 st.markdown("---")
 st.subheader("🔮 預約 Hugo 大師親自破局")
 st.markdown("### 📱 LINE 預約：https://line.me/ti/p/~en777585 ")
->>>>>>> 6d95bc82acd2a334f920100baf202374e983fb10
