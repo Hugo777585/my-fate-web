@@ -90,7 +90,7 @@ def get_visitor_count():
                 with open(count_file, "r") as f:
                     count = int(f.read().strip())
             else:
-                count = 888
+                count = 888 
             count += 1
             with open(count_file, "w") as f:
                 f.write(str(count))
@@ -404,59 +404,54 @@ with col1:
             else:
                 p2_name = st.text_input("對象姓名/標籤", value="對象B")
                 p2_gender = st.selectbox("對象性別", ["female", "male"], format_func=lambda x: "女" if x=="female" else "男")
-                p2_bday = st.date_input("對象生日", value=_dt.date(1980, 1, 1), key="p2_bday")
-                p2_btime = st.time_input("對象出生時間", value=_dt.time(12, 0), key="p2_btime")
+                p2_bday = st.date_input("對象出生日期", value=_dt.date(1985, 1, 1))
+                p2_btime = st.time_input("對象出生時間", value=_dt.time(12, 0))
 
 with col2:
     with st.container(border=True):
         st.subheader("📚 解盤框架")
         books = st.multiselect("學理框架", [b[1] for b in BOOK_OPTIONS], default=[b[1] for b in BOOK_OPTIONS])
-        st.subheader("📅 行事曆設定")
-        cal_date = st.date_input("查詢月份", value=_dt.date.today())
 
 st.divider()
 
-# 按鈕區
 btn_cols = st.columns(4)
-module = None
-if btn_cols[0].button("八字乾坤：深度解析"): module = "八字乾坤：深度能量解析"
-if btn_cols[1].button("紫微精論：十二宮位"): module = "紫微精論：人生十二宮位"
-if btn_cols[2].button("命理大滿貫：旗艦合參"): module = "命理大滿貫：八字紫微合參"
-if btn_cols[3].button("匯出 PDF 命書"): module = "PDF_EXPORT"
+module_name = None
+if btn_cols[0].button("八字乾坤：深度解析"): module_name = "八字乾坤：深度能量解析"
+if btn_cols[1].button("紫微精論：十二宮位"): module_name = "紫微精論：人生十二宮位"
+if btn_cols[2].button("命理大滿貫：旗艦合參"): module_name = "命理大滿貫：八字紫微合參"
 
-if module:
-    p1 = Person(name, bday, btime, gender, occ, unknown)
-    report1 = build_person_report(p1)
-    
-    payload = {"main_person": report1}
-    
-    if enable_partner and p2_name:
-        p2 = Person(p2_name, p2_bday, p2_btime, p2_gender, "未知", False)
-        report2 = build_person_report(p2)
-        payload["partner_person"] = report2
-        module = f"【雙人合盤】{module}"
-    
-    if module == "PDF_EXPORT":
-        with st.spinner("正在撰寫大師命書..."):
-            full_body = generate_ai_text(api_key, model_name, "一般版命書", payload, books, is_master=is_master_mode)
-            pdf_bytes = create_pdf(name, full_body)
-            st.success("命書已撰寫完成！")
-            st.download_button("📥 下載 PDF 命書", data=pdf_bytes, file_name=f"{name}_Fate.pdf", mime="application/pdf")
+if module_name:
+    if not api_key:
+        st.error("🚨 老闆，你忘了在左邊輸入 Gemini API Key 啦！沒有鑰匙，大師無法開工喔！")
     else:
-        with st.spinner(f"大師正在解析【{module}】..."):
-            result = generate_ai_text(api_key, model_name, module, payload, books, is_master=is_master_mode)
+        p1 = Person(name, bday, btime, gender, occ, unknown)
+        report1 = build_person_report(p1)
+        payload = {"main_person": report1}
+        
+        if enable_partner:
+            p2 = Person(p2_name, p2_bday, p2_btime, p2_gender, "未知", False)
+            report2 = build_person_report(p2)
+            payload["partner_person"] = report2
+            module_name += " (💖 雙人情感合盤)"
+        
+        with st.spinner(f"大師正在解析【{module_name}】..."):
+            result = generate_ai_text(api_key, model_name, module_name, payload, books, is_master=is_master_mode)
+            
             if result == "NO_API_KEY":
-                st.error("請先在左側設定 API Key。")
+                st.error("🚨 系統錯誤：偵測不到 API Key。")
             else:
-                st.markdown(f"### 🖋️ 大師論斷：{module}")
+                st.markdown(f"### 🖋️ 大師論斷：{module_name}")
                 st.markdown(f"<div class='report-card'>{result}</div>", unsafe_allow_html=True)
                 
-                pdf_bytes = create_pdf(name, result)
-                col_dl1, col_dl2 = st.columns(2)
-                col_dl1.download_button("📥 下載 PDF 版", data=pdf_bytes, file_name=f"{module}.pdf", mime="application/pdf")
-                col_dl2.download_button("📥 下載純文字版", data=result.encode("utf-8"), file_name=f"{module}.txt")
+                try:
+                    pdf_bytes = create_pdf(name, result)
+                    col_dl1, col_dl2 = st.columns(2)
+                    col_dl1.download_button("📥 下載 PDF 版", data=pdf_bytes, file_name=f"{module_name}.pdf", mime="application/pdf")
+                    col_dl2.download_button("📥 下載純文字版", data=result.encode("utf-8"), file_name=f"{module_name}.txt")
+                except Exception as e:
+                    st.warning("⚠️ 雲端伺服器缺少中文字型，暫停 PDF 下載功能，請先截圖或複製上方文字！")
+                    st.download_button("📥 下載純文字版", data=result.encode("utf-8"), file_name=f"{module_name}.txt")
 
-# 隨時可見的聯絡資訊
 st.markdown("---")
 st.subheader("🔮 預約 Hugo 大師親自破局")
-st.markdown("### 📱 LINE 預約： `https://line.me/ti/p/~en777585` ")
+st.markdown("### 📱 LINE 預約：https://line.me/ti/p/~en777585 ")
