@@ -290,7 +290,10 @@ def generate_ai_text(api_key: str, model_name: str, module_name: str, payload: d
         res = model.generate_content(prompt, generation_config=genai.types.GenerationConfig(temperature=0.7))
         return res.text
     except Exception as e:
-        return f"解析失敗：{str(e)}"
+        error_msg = str(e)
+        if "429" in error_msg or "quota" in error_msg.lower():
+            return "⚠️ **大師今日解盤能量已滿（系統 API 限制）**\n\n目前算命請求人數過多，AI 解析額度已暫時耗盡。請稍後再試，或直接點擊下方連結預約大師親自解盤。"
+        return f"解析失敗：{error_msg}"
 
 # ==========================================
 # PDF 匯出
