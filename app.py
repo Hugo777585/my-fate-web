@@ -87,7 +87,6 @@ def get_visitor_count():
     count_file = "visitor_count.txt"
     if "visited" not in st.session_state:
         st.session_state.visited = True
-        st.session_state.download_history = set()
         try:
             if os.path.exists(count_file):
                 with open(count_file, "r") as f:
@@ -109,31 +108,24 @@ def get_visitor_count():
     return count
 
 # ==========================================
-# 小助手功能 (Google Sheets)
+# Google Sheets 寫入功能
 # ==========================================
-def get_guest_list():
-    """從 Google Sheets 讀取客人名單"""
+def save_to_google_sheet(row_data: list):
+    """將解析紀錄寫入 Google 試算表"""
     try:
-        if "SPREADSHEET_ID" not in st.secrets:
-            return "MISSING_ID"
-        
-        # 設定 Google Sheets API 存取權限
-        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-        
-        # 使用 st.secrets 中的 GCP_SERVICE_ACCOUNT 資訊進行認證
-        creds_info = st.secrets["GCP_SERVICE_ACCOUNT"]
-        creds = Credentials.from_service_account_info(creds_info, scopes=scope)
+        if "GCP_SERVICE_ACCOUNT" not in st.secrets:
+            return
+            
+        scopes = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
+        creds = Credentials.from_service_account_info(st.secrets["GCP_SERVICE_ACCOUNT"], scopes=scopes)
         client = gspread.authorize(creds)
         
-        # 開啟試算表並讀取第一個工作表
-        spreadsheet_id = st.secrets["SPREADSHEET_ID"]
-        sheet = client.open_by_key(spreadsheet_id).sheet1
-        
-        # 讀取所有資料並轉換為 DataFrame
-        data = sheet.get_all_records()
-        return data
+        # 開啟試算表
+        sh = client.open("Hugo 命理館：客戶紀錄總表")
+        worksheet = sh.worksheet("工作表1")
+        worksheet.append_row(row_data)
     except Exception as e:
-        return f"🚨 讀取客人名單失敗：{str(e)}"
+        print(f"Google Sheets 寫入失敗: {e}")
 
 # ==========================================
 # 核心資料結構與計算
@@ -157,6 +149,8 @@ class Person:
     gender: str
     occupation: str
     hour_unknown: bool
+    has_children: str = "無"
+    children_count: int = 0
 
 def _parse_gz(gz: str) -> GZ:
     tg = GAN.index(gz[0]); dz = ZHI.index(gz[1])
@@ -270,7 +264,10 @@ def build_person_report(p: Person) -> dict[str, Any]:
     age = (_dt.datetime.now() - base["birth_dt"]).total_seconds() / (365.2425 * 86400.0)
     current = next((it for it in dayun["items"] if it["start_age_years"] <= age < it["end_age_years"]), None)
     return {
-        "person": p, "pillars": pillars, "lunar": lunar, "counts": five_element_counts(pillars),
+        "person": p, 
+        "has_children": p.has_children,
+        "children_count": p.children_count,
+        "pillars": pillars, "lunar": lunar, "counts": five_element_counts(pillars),
         "dayun": dayun, "current_dayun": current, "liunian": calc_liunian(_dt.date.today().year, 5),
         "shensha": shensha(pillars), "ziwei_chart": _ziwei_chart_from_iztro(p)
     }
@@ -319,8 +316,8 @@ def generate_ai_text(api_key: str, model_name: str, module_name: str, payload: d
     try:
         res = model.generate_content(prompt, generation_config=genai.types.GenerationConfig(temperature=0.7))
         return res.text
-    except Exception as e:
-        return f"🚨 系統發生錯誤，請截圖給工程師：\n\n{str(e)}"
+    except Exception as e: 
+         return f"🚨 **【偵測模式】發生未預期的系統攔截，請老闆將以下原始錯誤代碼截圖：**\n\n{str(e)}"
 
 # ==========================================
 # PDF 匯出
@@ -376,40 +373,20 @@ st.title("🔮 Hugo 乾坤命理館：流年造化推演")
 
 with st.sidebar:
     st.header("⚙️ 設定")
-    # 確認 API Key 是透過 st.secrets["GEMINI_API_KEY"] 讀取的
     try:
         api_key = st.secrets["GEMINI_API_KEY"]
     except KeyError:
         api_key = st.text_input("Gemini API Key", type="password")
     
-    # 請確認所有檔案中的 genai.GenerativeModel 都已經改為 gemini-1.5-flash
-    model_name = st.selectbox("模型版本", ["gemini-1.5-flash"])
+    # 【關鍵修正】：把 1.5-flash 放第一位，預設就不會踩到 404 地雷！
+    model_name = st.selectbox("模型版本", ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.0-flash"])
     st.info("已鎖定大師靈魂提示詞，強制輸出權威斷言。")
-     
+    
     st.markdown("---")
     master_code = st.text_input("大師通關密語 (選填)", type="password")
     is_master_mode = (master_code.upper() == "HUGO888")
     if is_master_mode:
         st.success("✅ 已解鎖：宗師深度模式")
-        
-        # 小助手功能 (Google Sheets)
-        st.markdown("---")
-        st.subheader("📋 小助手：客人名單")
-        if st.button("🔄 重新抓取名單"):
-            st.session_state.guest_list = get_guest_list()
-        
-        if "guest_list" not in st.session_state:
-            st.session_state.guest_list = get_guest_list()
-            
-        guest_data = st.session_state.guest_list
-        if guest_data == "MISSING_ID":
-            st.warning("⚠️ 尚未設定 SPREADSHEET_ID")
-        elif isinstance(guest_data, str) and guest_data.startswith("🚨"):
-            st.error(guest_data)
-        elif guest_data:
-            st.dataframe(guest_data)
-        else:
-            st.info("目前無客人名單資料。")
     elif master_code:
         st.error("❌ 密語錯誤：啟動公眾引流模式")
     else:
@@ -418,7 +395,7 @@ with st.sidebar:
     st.sidebar.markdown("---")
     v_count = get_visitor_count()
     st.sidebar.metric("📊 累計解盤人數", f"{v_count} 人")
-    st.sidebar.caption("Powered by Gemini 1.5 Flash & Borax")
+    st.sidebar.caption("Powered by Gemini 1.5 & Borax")
 
 col1, col2 = st.columns(2)
 with col1:
@@ -430,6 +407,12 @@ with col1:
         btime = st.time_input("出生時間", value=_dt.time(12, 0))
         occ = st.selectbox("職業屬性", OCCUPATIONS)
         unknown = st.checkbox("不確定出生時辰")
+        
+        # 新增小孩資訊
+        has_children = st.radio("是否有小孩？", ["無", "有"], horizontal=True)
+        children_count = 0
+        if has_children == "有":
+            children_count = st.number_input("請問有幾個小孩？", min_value=1, max_value=10, value=1)
 
     with st.container(border=True):
         st.subheader("💞 感情合盤 / 配對對象")
@@ -450,72 +433,4 @@ with col1:
                 p2_name = "Hugo 大師 (士恩)"
                 p2_gender = "male"
                 p2_bday = _dt.date(1977, 12, 6)
-                p2_btime = _dt.time(12, 0)
-                st.success("✅ 已自動載入大師本命盤 (1977/12/06 屬蛇)")
-            else:
-                p2_name = st.text_input("對象姓名/標籤", value="對象B")
-                p2_gender = st.selectbox("對象性別", ["female", "male"], format_func=lambda x: "女" if x=="female" else "男")
-                p2_bday = st.date_input("對象出生日期", value=_dt.date(1985, 1, 1))
-                p2_btime = st.time_input("對象出生時間", value=_dt.time(12, 0))
-
-with col2:
-    with st.container(border=True):
-        st.subheader("📚 解盤框架")
-        books = st.multiselect("學理框架", [b[1] for b in BOOK_OPTIONS], default=[b[1] for b in BOOK_OPTIONS])
-
-st.divider()
-
-btn_cols = st.columns(4)
-module_name = None
-if btn_cols[0].button("八字乾坤：深度解析"): module_name = "八字乾坤：深度能量解析"
-if btn_cols[1].button("紫微精論：十二宮位"): module_name = "紫微精論：人生十二宮位"
-if btn_cols[2].button("命理大滿貫：旗艦合參"): module_name = "命理大滿貫：八字紫微合參"
-
-if module_name:
-    if not api_key:
-        st.error("🚨 老闆，你忘了在左邊輸入 Gemini API Key 啦！沒有鑰匙，大師無法開工喔！")
-    else:
-        p1 = Person(name, bday, btime, gender, occ, unknown)
-        report1 = build_person_report(p1)
-        payload = {"main_person": report1}
-        
-        if enable_partner:
-            p2 = Person(p2_name, p2_bday, p2_btime, p2_gender, "未知", False)
-            report2 = build_person_report(p2)
-            payload["partner_person"] = report2
-            module_name += " (💖 雙人情感合盤)"
-        
-        with st.spinner(f"大師正在解析【{module_name}】..."):
-            try:
-                result = generate_ai_text(api_key, model_name, module_name, payload, books, is_master=is_master_mode)
-                
-                if result == "NO_API_KEY":
-                    st.error("🚨 系統錯誤：偵測不到 API Key。")
-                else:
-                    st.markdown(f"### 🖋️ 大師論斷：{module_name}")
-                    st.markdown(f"<div class='report-card'>{result}</div>", unsafe_allow_html=True)
-                    
-                    report_id = hashlib.md5(f"{name}_{module_name}_{result}".encode()).hexdigest()
-                    already_downloaded = report_id in st.session_state.download_history
-                    
-                    show_download = True
-                    if already_downloaded:
-                        st.warning("⚠️ 您之前已經下載過這份完全相同的報告了。")
-                        if not st.checkbox("確定要重複下載？", key=f"confirm_{report_id}"):
-                            show_download = False
-                    
-                    if show_download:
-                        try:
-                            #pdf_bytes = create_pdf(name, result)
-                            col_dl1, col_dl2 = st.columns(2)
-                           # col_dl1.download_button("📥 下載 PDF 版", data=pdf_bytes, file_name=f"{module_name}.pdf", mime="application/pdf", on_click=lambda: st.session_state.download_history.add(report_id))
-                            col_dl2.download_button("📥 下載純文字版", data=result.encode("utf-8"), file_name=f"{module_name}.txt", on_click=lambda: st.session_state.download_history.add(report_id))
-                        except Exception as e:
-                            st.error(f"🚨 系統發生錯誤，請截圖給工程師：\n\n{str(e)}")
-                            st.download_button("📥 下載純文字版", data=result.encode("utf-8"), file_name=f"{module_name}.txt", on_click=lambda: st.session_state.download_history.add(report_id))
-            except Exception as e:
-                st.error(f"🚨 系統發生錯誤，請截圖給工程師：\n\n{str(e)}")
-
-st.markdown("---")
-st.subheader("🔮 預約 Hugo 大師親自破局")
-st.markdown("### 📱 LINE 預約：https://line.me/ti/p/~en777585 ")
+                p2_
