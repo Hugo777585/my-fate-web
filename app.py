@@ -9,6 +9,8 @@ from typing import Any
 
 import streamlit as st
 import google.generativeai as genai
+import gspread
+from google.oauth2.service_account import Credentials
 from fpdf import FPDF
 from borax.calendars.festivals2 import TermFestival
 from borax.calendars.lunardate import LunarDate
@@ -85,6 +87,7 @@ def get_visitor_count():
     count_file = "visitor_count.txt"
     if "visited" not in st.session_state:
         st.session_state.visited = True
+        st.session_state.download_history = set()
         try:
             if os.path.exists(count_file):
                 with open(count_file, "r") as f:
@@ -104,6 +107,33 @@ def get_visitor_count():
         except:
             count = st.session_state.get("v_count", 889)
     return count
+
+# ==========================================
+# 小助手功能 (Google Sheets)
+# ==========================================
+def get_guest_list():
+    """從 Google Sheets 讀取客人名單"""
+    try:
+        if "SPREADSHEET_ID" not in st.secrets:
+            return "MISSING_ID"
+        
+        # 設定 Google Sheets API 存取權限
+        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+        
+        # 使用 st.secrets 中的 GCP_SERVICE_ACCOUNT 資訊進行認證
+        creds_info = st.secrets["GCP_SERVICE_ACCOUNT"]
+        creds = Credentials.from_service_account_info(creds_info, scopes=scope)
+        client = gspread.authorize(creds)
+        
+        # 開啟試算表並讀取第一個工作表
+        spreadsheet_id = st.secrets["SPREADSHEET_ID"]
+        sheet = client.open_by_key(spreadsheet_id).sheet1
+        
+        # 讀取所有資料並轉換為 DataFrame
+        data = sheet.get_all_records()
+        return data
+    except Exception as e:
+        return f"🚨 讀取客人名單失敗：{str(e)}"
 
 # ==========================================
 # 核心資料結構與計算
@@ -346,19 +376,40 @@ st.title("🔮 Hugo 乾坤命理館：流年造化推演")
 
 with st.sidebar:
     st.header("⚙️ 設定")
+    # 確認 API Key 是透過 st.secrets["GEMINI_API_KEY"] 讀取的
     try:
         api_key = st.secrets["GEMINI_API_KEY"]
     except KeyError:
         api_key = st.text_input("Gemini API Key", type="password")
     
-    model_name = st.selectbox("模型版本", ["gemini-2.0-flash", "gemini-2.0-flash"])
+    # 請確認所有檔案中的 genai.GenerativeModel 都已經改為 gemini-1.5-flash
+    model_name = st.selectbox("模型版本", ["gemini-1.5-flash"])
     st.info("已鎖定大師靈魂提示詞，強制輸出權威斷言。")
-    
+     
     st.markdown("---")
     master_code = st.text_input("大師通關密語 (選填)", type="password")
     is_master_mode = (master_code.upper() == "HUGO888")
     if is_master_mode:
         st.success("✅ 已解鎖：宗師深度模式")
+        
+        # 小助手功能 (Google Sheets)
+        st.markdown("---")
+        st.subheader("📋 小助手：客人名單")
+        if st.button("🔄 重新抓取名單"):
+            st.session_state.guest_list = get_guest_list()
+        
+        if "guest_list" not in st.session_state:
+            st.session_state.guest_list = get_guest_list()
+            
+        guest_data = st.session_state.guest_list
+        if guest_data == "MISSING_ID":
+            st.warning("⚠️ 尚未設定 SPREADSHEET_ID")
+        elif isinstance(guest_data, str) and guest_data.startswith("🚨"):
+            st.error(guest_data)
+        elif guest_data:
+            st.dataframe(guest_data)
+        else:
+            st.info("目前無客人名單資料。")
     elif master_code:
         st.error("❌ 密語錯誤：啟動公眾引流模式")
     else:
@@ -367,7 +418,7 @@ with st.sidebar:
     st.sidebar.markdown("---")
     v_count = get_visitor_count()
     st.sidebar.metric("📊 累計解盤人數", f"{v_count} 人")
-    st.sidebar.caption("Powered by Gemini 2.0 Flash & Borax")
+    st.sidebar.caption("Powered by Gemini 1.5 Flash & Borax")
 
 col1, col2 = st.columns(2)
 with col1:
@@ -444,14 +495,24 @@ if module_name:
                     st.markdown(f"### 🖋️ 大師論斷：{module_name}")
                     st.markdown(f"<div class='report-card'>{result}</div>", unsafe_allow_html=True)
                     
-                    try:
-                        #pdf_bytes = create_pdf(name, result)
-                        col_dl1, col_dl2 = st.columns(2)
-                       # col_dl1.download_button("📥 下載 PDF 版", data=pdf_bytes, file_name=f"{module_name}.pdf", mime="application/pdf")
-                        col_dl2.download_button("📥 下載純文字版", data=result.encode("utf-8"), file_name=f"{module_name}.txt")
-                    except Exception as e:
-                        st.error(f"🚨 系統發生錯誤，請截圖給工程師：\n\n{str(e)}")
-                        st.download_button("📥 下載純文字版", data=result.encode("utf-8"), file_name=f"{module_name}.txt")
+                    report_id = hashlib.md5(f"{name}_{module_name}_{result}".encode()).hexdigest()
+                    already_downloaded = report_id in st.session_state.download_history
+                    
+                    show_download = True
+                    if already_downloaded:
+                        st.warning("⚠️ 您之前已經下載過這份完全相同的報告了。")
+                        if not st.checkbox("確定要重複下載？", key=f"confirm_{report_id}"):
+                            show_download = False
+                    
+                    if show_download:
+                        try:
+                            #pdf_bytes = create_pdf(name, result)
+                            col_dl1, col_dl2 = st.columns(2)
+                           # col_dl1.download_button("📥 下載 PDF 版", data=pdf_bytes, file_name=f"{module_name}.pdf", mime="application/pdf", on_click=lambda: st.session_state.download_history.add(report_id))
+                            col_dl2.download_button("📥 下載純文字版", data=result.encode("utf-8"), file_name=f"{module_name}.txt", on_click=lambda: st.session_state.download_history.add(report_id))
+                        except Exception as e:
+                            st.error(f"🚨 系統發生錯誤，請截圖給工程師：\n\n{str(e)}")
+                            st.download_button("📥 下載純文字版", data=result.encode("utf-8"), file_name=f"{module_name}.txt", on_click=lambda: st.session_state.download_history.add(report_id))
             except Exception as e:
                 st.error(f"🚨 系統發生錯誤，請截圖給工程師：\n\n{str(e)}")
 
