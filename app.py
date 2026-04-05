@@ -268,4 +268,236 @@ def build_person_report(p: Person) -> dict[str, Any]:
         "has_children": p.has_children,
         "children_count": p.children_count,
         "pillars": pillars, "lunar": lunar, "counts": five_element_counts(pillars),
-        "dayun": dayun, "current_dayun": current, "liunian": calc_liunian
+        "dayun": dayun, "current_dayun": current, "liunian": calc_liunian(_dt.date.today().year, 5),
+        "shensha": shensha(pillars), "ziwei_chart": _ziwei_chart_from_iztro(p)
+    }# ==========================================
+# AI 邏輯 (大師靈魂)
+# ==========================================
+def generate_ai_text(api_key: str, model_name: str, module_name: str, payload: dict, selected_books: list[str], is_master: bool = False) -> str:
+    if not api_key: return "NO_API_KEY"
+    
+    genai.configure(api_key=api_key)
+    model = genai.GenerativeModel(model_name=model_name)
+    
+    def json_serial(obj):
+        if hasattr(obj, 'isoformat'): return obj.isoformat()
+        if hasattr(obj, 'text'): return obj.text
+        return str(obj)
+
+    star_info = ""
+    if "main_person" in payload and payload["main_person"].get("ziwei_chart"):
+        star_info += "【主命主星曜】\n" + "\n".join([f"{p['name']}主星={'、'.join(p['major_stars'])}" for p in payload["main_person"]["ziwei_chart"].get('palaces', [])]) + "\n"
+    if "partner_person" in payload and payload["partner_person"].get("ziwei_chart"):
+        star_info += "【對象星曜】\n" + "\n".join([f"{p['name']}主星={'、'.join(p['major_stars'])}" for p in payload["partner_person"]["ziwei_chart"].get('palaces', [])]) + "\n"
+
+    if not is_master:
+        prompt = f"""
+        你現在是命理大師 Hugo。這是一位剛進網站的客人。
+        請根據他的專屬命盤資料：{json.dumps(payload, default=json_serial, ensure_ascii=False)} 產出一份「高度客製化的試算大綱」。
+        
+        【大綱規範】：
+        1. 語氣要震撼人心，像是在對他本人說話，必須讓他覺得「這大師真準，這真的是在算我！」。
+        2. ### 【天命密碼】：點出他命盤中「最獨特的優勢」或「性格中最隱密的問題」。
+        3. ### 【命運預告】：指出 2026 年他會遇到的一個重大轉折點（如果有雙人資料，請預告兩人感情轉折），但「不准」告訴他具體月份與解法。
+        4. ### 【大師提點】：告訴他這段命運中有一把「專屬破局鑰匙」，想知道鑰匙在哪，請找大師。
+        5. 最後強制加上：✨ **【想解鎖完整運勢與破局戰術？】** ✨ 請截圖此畫面並點擊下方 LINE 連結預約大師！
+        """
+    else:
+        books = "、".join(selected_books) if selected_books else "（未指定）"
+        prompt = f"""
+        你是命理大師 Hugo。模組：{module_name}。
+        請給出包含靈魂共振、命理金箔、破局戰術的深度解析。嚴禁罐頭廢話。
+        參考學理：{books}。
+        {star_info}
+        """
+
+    try:
+        res = model.generate_content(prompt, generation_config=genai.types.GenerationConfig(temperature=0.7))
+        return res.text
+    except Exception as e: 
+         return f"🚨 **【偵測模式】發生未預期的系統攔截，請老闆將以下原始錯誤代碼截圖：**\n\n{str(e)}"
+
+# ==========================================
+# PDF 匯出
+# ==========================================
+class ReportPDF(FPDF):
+    def footer(self):
+        self.set_y(-15); self.set_font("Helvetica", size=9)
+        self.cell(0, 10, "執此命書，願你洞悉天機，行穩致遠。", align="C")
+
+def _find_cjk_font() -> str:
+    candidates = [
+        r"C:\Windows\Fonts\msyh.ttc", r"C:\Windows\Fonts\msjh.ttc",
+        r"C:\Windows\Fonts\simsun.ttc", r"C:\Windows\Fonts\simhei.ttf",
+    ]
+    for p in candidates:
+        if os.path.exists(p): return p
+    return ""
+
+def create_pdf(user_name: str, body: str):
+    pdf = ReportPDF()
+    font_path = _find_cjk_font()
+    if font_path:
+        pdf.add_font("CJK", "", font_path)
+        pdf.add_font("CJK", "B", font_path)
+        pdf.set_font("CJK", size=16)
+    else:
+        pdf.set_font("Helvetica", size=16)
+    
+    pdf.add_page()
+    pdf.cell(0, 10, f"{user_name} - 人生宿命乾坤論斷", ln=True, align="C")
+    
+    if font_path: pdf.set_font("CJK", size=12)
+    else: pdf.set_font("Helvetica", size=12)
+    
+    clean_body = body.replace("**", "")
+    pdf.multi_cell(0, 8, clean_body)
+    return pdf.output()
+
+# ==========================================
+# Streamlit UI
+# ==========================================
+st.set_page_config(page_title="Hugo 乾坤命理館：流年造化推演", layout="wide")
+
+st.markdown("""
+<style>
+    .stApp { background-color: #0e1117; color: #ffffff; }
+    .stButton>button { width: 100%; border-radius: 8px; height: 3.5em; font-weight: bold; background-color: #262730; border: 1px solid #4a4a4a; }
+    .report-card { background-color: #1e212b; padding: 25px; border-radius: 12px; border: 1px solid #30363d; font-size: 1.1em; line-height: 1.6; }
+</style>
+""", unsafe_allow_html=True)
+
+st.title("🔮 Hugo 乾坤命理館：流年造化推演")
+
+with st.sidebar:
+    st.header("⚙️ 設定")
+    try:
+        api_key = st.secrets["GEMINI_API_KEY"]
+    except KeyError:
+        api_key = st.text_input("Gemini API Key", type="password")
+    
+    # 【關鍵修正】：1.5-flash 放第一位，預設就不會踩到 404 地雷！
+    model_name = st.selectbox("模型版本", ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.0-flash"])
+    st.info("已鎖定大師靈魂提示詞，強制輸出權威斷言。")
+    
+    st.markdown("---")
+    master_code = st.text_input("大師通關密語 (選填)", type="password")
+    is_master_mode = (master_code.upper() == "HUGO888")
+    if is_master_mode:
+        st.success("✅ 已解鎖：宗師深度模式")
+    elif master_code:
+        st.error("❌ 密語錯誤：啟動公眾引流模式")
+    else:
+        st.caption("輸入正確密語以解鎖深度流年分析")
+
+    st.sidebar.markdown("---")
+    v_count = get_visitor_count()
+    st.sidebar.metric("📊 累計解盤人數", f"{v_count} 人")
+    st.sidebar.caption("Powered by Gemini 1.5 & Borax")
+
+col1, col2 = st.columns(2)
+with col1:
+    with st.container(border=True):
+        st.subheader("👤 主命主資料")
+        name = st.text_input("姓名/標籤", value="命主A")
+        gender = st.selectbox("性別", ["male", "female"], format_func=lambda x: "男" if x=="male" else "女")
+        bday = st.date_input("出生日期", value=_dt.date(1980, 1, 1))
+        btime = st.time_input("出生時間", value=_dt.time(12, 0))
+        occ = st.selectbox("職業屬性", OCCUPATIONS)
+        unknown = st.checkbox("不確定出生時辰")
+        
+        has_children = st.radio("是否有小孩？", ["無", "有"], horizontal=True)
+        children_count = 0
+        if has_children == "有":
+            children_count = st.number_input("請問有幾個小孩？", min_value=1, max_value=10, value=1)
+
+    with st.container(border=True):
+        st.subheader("💞 感情合盤 / 配對對象")
+        enable_partner = st.checkbox("啟用雙人合盤分析")
+        
+        p2_name = ""
+        p2_gender = "female"
+        p2_bday = _dt.date.today()
+        p2_btime = _dt.time(12, 0)
+        
+        if enable_partner:
+            if is_master_mode:
+                match_with_hugo = st.checkbox("🔮 直接與大師本人(士恩)合盤", help="自動載入 1977/12/06 資料")
+            else:
+                match_with_hugo = False
+                
+            if match_with_hugo:
+                p2_name = "Hugo 大師 (士恩)"
+                p2_gender = "male"
+                p2_bday = _dt.date(1977, 12, 6)
+                p2_btime = _dt.time(12, 0)
+                st.success("✅ 已自動載入大師本命盤 (1977/12/06 屬蛇)")
+            else:
+                p2_name = st.text_input("對象姓名/標籤", value="對象B")
+                p2_gender = st.selectbox("對象性別", ["female", "male"], format_func=lambda x: "女" if x=="female" else "男")
+                p2_bday = st.date_input("對象出生日期", value=_dt.date(1985, 1, 1))
+                p2_btime = st.time_input("對象出生時間", value=_dt.time(12, 0))
+
+with col2:
+    with st.container(border=True):
+        st.subheader("📚 解盤框架")
+        books = st.multiselect("學理框架", [b[1] for b in BOOK_OPTIONS], default=[b[1] for b in BOOK_OPTIONS])
+
+st.divider()
+
+btn_cols = st.columns(4)
+module_name = None
+if btn_cols[0].button("八字乾坤：深度解析"): module_name = "八字乾坤：深度能量解析"
+if btn_cols[1].button("紫微精論：十二宮位"): module_name = "紫微精論：人生十二宮位"
+if btn_cols[2].button("命理大滿貫：旗艦合參"): module_name = "命理大滿貫：八字紫微合參"
+
+if module_name:
+    if not api_key:
+        st.error("🚨 老闆，你忘了在左邊輸入 Gemini API Key 啦！沒有鑰匙，大師無法開工喔！")
+    else:
+        p1 = Person(name, bday, btime, gender, occ, unknown, has_children, children_count)
+        report1 = build_person_report(p1)
+        payload = {"main_person": report1}
+        
+        if enable_partner:
+            p2 = Person(p2_name, p2_bday, p2_btime, p2_gender, "未知", False)
+            report2 = build_person_report(p2)
+            payload["partner_person"] = report2
+            module_name += " (💖 雙人情感合盤)"
+        
+        with st.spinner(f"大師正在解析【{module_name}】..."):
+            result = generate_ai_text(api_key, model_name, module_name, payload, books, is_master=is_master_mode)
+            
+            if result == "NO_API_KEY":
+                st.error("🚨 系統錯誤：偵測不到 API Key。")
+            else:
+                st.markdown(f"### 🖋️ 大師論斷：{module_name}")
+                st.markdown(f"<div class='report-card'>{result}</div>", unsafe_allow_html=True)
+                
+                # --- 寫入 Google Sheets ---
+                now_tw = (_dt.datetime.utcnow() + _dt.timedelta(hours=8)).strftime("%Y-%m-%d %H:%M:%S")
+                row_data = [
+                    now_tw,                              # A: 推算時間
+                    name,                                # B: 客戶姓名
+                    str(bday),                           # C: 出生日期
+                    str(btime),                          # D: 出生時間
+                    occ,                                 # E: 職業屬性
+                    p2_name if enable_partner else "",   # F: 對象姓名
+                    str(p2_bday) if enable_partner else "", # G: 對象生日
+                    "解析成功",                          # H: 解析結果
+                    "大師深度模式" if is_master_mode else "公眾引流模式" # I: 解盤模式
+                ]
+                save_to_google_sheet(row_data)
+
+                try:
+                    pdf_bytes = create_pdf(name, result)
+                    col_dl1, col_dl2 = st.columns(2)
+                    col_dl1.download_button("📥 下載 PDF 版", data=pdf_bytes, file_name=f"{module_name}.pdf", mime="application/pdf")
+                    col_dl2.download_button("📥 下載純文字版", data=result.encode("utf-8"), file_name=f"{module_name}.txt")
+                except Exception as e:
+                    st.warning("⚠️ 雲端伺服器缺少中文字型，暫停 PDF 下載功能，請先截圖或複製上方文字！")
+                    st.download_button("📥 下載純文字版", data=result.encode("utf-8"), file_name=f"{module_name}.txt")
+
+st.markdown("---")
+st.subheader("🔮 預約 Hugo 大師親自破局")
+st.markdown("### 📱 LINE 預約：https://line.me/ti/p/~en777585 ")
