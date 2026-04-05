@@ -228,4 +228,44 @@ def five_element_counts(pillars: dict[str, GZ]) -> dict[str, int]:
         counts[ZHI_ELEMENT[gz.zhi]] += 1
     return counts
 
-def branch_pair_relation(a: str, b: str) -> tuple
+def branch_pair_relation(a: str, b: str) -> tuple[bool, bool, bool, bool]:
+    p, q = (a, b), (b, a)
+    return (p in LIUHE or q in LIUHE, any(a in g and b in g for g in SANHE.keys()), p in CHONG or q in CHONG, any(a in g and b in g for g in XING_GROUPS))
+
+def shensha(pillars: dict[str, GZ]) -> dict[str, Any]:
+    day_gan, year_zhi, day_zhi = pillars["day"].gan, pillars["year"].zhi, pillars["day"].zhi
+    branches = {p.zhi for p in pillars.values()}
+    tianyi_map = {"甲":{"丑","未"}, "戊":{"丑","未"}, "庚":{"丑","未"}, "乙":{"子","申"}, "己":{"子","申"}, "丙":{"亥","酉"}, "丁":{"亥","酉"}, "壬":{"卯","巳"}, "癸":{"卯","巳"}, "辛":{"寅","午"}}
+    tianyi = sorted(branches.intersection(tianyi_map.get(day_gan, set())))
+    def _group_key(z: str): return "申子辰" if z in {"申","子","辰"} else "寅午戌" if z in {"寅","午","戌"} else "亥卯未" if z in {"亥","卯","未"} else "巳酉丑"
+    tm, ym = {"申子辰":"酉", "寅午戌":"卯", "亥卯未":"子", "巳酉丑":"午"}, {"申子辰":"寅", "寅午戌":"申", "亥卯未":"巳", "巳酉丑":"亥"}
+    tk, yk = _group_key(year_zhi), _group_key(day_zhi)
+    return {"tianyi": tianyi, "taohua": {"by_year": tm[tk], "hit_by_year": tm[tk] in branches, "by_day": tm[yk], "hit_by_day": tm[yk] in branches}, "yima": {"by_year": ym[tk], "hit_by_year": ym[tk] in branches, "by_day": ym[yk], "hit_by_day": ym[yk] in branches}}
+
+def _ziwei_chart_from_iztro(person: Person) -> dict[str, Any] | None:
+    gender = "男" if person.gender == "male" else "女"
+    try:
+        chart = astro.by_solar(person.date.isoformat(), int(person.time.hour), gender, language="zh-TW")
+        palaces = []
+        for p in chart.palaces:
+            palaces.append({
+                "name": p.translate_name("zh-TW"),
+                "major_stars": [s.translate_name("zh-TW") for s in p.major_stars],
+                "minor_stars": [s.translate_name("zh-TW") for s in p.minor_stars],
+            })
+        return {"palaces": palaces, "soul_palace": chart.get_soul_palace().translate_name("zh-TW")}
+    except: return None
+
+def build_person_report(p: Person) -> dict[str, Any]:
+    base = bazi_from_borax(p.date, p.time)
+    pillars = base["pillars"]
+    lunar = base["lunar"]
+    dayun = calc_dayun(base["birth_dt"], pillars["year"], pillars["month"], p.gender)
+    age = (_dt.datetime.now() - base["birth_dt"]).total_seconds() / (365.2425 * 86400.0)
+    current = next((it for it in dayun["items"] if it["start_age_years"] <= age < it["end_age_years"]), None)
+    return {
+        "person": p, 
+        "has_children": p.has_children,
+        "children_count": p.children_count,
+        "pillars": pillars, "lunar": lunar, "counts": five_element_counts(pillars),
+        "dayun": dayun, "current_dayun": current, "liunian": calc_liunian
