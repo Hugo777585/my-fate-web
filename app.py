@@ -290,10 +290,7 @@ def generate_ai_text(api_key: str, model_name: str, module_name: str, payload: d
         res = model.generate_content(prompt, generation_config=genai.types.GenerationConfig(temperature=0.7))
         return res.text
     except Exception as e:
-        error_msg = str(e)
-        if "429" in error_msg or "quota" in error_msg.lower():
-            return "⚠️ **大師今日解盤能量已滿（系統 API 限制）**\n\n目前算命請求人數過多，AI 解析額度已暫時耗盡。請稍後再試，或直接點擊下方連結預約大師親自解盤。"
-        return f"解析失敗：{error_msg}"
+        return f"🚨 系統發生錯誤，請截圖給工程師：\n\n{str(e)}"
 
 # ==========================================
 # PDF 匯出
@@ -438,22 +435,25 @@ if module_name:
             module_name += " (💖 雙人情感合盤)"
         
         with st.spinner(f"大師正在解析【{module_name}】..."):
-            result = generate_ai_text(api_key, model_name, module_name, payload, books, is_master=is_master_mode)
-            
-            if result == "NO_API_KEY":
-                st.error("🚨 系統錯誤：偵測不到 API Key。")
-            else:
-                st.markdown(f"### 🖋️ 大師論斷：{module_name}")
-                st.markdown(f"<div class='report-card'>{result}</div>", unsafe_allow_html=True)
+            try:
+                result = generate_ai_text(api_key, model_name, module_name, payload, books, is_master=is_master_mode)
                 
-                try:
-                    pdf_bytes = create_pdf(name, result)
-                    col_dl1, col_dl2 = st.columns(2)
-                    col_dl1.download_button("📥 下載 PDF 版", data=pdf_bytes, file_name=f"{module_name}.pdf", mime="application/pdf")
-                    col_dl2.download_button("📥 下載純文字版", data=result.encode("utf-8"), file_name=f"{module_name}.txt")
-                except Exception as e:
-                    st.warning("⚠️ 雲端伺服器缺少中文字型，暫停 PDF 下載功能，請先截圖或複製上方文字！")
-                    st.download_button("📥 下載純文字版", data=result.encode("utf-8"), file_name=f"{module_name}.txt")
+                if result == "NO_API_KEY":
+                    st.error("🚨 系統錯誤：偵測不到 API Key。")
+                else:
+                    st.markdown(f"### 🖋️ 大師論斷：{module_name}")
+                    st.markdown(f"<div class='report-card'>{result}</div>", unsafe_allow_html=True)
+                    
+                    try:
+                        pdf_bytes = create_pdf(name, result)
+                        col_dl1, col_dl2 = st.columns(2)
+                        col_dl1.download_button("📥 下載 PDF 版", data=pdf_bytes, file_name=f"{module_name}.pdf", mime="application/pdf")
+                        col_dl2.download_button("📥 下載純文字版", data=result.encode("utf-8"), file_name=f"{module_name}.txt")
+                    except Exception as e:
+                        st.error(f"🚨 系統發生錯誤，請截圖給工程師：\n\n{str(e)}")
+                        st.download_button("📥 下載純文字版", data=result.encode("utf-8"), file_name=f"{module_name}.txt")
+            except Exception as e:
+                st.error(f"🚨 系統發生錯誤，請截圖給工程師：\n\n{str(e)}")
 
 st.markdown("---")
 st.subheader("🔮 預約 Hugo 大師親自破局")
