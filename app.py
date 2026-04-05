@@ -445,9 +445,9 @@ if module_name:
                     st.markdown(f"<div class='report-card'>{result}</div>", unsafe_allow_html=True)
                     
                     try:
-                        pdf_bytes = create_pdf(name, result)
+                        #pdf_bytes = create_pdf(name, result)
                         col_dl1, col_dl2 = st.columns(2)
-                        col_dl1.download_button("📥 下載 PDF 版", data=pdf_bytes, file_name=f"{module_name}.pdf", mime="application/pdf")
+                       # col_dl1.download_button("📥 下載 PDF 版", data=pdf_bytes, file_name=f"{module_name}.pdf", mime="application/pdf")
                         col_dl2.download_button("📥 下載純文字版", data=result.encode("utf-8"), file_name=f"{module_name}.txt")
                     except Exception as e:
                         st.error(f"🚨 系統發生錯誤，請截圖給工程師：\n\n{str(e)}")
