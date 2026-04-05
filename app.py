@@ -351,7 +351,7 @@ with st.sidebar:
     except KeyError:
         api_key = st.text_input("Gemini API Key", type="password")
     
-    model_name = st.selectbox("模型版本", ["gemini-2.0-flash", "gemini-1.5-flash"])
+    model_name = st.selectbox("模型版本", ["gemini-2.0-flash", "gemini-2.0-flash"])
     st.info("已鎖定大師靈魂提示詞，強制輸出權威斷言。")
     
     st.markdown("---")
