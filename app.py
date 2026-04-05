@@ -433,4 +433,74 @@ with col1:
                 p2_name = "Hugo 大師 (士恩)"
                 p2_gender = "male"
                 p2_bday = _dt.date(1977, 12, 6)
-                p2_
+                p2_btime = _dt.time(12, 0)
+                st.success("✅ 已自動載入大師本命盤 (1977/12/06 屬蛇)")
+            else:
+                p2_name = st.text_input("對象姓名/標籤", value="對象B")
+                p2_gender = st.selectbox("對象性別", ["female", "male"], format_func=lambda x: "女" if x=="female" else "男")
+                p2_bday = st.date_input("對象出生日期", value=_dt.date(1985, 1, 1))
+                p2_btime = st.time_input("對象出生時間", value=_dt.time(12, 0))
+
+with col2:
+    with st.container(border=True):
+        st.subheader("📚 解盤框架")
+        books = st.multiselect("學理框架", [b[1] for b in BOOK_OPTIONS], default=[b[1] for b in BOOK_OPTIONS])
+
+st.divider()
+
+btn_cols = st.columns(4)
+module_name = None
+if btn_cols[0].button("八字乾坤：深度解析"): module_name = "八字乾坤：深度能量解析"
+if btn_cols[1].button("紫微精論：十二宮位"): module_name = "紫微精論：人生十二宮位"
+if btn_cols[2].button("命理大滿貫：旗艦合參"): module_name = "命理大滿貫：八字紫微合參"
+
+if module_name:
+    if not api_key:
+        st.error("🚨 老闆，你忘了在左邊輸入 Gemini API Key 啦！沒有鑰匙，大師無法開工喔！")
+    else:
+        p1 = Person(name, bday, btime, gender, occ, unknown, has_children, children_count)
+        report1 = build_person_report(p1)
+        payload = {"main_person": report1}
+        
+        if enable_partner:
+            p2 = Person(p2_name, p2_bday, p2_btime, p2_gender, "未知", False)
+            report2 = build_person_report(p2)
+            payload["partner_person"] = report2
+            module_name += " (💖 雙人情感合盤)"
+        
+        with st.spinner(f"大師正在解析【{module_name}】..."):
+            result = generate_ai_text(api_key, model_name, module_name, payload, books, is_master=is_master_mode)
+            
+            if result == "NO_API_KEY":
+                st.error("🚨 系統錯誤：偵測不到 API Key。")
+            else:
+                st.markdown(f"### 🖋️ 大師論斷：{module_name}")
+                st.markdown(f"<div class='report-card'>{result}</div>", unsafe_allow_html=True)
+                
+                # --- 寫入 Google Sheets ---
+                now_tw = (_dt.datetime.utcnow() + _dt.timedelta(hours=8)).strftime("%Y-%m-%d %H:%M:%S")
+                row_data = [
+                    now_tw,                              # A: 推算時間
+                    name,                                # B: 客戶姓名
+                    str(bday),                           # C: 出生日期
+                    str(btime),                          # D: 出生時間
+                    occ,                                 # E: 職業屬性
+                    p2_name if enable_partner else "",   # F: 對象姓名
+                    str(p2_bday) if enable_partner else "", # G: 對象生日
+                    "解析成功",                          # H: 解析結果
+                    "大師深度模式" if is_master_mode else "公眾引流模式" # I: 解盤模式
+                ]
+                save_to_google_sheet(row_data)
+
+                try:
+                    pdf_bytes = create_pdf(name, result)
+                    col_dl1, col_dl2 = st.columns(2)
+                    col_dl1.download_button("📥 下載 PDF 版", data=pdf_bytes, file_name=f"{module_name}.pdf", mime="application/pdf")
+                    col_dl2.download_button("📥 下載純文字版", data=result.encode("utf-8"), file_name=f"{module_name}.txt")
+                except Exception as e:
+                    st.warning("⚠️ 雲端伺服器缺少中文字型，暫停 PDF 下載功能，請先截圖或複製上方文字！")
+                    st.download_button("📥 下載純文字版", data=result.encode("utf-8"), file_name=f"{module_name}.txt")
+
+st.markdown("---")
+st.subheader("🔮 預約 Hugo 大師親自破局")
+st.markdown("### 📱 LINE 預約：https://line.me/ti/p/~en777585 ")
