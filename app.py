@@ -26,7 +26,7 @@ from iztro_py import astro
 # ==========================================
 # 全域變數與 AI 設定 (集中管理模型版本)
 # ==========================================
-GEMINI_MODEL = 'gemini-2.5-pro'
+GEMINI_MODEL = 'gemini-2.0-flash'
 # ==========================================
 # 基礎常數與資料
 # ==========================================
@@ -299,12 +299,10 @@ def build_person_report(p: Person) -> dict[str, Any]:
 def get_bazi_analysis(prompt, api_key, model_name=GEMINI_MODEL):
     """🔥 終極穩定版：使用 google-generativeai SDK"""
     
-    # 將使用者選擇的模型放在第一位，之後接備援模型 (更新為標準穩定版名稱)
+    # 將使用者選擇的模型放在第一位，之後接備援模型 (首選 2.0-flash, 備選 1.5-flash)
     models_to_try = [
         model_name, 
-        "gemini-2.5-pro", 
-        "gemini-2.5-flash", 
-        "gemini-1.5-pro", 
+        "gemini-2.0-flash", 
         "gemini-1.5-flash"
     ]
     # 移除重複的模型名，並過濾掉 None
@@ -317,10 +315,22 @@ def get_bazi_analysis(prompt, api_key, model_name=GEMINI_MODEL):
         st.error(f"🚨 API Key 設定失敗：{e}")
         return None
 
+    # 模型參數設定 (符合 2026 最新規格)
+    generation_config = {
+        "temperature": 0.7,
+        "top_p": 0.95,
+        "top_k": 40,
+        "max_output_tokens": 8192,
+        "response_mime_type": "text/plain",
+    }
+
     for m in models_to_try:
         placeholder = st.empty()
         try:
-            model = genai.GenerativeModel(m)
+            model = genai.GenerativeModel(
+                model_name=m,
+                generation_config=generation_config
+            )
             placeholder.info(f"🔮 大師正在運用【{m}】進行深度推演...")
             
             response = model.generate_content(prompt)
@@ -490,11 +500,9 @@ with st.sidebar:
     except Exception:
         api_key = st.text_input("Gemini API Key", type="password")
     
-    # 【關鍵修正】：使用目前最標準、最穩定的模型選項
+    # 【關鍵修正】：首選使用 gemini-2.0-flash，備選使用 gemini-1.5-flash
     model_name = st.selectbox("模型版本", [
-        "gemini-2.5-pro", 
-        "gemini-2.5-flash", 
-        "gemini-1.5-pro", 
+        "gemini-2.0-flash", 
         "gemini-1.5-flash"
     ])
     st.info("已鎖定大師靈魂提示詞，強制輸出權威斷言。")
@@ -506,7 +514,11 @@ with st.sidebar:
         else:
             try:
                 genai.configure(api_key=api_key)
-                test_model = genai.GenerativeModel("gemini-2.0-flash")
+                # 測試也使用標準參數
+                test_model = genai.GenerativeModel(
+                    model_name="gemini-2.0-flash",
+                    generation_config={"temperature": 0.7}
+                )
                 r = test_model.generate_content("請說一句：『AI 連線測試成功！』")
                 st.success(r.text)
             except Exception as e:
