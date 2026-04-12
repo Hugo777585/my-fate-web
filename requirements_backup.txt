@@ -1,0 +1,7 @@
+streamlit
+google-genai
+borax
+fpdf2
+iztro-py
+gspread
+google-auth
