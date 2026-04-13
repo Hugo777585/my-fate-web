@@ -489,16 +489,14 @@ st.title("🔮 Hugo 乾坤命理館：流年造化推演")
 
 with st.sidebar:
     st.header("⚙️ 設定")
-    try:
-        # 優先嘗試讀取 GOOGLE_API_KEY，其次是 GEMINI_API_KEY
-        if "GOOGLE_API_KEY" in st.secrets:
-            api_key = st.secrets["GOOGLE_API_KEY"]
-        elif "GEMINI_API_KEY" in st.secrets:
-            api_key = st.secrets["GEMINI_API_KEY"]
-        else:
-            api_key = st.text_input("Gemini API Key", type="password")
-    except Exception:
+    # 優先從 st.secrets 讀取 GEMINI_API_KEY 或 GOOGLE_API_KEY
+    api_key = st.secrets.get("GEMINI_API_KEY") or st.secrets.get("GOOGLE_API_KEY")
+    
+    # 如果 secrets 中沒有，才顯示側邊欄輸入框
+    if not api_key:
         api_key = st.text_input("Gemini API Key", type="password")
+    else:
+        st.success("✅ 已自動載入系統 API Key")
     
     # 【關鍵修正】：首選使用 gemini-2.0-flash，備選使用 gemini-1.5-flash
     model_name = st.selectbox("模型版本", [
