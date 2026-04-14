@@ -26,7 +26,7 @@ from iztro_py import astro
 # ==========================================
 # 全域變數與 AI 設定 (集中管理模型版本)
 # ==========================================
-GEMINI_MODEL = 'gemini-2.0-flash'
+GEMINI_MODEL = 'gemini-2.5-flash'
 # ==========================================
 # 基礎常數與資料
 # ==========================================
@@ -299,11 +299,10 @@ def build_person_report(p: Person) -> dict[str, Any]:
 def get_bazi_analysis(prompt, api_key, model_name=GEMINI_MODEL):
     """🔥 終極穩定版：使用 google-generativeai SDK"""
     
-    # 將使用者選擇的模型放在第一位，之後接備援模型 (首選 2.0-flash, 備選 1.5-flash)
+    # 將使用者選擇的模型放在第一位，之後接備援模型 (統一使用 gemini-2.5-flash)
     models_to_try = [
         model_name, 
-        "gemini-2.0-flash", 
-        "gemini-1.5-flash"
+        "gemini-2.5-flash"
     ]
     # 移除重複的模型名，並過濾掉 None
     models_to_try = list(dict.fromkeys([m for m in models_to_try if m]))
@@ -498,10 +497,9 @@ with st.sidebar:
     else:
         st.success("✅ 已自動載入系統 API Key")
     
-    # 【關鍵修正】：首選使用 gemini-2.0-flash，備選使用 gemini-1.5-flash
+    # 【關鍵修正】：統一使用 gemini-2.5-flash
     model_name = st.selectbox("模型版本", [
-        "gemini-2.0-flash", 
-        "gemini-1.5-flash"
+        "gemini-2.5-flash"
     ])
     st.info("已鎖定大師靈魂提示詞，強制輸出權威斷言。")
 
@@ -514,7 +512,7 @@ with st.sidebar:
                 genai.configure(api_key=api_key)
                 # 測試也使用標準參數
                 test_model = genai.GenerativeModel(
-                    model_name="gemini-2.0-flash",
+                    model_name="gemini-2.5-flash",
                     generation_config={"temperature": 0.7}
                 )
                 r = test_model.generate_content("請說一句：『AI 連線測試成功！』")
