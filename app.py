@@ -70,7 +70,7 @@ st.markdown('<p class="main-title">🔮 雨果大師</p>', unsafe_allow_html=Tru
 col_logo1, col_logo2, col_logo3 = st.columns([1, 2, 1])
 with col_logo2:
     try:
-        st.image("logo.jpg", width=250, caption="")
+        st.image("logo.jpg", use_container_width=True)
     except Exception:
         pass
 
@@ -200,27 +200,27 @@ with col_btn_right:
                     response = model.generate_content(prompt)
                     elapsed = time.time() - start_time
 
-                    try:
-                        import gspread
-                        from oauth2client.service_account import ServiceAccountCredentials
-                        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-                        credentials = ServiceAccountCredentials.from_json_keyfile_dict(st.secrets["gcp_service_account"], scope)
-                        gc = gspread.authorize(credentials)
-                        sheet = gc.open_by_url(st.secrets["google_sheets_url"]).sheet1
-                        row = [
-                            datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
-                            str(birth_date),
-                            str(birth_time),
-                            gender,
-                            occupation,
-                            version,
-                            question,
-                            response.text[:200] + "..." if len(response.text) > 200 else response.text
-                        ]
-                        sheet.append_row(row)
-                        st.success("✅ 資料已同步寫入資料庫！")
-                    except Exception as gs_err:
-                        st.warning(f"⚠️ 資料庫寫入失敗：{gs_err}")
+                    # try:
+                    #     import gspread
+                    #     from oauth2client.service_account import ServiceAccountCredentials
+                    #     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+                    #     credentials = ServiceAccountCredentials.from_json_keyfile_dict(st.secrets["gcp_service_account"], scope)
+                    #     gc = gspread.authorize(credentials)
+                    #     sheet = gc.open_by_url(st.secrets["google_sheets_url"]).sheet1
+                    #     row = [
+                    #         datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
+                    #         str(birth_date),
+                    #         str(birth_time),
+                    #         gender,
+                    #         occupation,
+                    #         version,
+                    #         question,
+                    #         response.text[:200] + "..." if len(response.text) > 200 else response.text
+                    #     ]
+                    #     sheet.append_row(row)
+                    #     st.success("✅ 資料已同步寫入資料庫！")
+                    # except Exception as gs_err:
+                    #     st.warning(f"⚠️ 資料庫寫入失敗：{gs_err}")
 
                     st.markdown('<div class="result-card">', unsafe_allow_html=True)
                     st.markdown('<p class="result-header">📜 大師解析</p>', unsafe_allow_html=True)
