@@ -62,6 +62,9 @@ st.markdown("""
         border-radius: 0 8px 8px 0;
         margin: 10px 0;
     }
+    #MainMenu {display: none !important;}
+    footer {display: none !important;}
+    header {display: none !important;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -69,9 +72,11 @@ st.markdown('<p class="main-title">🔮 雨果大師</p>', unsafe_allow_html=Tru
 
 col_logo1, col_logo2, col_logo3 = st.columns([1, 2, 1])
 with col_logo2:
-    try:
-        st.image("logo.jpg", use_container_width=True)
-    except Exception:
+    import os
+    logo_path = "logo.JPG" if os.path.exists("logo.JPG") else "logo.jpg"
+    if os.path.exists(logo_path):
+        st.image(logo_path, use_container_width=True)
+    else:
         pass
 
 st.markdown('<p class="sub-title">古典命理與 AI 的深度對話｜專業八字・紫微斗數・人生指引</p>', unsafe_allow_html=True)
