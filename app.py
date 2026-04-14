@@ -2,6 +2,7 @@ import streamlit as st
 import google.generativeai as genai
 import datetime
 import time
+import os
 
 st.set_page_config(page_title="雨果大師｜命理 AI", page_icon="🔮", layout="wide")
 
@@ -72,14 +73,20 @@ st.markdown('<p class="main-title">🔮 雨果大師</p>', unsafe_allow_html=Tru
 
 col_logo1, col_logo2, col_logo3 = st.columns([1, 2, 1])
 with col_logo2:
-    import os
     logo_path = "logo.JPG" if os.path.exists("logo.JPG") else "logo.jpg"
     if os.path.exists(logo_path):
         st.image(logo_path, use_container_width=True)
-    else:
-        pass
 
 st.markdown('<p class="sub-title">古典命理與 AI 的深度對話｜專業八字・紫微斗數・人生指引</p>', unsafe_allow_html=True)
+
+MASTER_CODE = "16888"
+
+with st.sidebar:
+    st.header("🔐 大師授權")
+    master_input = st.text_input("請輸入大師授權碼", type="password")
+    if master_input != MASTER_CODE:
+        st.error("請輸入正確授權碼以開啟雨果大師命理系統")
+        st.stop()
 
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
@@ -102,7 +109,7 @@ with st.container():
     with col_left:
         occupation = st.selectbox(
             "目前狀態/職業",
-            ["學生", "上班族", "受聘", "自營商", "合夥公司", "公務人員", "軍警", "八大行業", "待業", "家管", "退休", "更生人", "身障"]
+            ["學生", "上班族", "受聘", "自營商", "合夥公司", "待業", "家管", "退休", "更生人", "身障"]
         )
         question = st.text_area("有什麼特別想問的問題嗎？", placeholder="請簡述您的問題...", height=100)
     with col_right:
@@ -117,7 +124,6 @@ with st.container():
             st.markdown("")
             enable_dual = st.checkbox("💞 雙人合盤 (感情/合夥)")
 
-            person2_data = None
             if enable_dual:
                 st.markdown("---")
                 st.markdown("**💞 第二位對象**")
@@ -180,7 +186,7 @@ with col_btn_right:
 
                     為了讓客人既能感受專業底蘊，又能完全聽懂，你的輸出排版必須採用『古籍學理 ＋ 白話註解』的雙軌格式。請嚴格遵守以下排版呈現你的分析結果：
 
-                    【經典命理依據】：在此處直接引用上述三本古籍的專有名詞，原句或學理邏輯，展現絕對的專業度。
+                    【經典命理依據】：在此處直接引用上述三本古籍的專有名詞、原句或學理邏輯，展現絕對的專業度。
 
                     【大師白話註解】：在此處將上述的古文與學理，翻譯成現代人聽得懂的白話文。並結合客人的【職業狀態】（{occupation}），具體說明這對他們的現況（如事業、財運、人際或人生轉機）意味著什麼，給予具同理心且實用的指引。
                     """
@@ -204,28 +210,6 @@ with col_btn_right:
                 try:
                     response = model.generate_content(prompt)
                     elapsed = time.time() - start_time
-
-                    # try:
-                    #     import gspread
-                    #     from oauth2client.service_account import ServiceAccountCredentials
-                    #     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-                    #     credentials = ServiceAccountCredentials.from_json_keyfile_dict(st.secrets["gcp_service_account"], scope)
-                    #     gc = gspread.authorize(credentials)
-                    #     sheet = gc.open_by_url(st.secrets["google_sheets_url"]).sheet1
-                    #     row = [
-                    #         datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
-                    #         str(birth_date),
-                    #         str(birth_time),
-                    #         gender,
-                    #         occupation,
-                    #         version,
-                    #         question,
-                    #         response.text[:200] + "..." if len(response.text) > 200 else response.text
-                    #     ]
-                    #     sheet.append_row(row)
-                    #     st.success("✅ 資料已同步寫入資料庫！")
-                    # except Exception as gs_err:
-                    #     st.warning(f"⚠️ 資料庫寫入失敗：{gs_err}")
 
                     st.markdown('<div class="result-card">', unsafe_allow_html=True)
                     st.markdown('<p class="result-header">📜 大師解析</p>', unsafe_allow_html=True)
