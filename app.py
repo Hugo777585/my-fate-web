@@ -189,30 +189,37 @@ with col_btn_right:
 加強維度：{', '.join(advanced_params.get('focus', []))}
 學理偏好：{advanced_params.get('theory', '標準')}
 
-一、【四柱八字實盤】
-| 四柱 | 天干 | 十神 | 天干 | 地支 | 藏干 | 藏干十神 |
-|------|------|------|------|------|------|----------|
-| 年柱 | | | | | | |
-| 月柱 | | | | | | |
-| 日柱日主 | | (日主) | | | | |
-| 時柱 | | | | | | |
+【輸出要求】：必須使用 HTML 表格呈現四柱排盤，並根據五行屬性加上背景底色，字體加粗加大確保清晰易讀。
+
+一、【命盤乾坤：四柱排盤】（HTML 表格，五行配色）
+<table border="2" cellpadding="8" cellspacing="2" style="border-collapse: collapse; width: 100%; font-size: 18px; font-weight: bold;">
+<tr style="background-color: #6C3483; color: white;">
+<th>四柱</th><th>天干</th><th>十神</th><th>地支</th><th>藏干</th><th>藏干十神</th>
+</tr>
+<tr style="background-color: #ffebee;"><td>年柱</td><td>天干</td><td>十神</td><td>地支</td><td>藏干</td><td>十神</td></tr>
+<tr style="background-color: #e3f2fd;"><td>月柱</td><td>天干</td><td>十神</td><td>地支</td><td>藏干</td><td>十神</td></tr>
+<tr style="background-color: #fff3e0;"><td>日柱日主</td><td>天干</td><td>(日主)</td><td>地支</td><td>藏干</td><td>十神</td></tr>
+<tr style="background-color: #f5f5f5;"><td>時柱</td><td>天干</td><td>十神</td><td>地支</td><td>藏干</td><td>十神</td></tr>
+</table>
+
+【五行配色規則】（請嚴格遵守）：
+- 木（甲乙寅卯）：背景色 #e8f5e9（淺綠色）
+- 火（丙丁巳午）：背景色 #ffebee（淺紅色）
+- 土（戊己辰戌丑未）：背景色 #fff3e0（淺黃色）
+- 金（庚辛申酉）：背景色 #f5f5f5（淺灰色）
+- 水（壬癸亥子）：背景色 #e3f2fd（淺藍色）
 
 二、【五行能量與喜忌】
-| 五行 | 旺相休囚死 | 權重百分比 |
-|------|------------|------------|
-| 金 | | % |
-| 木 | | % |
-| 水 | | % |
-| 火 | | % |
-| 土 | | % |
-
 本命格局：(填入)
 日元強弱：(填入)
 喜用五行：(填入)
 忌諱五行：(填入)
 
-三、【古籍學理與大師白話指引】
-依據《三命通會》、《滴天髓》、《窮通寶鑑》進行解析，禁止任何問候語與廢話。"""
+三、【經典命理依據】
+依據《三命通會》、《滴天髓》、《窮通寶鑑》進行解析。
+
+四、【大師白話註解】
+針對職業狀態【{occupation}】給予溫暖建議與趨吉避凶方向。
                     elif analysis_mode == "【紫微斗數分析】":
                         prompt = f"""客人資料：{base_info}
 加強維度：{', '.join(advanced_params.get('focus', []))}
@@ -300,7 +307,7 @@ with col_btn_right:
 
                     st.markdown('<div class="result-card">', unsafe_allow_html=True)
                     st.markdown(f'<p class="result-header">{result_title}</p>', unsafe_allow_html=True)
-                    st.markdown(result_text)
+                    st.markdown(result_text, unsafe_allow_html=True)
                     st.markdown('</div>', unsafe_allow_html=True)
                     st.caption(f"⏱️ 分析耗時：{elapsed:.1f} 秒")
 
