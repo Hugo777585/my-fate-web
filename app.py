@@ -3,6 +3,35 @@ import google.generativeai as genai
 import datetime
 import time
 import os
+from lunar import Lunar
+
+def calculate_bazi(birth_date, birth_time):
+    try:
+        lunar = Lunar.fromDate(birth_date)
+        year_ganzhi = lunar.getYearInGanZhi()
+        year_tiangan = year_ganzhi[:1]
+        year_dizhi = year_ganzhi[1:2]
+
+        month_ganzhi = lunar.getMonthInGanZhi()
+        month_tiangan = month_ganzhi[:1]
+        month_dizhi = month_ganzhi[1:2]
+
+        day_ganzhi = lunar.getDayInGanZhi()
+        day_tiangan = day_ganzhi[:1]
+        day_dizhi = day_ganzhi[1:2]
+
+        hour_ganzhi = lunar.getShiInGanZhi(birth_time.hour)
+        hour_tiangan = hour_ganzhi[:1]
+        hour_dizhi = hour_ganzhi[1:2]
+
+        return {
+            'year_tg': year_tiangan, 'year_dz': year_dizhi,
+            'month_tg': month_tiangan, 'month_dz': month_dizhi,
+            'day_tg': day_tiangan, 'day_dz': day_dizhi,
+            'hour_tg': hour_tiangan, 'hour_dz': hour_dizhi
+        }
+    except:
+        return None
 
 st.set_page_config(page_title="雨果大師｜命理 AI", page_icon="🔮", layout="wide")
 
@@ -181,26 +210,35 @@ with col_btn_right:
         else:
             start_time = time.time()
             with st.spinner("大師正在排盤與分析中，請稍候..."):
+                bazi = calculate_bazi(birth_date, birth_time)
                 base_info = f"姓名：{name}，性別：{gender}，生日：{birth_date} {birth_time}，職業：{occupation}，提問：{question}"
 
                 if is_master:
                     if analysis_mode == "【八字精論】":
-                        prompt = f"""客人資料：{base_info}
+                        pillar_data = f"""
+年柱：天干【{bazi['year_tg']}】地支【{bazi['year_dz']}】
+月柱：天干【{bazi['month_tg']}】地支【{bazi['month_dz']}】
+日柱：天干【{bazi['day_tg']}】地支【{bazi['day_dz']}】→ 日主
+時柱：天干【{bazi['hour_tg']}】地支【{bazi['hour_dz']}】""" if bazi else ""
+
+                        prompt = f"""以下是經由萬年曆精算出的正確命盤，請以此為絕對依據：
+{pillar_data}
+客人資料：{base_info}
 加強維度：{', '.join(advanced_params.get('focus', []))}
 學理偏好：{advanced_params.get('theory', '標準')}
 
 【輸出要求】：必須使用 HTML 表格呈現四柱排盤。表格字體加粗加大，確保清晰易讀。
-請根據每一柱「地支」的五行屬性，為該行（Row）或單元格（Cell）加上背景底色。
+請根據每一柱「地支」的五行屬性，為該行加上背景底色。
 
 一、【命盤乾坤：四柱排盤】（HTML 彩色表格）
 <table border="2" cellpadding="8" cellspacing="2" style="border-collapse: collapse; width: 100%; font-size: 20px; font-weight: bold; text-align: center;">
 <tr style="background-color: #6C3483; color: white;">
 <th>四柱</th><th>天干</th><th>十神</th><th>地支</th><th>藏干</th><th>藏干十神</th>
 </tr>
-<tr style="background-color: (根據年柱五行填入顏色);"><td>年柱</td><td>(填入)</td><td>(填入)</td><td>(填入)</td><td>(填入)</td><td>(填入)</td></tr>
-<tr style="background-color: (根據月柱五行填入顏色);"><td>月柱</td><td>(填入)</td><td>(填入)</td><td>(填入)</td><td>(填入)</td><td>(填入)</td></tr>
-<tr style="background-color: (根據日柱五行填入顏色);"><td>日柱日主</td><td>(填入)</td><td>(日主)</td><td>(填入)</td><td>(填入)</td><td>(填入)</td></tr>
-<tr style="background-color: (根據時柱五行填入顏色);"><td>時柱</td><td>(填入)</td><td>(填入)</td><td>(填入)</td><td>(填入)</td><td>(填入)</td></tr>
+<tr style="background-color: (請根據【{bazi['year_dz'] if bazi else '年'}】的五行填入顏色);"><td>年柱</td><td>{bazi['year_tg'] if bazi else '(年干)'}</td><td>(十神)</td><td>{bazi['year_dz'] if bazi else '(年支)'}</td><td>(藏干)</td><td>(十神)</td></tr>
+<tr style="background-color: (請根據【{bazi['month_dz'] if bazi else '月'}】的五行填入顏色);"><td>月柱</td><td>{bazi['month_tg'] if bazi else '(月干)'}</td><td>(十神)</td><td>{bazi['month_dz'] if bazi else '(月支)'}</td><td>(藏干)</td><td>(十神)</td></tr>
+<tr style="background-color: (請根據【{bazi['day_dz'] if bazi else '日'}】的五行填入顏色);"><td>日柱日主</td><td>{bazi['day_tg'] if bazi else '(日干)'}【日主】</td><td>(日主)</td><td>{bazi['day_dz'] if bazi else '(日支)'}</td><td>(藏干)</td><td>(十神)</td></tr>
+<tr style="background-color: (請根據【{bazi['hour_dz'] if bazi else '時'}】的五行填入顏色);"><td>時柱</td><td>{bazi['hour_tg'] if bazi else '(時干)'}</td><td>(十神)</td><td>{bazi['hour_dz'] if bazi else '(時支)'}</td><td>(藏干)</td><td>(十神)</td></tr>
 </table>
 
 【五行配色規則】：
@@ -211,13 +249,13 @@ with col_btn_right:
 - 水 (壬癸亥子)：#e3f2fd (淺藍)
 
 二、【五行能量與喜忌】
-(請分析五行強弱權重，並列出本命格局、日元強弱、喜用五行、忌諱五行)
+依據《三命通會》、《滴天髓》、《窮通寶鑑》分析五行強弱，判定本命格局、日元強弱、喜用五行、忌諱五行。
 
 三、【經典命理依據】
-依據《三命通會》、《滴天髓》、《窮通寶鑑》進行深度解析。
+嚴格依據《三命通會》、《滴天髓》、《窮通寶鑑》進行深度解析。
 
 四、【大師白話註解】
-針對客人的職業狀態【{occupation}】給予專業且具同理心的現代建議與趨吉避凶指引。
+針對客人職業狀態【{occupation}】給予專業且具同理心的建議與趨吉避凶指引。
 """
                     elif analysis_mode == "【紫微斗數分析】":
                         prompt = f"""客人資料：{base_info}
