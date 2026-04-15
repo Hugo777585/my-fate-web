@@ -7,15 +7,15 @@ from lunar_python import Lunar, Solar
 
 def calculate_bazi(birth_date, birth_time):
     try:
-        # 使用 Solar 類來處理國曆日期與時間，確保節氣轉換精準
-        solar = Solar.fromYmdHms(
-            int(birth_date.year), 
-            int(birth_date.month), 
-            int(birth_date.day), 
-            int(birth_time.hour), 
-            int(birth_time.minute), 
-            0
-        )
+        # 1. 強制轉為整數
+        y = int(birth_date.year)
+        m = int(birth_date.month)
+        d = int(birth_date.day)
+        h = int(birth_time.hour)
+        minute = int(birth_time.minute)
+
+        # 2. 生成八字
+        solar = Solar.fromYmdHms(y, m, d, h, minute, 0)
         lunar = solar.getLunar()
         eight_char = lunar.getEightChar()
         
@@ -25,7 +25,7 @@ def calculate_bazi(birth_date, birth_time):
         day_pillar = eight_char.getDay()
         hour_pillar = eight_char.getHour()
 
-        # 取得藏干 (修正方法名為 getXXXZhiHideGan)
+        # 取得藏干
         year_hide = "".join(eight_char.getYearZhiHideGan())
         month_hide = "".join(eight_char.getMonthZhiHideGan())
         day_hide = "".join(eight_char.getDayZhiHideGan())
@@ -49,7 +49,7 @@ def calculate_bazi(birth_date, birth_time):
             }
         }
     except Exception as e:
-        print(f"Bazi Calculation Error: {e}")
+        st.error(f"日期轉換或命盤計算發生系統錯誤：{e}")
         return None
 
 st.set_page_config(page_title="雨果大師｜命理 AI", page_icon="🔮", layout="wide")
