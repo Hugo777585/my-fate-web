@@ -9,11 +9,11 @@ def calculate_bazi(birth_date, birth_time):
     try:
         # 使用 Solar 類來處理國曆日期與時間，確保節氣轉換精準
         solar = Solar.fromYmdHms(
-            birth_date.year, 
-            birth_date.month, 
-            birth_date.day, 
-            birth_time.hour, 
-            birth_time.minute, 
+            int(birth_date.year), 
+            int(birth_date.month), 
+            int(birth_date.day), 
+            int(birth_time.hour), 
+            int(birth_time.minute), 
             0
         )
         lunar = solar.getLunar()
@@ -25,14 +25,13 @@ def calculate_bazi(birth_date, birth_time):
         day_pillar = eight_char.getDay()
         hour_pillar = eight_char.getHour()
 
-        # 取得藏干
-        year_hide = "".join(eight_char.getYearHideGan())
-        month_hide = "".join(eight_char.getMonthHideGan())
-        day_hide = "".join(eight_char.getDayHideGan())
-        hour_hide = "".join(eight_char.getHourHideGan())
+        # 取得藏干 (修正方法名為 getXXXZhiHideGan)
+        year_hide = "".join(eight_char.getYearZhiHideGan())
+        month_hide = "".join(eight_char.getMonthZhiHideGan())
+        day_hide = "".join(eight_char.getDayZhiHideGan())
+        hour_hide = "".join(eight_char.getHourZhiHideGan())
 
         # 取得十神 (以日主為中心)
-        day_stem = eight_char.getDayGan()
         year_shishen = eight_char.getYearShiShenGan()
         month_shishen = eight_char.getMonthShiShenGan()
         hour_shishen = eight_char.getHourShiShenGan()
