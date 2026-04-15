@@ -228,15 +228,28 @@ with col_logo2:
 st.markdown('<p class="sub-title">古典命理與 AI 的深度對話｜專業八字・紫微斗數・人生指引</p>', unsafe_allow_html=True)
 
 # 2. 管理員密碼鎖 (大師盤)
-MASTER_CODE = "16888"
+MASTER_CODE = "HUGO888"
 is_master = False
 
 with st.sidebar:
     st.header("🔐 系統授權")
     auth_code = st.text_input("大師專用授權碼", type="password")
-    if auth_code == MASTER_CODE:
+    if auth_code.strip().upper() == MASTER_CODE:
         is_master = True
         st.success("✅ 大師模式已開啟")
+        
+        # 連線測試按鈕
+        if st.button("📊 Google Sheets 連線測試"):
+            if sheet:
+                try:
+                    # 嘗試抓取第一列標題
+                    headers = sheet.row_values(1)
+                    st.write(f"✅ 連線成功！試算表標題：{sheet.title}")
+                    st.write(f"📋 目前欄位：{', '.join(headers)}")
+                except Exception as e:
+                    st.error(f"❌ 連線測試失敗：{e}")
+            else:
+                st.error("❌ 試算表尚未連線，請檢查後台設定。")
     elif auth_code != "":
         st.error("❌ 授權碼錯誤")
 
