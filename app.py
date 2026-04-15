@@ -5,17 +5,10 @@ import time
 import os
 from lunar_python import Lunar, Solar
 
-def calculate_bazi(birth_date, birth_time):
+def calculate_bazi(y, m, d, h, minute):
     try:
-        # 1. 強制轉為整數
-        y = int(birth_date.year)
-        m = int(birth_date.month)
-        d = int(birth_date.day)
-        h = int(birth_time.hour)
-        minute = int(birth_time.minute)
-
-        # 2. 生成八字
-        solar = Solar.fromYmdHms(y, m, d, h, minute, 0)
+        # 使用 Solar 類來處理國曆日期與時間，確保節氣轉換精準
+        solar = Solar.fromYmdHms(int(y), int(m), int(d), int(h), int(minute), 0)
         lunar = solar.getLunar()
         eight_char = lunar.getEightChar()
         
@@ -49,7 +42,7 @@ def calculate_bazi(birth_date, birth_time):
             }
         }
     except Exception as e:
-        st.error(f"日期轉換或命盤計算發生系統錯誤：{e}")
+        st.error(f"命盤計算發生系統錯誤：{e}")
         return None
 
 st.set_page_config(page_title="雨果大師｜命理 AI", page_icon="🔮", layout="wide")
@@ -176,11 +169,18 @@ with st.container():
             ["學生", "上班族", "受聘", "自營商", "合夥公司", "待業", "家管", "退休", "更生人", "身障"]
         )
 
-    col4, col5 = st.columns(2)
+    st.markdown("#### 📅 出生時間 (國曆)")
+    col4, col5, col6, col7, col8 = st.columns(5)
     with col4:
-        birth_date = st.date_input("出生日期 (國曆)", min_value=datetime.date(1930, 1, 1))
+        b_year = st.number_input("年", min_value=1900, max_value=2030, value=1980)
     with col5:
-        birth_time = st.time_input("出生時間")
+        b_month = st.number_input("月", min_value=1, max_value=12, value=1)
+    with col6:
+        b_day = st.number_input("日", min_value=1, max_value=31, value=1)
+    with col7:
+        b_hour = st.number_input("時", min_value=0, max_value=23, value=12)
+    with col8:
+        b_min = st.number_input("分", min_value=0, max_value=59, value=0)
 
     question = st.text_area("有什麼特別想問的問題嗎？", placeholder="請簡述您的問題...", height=100)
 
@@ -208,13 +208,19 @@ if is_master:
 enable_dual = st.checkbox("💞 啟用雙人合盤 (感情/合夥)")
 if enable_dual:
     st.subheader("💞 第二位對象資料")
-    col_p2_1, col_p2_2, col_p2_3 = st.columns(3)
+    col_p2_1, col_p2_2, col_p2_3, col_p2_4, col_p2_5, col_p2_6 = st.columns([1, 1, 1, 1, 1, 1])
     with col_p2_1:
         gender2 = st.selectbox("對象性別", ["男", "女"], key="gender2")
     with col_p2_2:
-        birth_date2 = st.date_input("對象出生日期", min_value=datetime.date(1930, 1, 1), key="birth_date2")
+        b_year2 = st.number_input("年", min_value=1900, max_value=2030, value=1980, key="b_year2")
     with col_p2_3:
-        birth_time2 = st.time_input("對象出生時間", key="birth_time2")
+        b_month2 = st.number_input("月", min_value=1, max_value=12, value=1, key="b_month2")
+    with col_p2_4:
+        b_day2 = st.number_input("日", min_value=1, max_value=31, value=1, key="b_day2")
+    with col_p2_5:
+        b_hour2 = st.number_input("時", min_value=0, max_value=23, value=12, key="b_hour2")
+    with col_p2_6:
+        b_min2 = st.number_input("分", min_value=0, max_value=59, value=0, key="b_min2")
     relation_type = st.selectbox("雙方關係", ["情侶/夫妻", "事業合夥", "家人/朋友"])
 
 st.markdown("---")
@@ -229,7 +235,7 @@ with col_btn_right:
         else:
             start_time = time.time()
             with st.spinner("大師正在排盤與分析中，請稍候..."):
-                bazi = calculate_bazi(birth_date, birth_time)
+                bazi = calculate_bazi(b_year, b_month, b_day, b_hour, b_min)
                 
                 # 準備精確的四柱數據字串，供 Prompt 使用
                 if bazi:
@@ -243,7 +249,7 @@ with col_btn_right:
                 else:
                     pillar_info = "（命盤計算失敗，請檢查輸入日期）"
 
-                base_info = f"姓名：{name}，性別：{gender}，生日：{birth_date} {birth_time}，職業：{occupation}，提問：{question}"
+                base_info = f"姓名：{name}，性別：{gender}，生日：{b_year}/{b_month}/{b_day} {b_hour}:{b_min}，職業：{occupation}，提問：{question}"
 
                 if is_master:
                     if analysis_mode == "【八字精論】":
@@ -258,7 +264,7 @@ with col_btn_right:
 請根據每一柱「地支」的五行屬性，為該行加上背景底色。
 
 一、【命盤乾坤：四柱排盤】（HTML 彩色表格）
-<table border="2" cellpadding="8" cellspacing="2" style="border-collapse: collapse; width: 100%; font-size: 20px; font-weight: bold; text-align: center;">
+<table border="2" cellpadding="8" cellspacing="2" style="border-collapse: collapse; width: 100%; font-size: 22px; font-weight: bold; text-align: center;">
 <tr style="background-color: #6C3483; color: white;">
 <th>四柱</th><th>天干</th><th>十神</th><th>地支</th><th>藏干</th>
 </tr>
@@ -269,11 +275,11 @@ with col_btn_right:
 </table>
 
 【五行配色規則】：
-- 木 (甲乙寅卯)：#e8f5e9 (淺綠)
-- 火 (丙丁巳午)：#ffebee (淺紅)
-- 土 (戊己辰戌丑未)：#fff3e0 (淺黃)
-- 金 (庚辛申酉)：#f5f5f5 (淺灰)
-- 水 (壬癸亥子)：#e3f2fd (淺藍)
+- 木 (甲乙寅卯)：#C8E6C9 (綠)
+- 火 (丙丁巳午)：#FFCDD2 (紅)
+- 土 (戊己辰戌丑未)：#FFF9C4 (黃)
+- 金 (庚辛申酉)：#F5F5F5 (灰)
+- 水 (壬癸亥子)：#BBDEFB (藍)
 
 二、【五行能量與喜忌】
 依據《三命通會》、《滴天髓》、《窮通寶鑑》分析五行強弱，判定本命格局、日元強弱、喜用五行、忌諱五行。
@@ -298,8 +304,11 @@ with col_btn_right:
 二、【格局與喜忌】
 命宮主星、四化飛星、事業/財富分析。
 
-三、【古籍學理與大師白話指引】
-依據《紫微斗數全書》進行解析，針對職業狀態【{occupation}】給予建議。"""
+三、【經典命理依據】
+依據《紫微斗數全書》進行解析。
+
+四、【大師白話註解】
+針對職業狀態【{occupation}】給予建議。"""
                     else:
                         prompt = f"""請以此經由萬年曆精算出的正確八字命盤為分析依據：
 {pillar_info}
@@ -311,10 +320,10 @@ with col_btn_right:
 一、【八字與紫微雙盤排盤】
 （請同時顯示八字四柱與紫微命盤簡表）
 
-二、【交叉比對結論】
+二、【經典命理依據】
 針對八字喜忌與紫微流年進行對照分析。
 
-三、【古籍學理與大師白話指引】
+三、【大師白話註解】
 綜合《三命通會》、《滴天髓》、《窮通寶鑑》與《紫微斗數全書》進行解析，禁止廢話。"""
                 else:
                     if analysis_mode == "【八字精論】":
@@ -322,22 +331,41 @@ with col_btn_right:
 {pillar_info}
 
 客人資料：{base_info}
-請用簡潔的 Markdown 格式（含表格）提供溫馨建議，並結合客人的職業背景【{occupation}】。"""
+
+一、【經典命理依據】
+提供八字解析。
+
+二、【大師白話註解】
+提供溫馨建議，並結合客人的職業背景【{occupation}】。"""
                     elif analysis_mode == "【紫微斗數分析】":
                         prompt = f"""請根據以下經由萬年曆精算出的正確八字命盤輔助參考，進行紫微斗數分析：
 {pillar_info}
 
 客人資料：{base_info}
-請提供專業的紫微斗數解析與溫馨建議。"""
+
+一、【經典命理依據】
+提供專業的紫微斗數解析。
+
+二、【大師白話註解】
+提供溫馨建議。"""
                     else:
                         prompt = f"""請根據以下經由萬年曆精算出的正確八字命盤進行交叉比對分析：
 {pillar_info}
 
 客人資料：{base_info}
-同時提供八字與紫微的綜合解析。"""
+
+一、【經典命理依據】
+同時提供八字與紫微的綜合解析。
+
+二、【大師白話註解】
+提供綜合建議。"""
 
                 if enable_dual:
-                    prompt += f"\n\n雙人合盤：對象性別：{gender2}，生日：{birth_date2} {birth_time2}，關係：{relation_type}"
+                    bazi2 = calculate_bazi(b_year2, b_month2, b_day2, b_hour2, b_min2)
+                    if bazi2:
+                        prompt += f"\n\n雙人合盤：對象八字【{bazi2['full']['year']} {bazi2['full']['month']} {bazi2['full']['day']} {bazi2['full']['hour']}】，關係：{relation_type}"
+                    else:
+                        prompt += f"\n\n雙人合盤：對象生日：{b_year2}/{b_month2}/{b_day2} {b_hour2}:{b_min2}，關係：{relation_type}"
 
                 try:
                     response = model.generate_content(prompt)
