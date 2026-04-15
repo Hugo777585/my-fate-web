@@ -26,10 +26,10 @@ def calculate_bazi(birth_date, birth_time):
         hour_pillar = eight_char.getTime()
 
         # 取得藏干
-        year_hide = "".join(eight_char.getYearZhiHideGan())
-        month_hide = "".join(eight_char.getMonthZhiHideGan())
-        day_hide = "".join(eight_char.getDayZhiHideGan())
-        hour_hide = "".join(eight_char.getTimeZhiHideGan())
+        year_hide = "".join(eight_char.getYearHideGan())
+        month_hide = "".join(eight_char.getMonthHideGan())
+        day_hide = "".join(eight_char.getDayHideGan())
+        hour_hide = "".join(eight_char.getTimeHideGan())
 
         # 取得十神 (以日主為中心)
         year_shishen = eight_char.getYearShiShenGan()
