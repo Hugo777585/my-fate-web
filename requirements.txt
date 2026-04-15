@@ -8,3 +8,4 @@ borax
 iztro-py
 streamlit-extras
 lunar-python
+google-api-python-client

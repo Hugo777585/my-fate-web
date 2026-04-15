@@ -3,7 +3,37 @@ import google.generativeai as genai
 import datetime
 import time
 import os
+import gspread
+from google.oauth2.service_account import Credentials
 from lunar_python import Lunar, Solar
+
+# --- Google Sheets 連線設定 ---
+def init_gsheets():
+    try:
+        # 定義存取範圍
+        scopes = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
+        
+        # 從 st.secrets 讀取服務帳號資訊
+        # 注意：在 Streamlit Cloud 中，這應該是一個字典格式
+        service_account_info = st.secrets["gcp_service_account"]
+        
+        # 建立憑證
+        creds = Credentials.from_service_account_info(service_account_info, scopes=scopes)
+        
+        # 授權並開啟試算表
+        client = gspread.authorize(creds)
+        
+        # 開啟指定的試算表（請確保已將服務帳號 Email 加入該試算表的共用清單，並給予編輯權限）
+        # 如果試算表不存在，這會報錯
+        sheet = client.open("雨果天命智庫客戶紀錄").sheet1
+        return sheet
+    except Exception as e:
+        # 不強制停止，以免影響 App 運行，但會記錄錯誤
+        print(f"Google Sheets 連線失敗：{e}")
+        return None
+
+# 初始化試算表物件
+sheet = init_gsheets()
 
 def calculate_bazi(y, m, d, h, minute):
     try:
@@ -385,6 +415,33 @@ with col_btn_right:
                     st.markdown(result_text, unsafe_allow_html=True)
                     st.markdown('</div>', unsafe_allow_html=True)
                     st.caption(f"⏱️ 分析耗時：{elapsed:.1f} 秒")
+
+                    # --- 寫入 Google Sheets 邏輯 ---
+                    if sheet is not None:
+                        try:
+                            # 準備要寫入的一列資料
+                            # 欄位：日期時間, 姓名, 性別, 職業, 西元生年, 月, 日, 時, 分, 模式, 正確日主, AI回覆
+                            now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                            day_master = bazi['day_tg'] if bazi else "未知"
+                            
+                            row_data = [
+                                now_str, 
+                                name, 
+                                gender, 
+                                occupation, 
+                                str(b_year), 
+                                str(b_month), 
+                                str(b_day), 
+                                str(b_hour), 
+                                str(b_min), 
+                                analysis_mode, 
+                                day_master, 
+                                result_text[:5000] # 限制長度以免超出儲存格上限
+                            ]
+                            sheet.append_row(row_data)
+                        except Exception as gs_err:
+                            st.warning(f"資料寫入試算表失敗，但不影響分析結果。")
+                            print(f"GS 寫入錯誤：{gs_err}")
 
                 except Exception as e:
                     st.error(f"發生錯誤：{e}")
