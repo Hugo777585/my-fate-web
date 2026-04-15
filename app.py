@@ -9,15 +9,14 @@ from lunar_python import Lunar, Solar
 
 # --- Google Sheets 連線設定 ---
 def init_gsheets():
+    error_msg = None
     try:
         # 定義存取範圍
         scopes = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
         
         # 從 st.secrets 讀取服務帳號資訊
-        # 在 Streamlit Cloud 中，這是一個字典格式
         if "gcp_service_account" not in st.secrets:
-            print("錯誤：Secrets 中找不到 gcp_service_account 設定")
-            return None
+            return None, "Secrets 中找不到 [gcp_service_account] 設定區塊。"
             
         service_account_info = st.secrets["gcp_service_account"]
         
@@ -27,28 +26,34 @@ def init_gsheets():
         # 授權並開啟試算表
         client = gspread.authorize(creds)
         
-        # 開啟指定的試算表
-        # 請確保已將服務帳號 Email 加入該試算表的共用清單，並給予編輯權限
+        # 優先嘗試透過 URL 開啟（如果 Secrets 中有設定）
+        sheet_url = st.secrets.get("gsheets_url")
         sheet_name = "雨果天命智庫客戶紀錄"
+        
         try:
-            spreadsheet = client.open(sheet_name)
+            if sheet_url:
+                spreadsheet = client.open_by_url(sheet_url)
+            else:
+                spreadsheet = client.open(sheet_name)
+            
             sheet = spreadsheet.sheet1
-            return sheet
+            return sheet, None
         except gspread.exceptions.SpreadsheetNotFound:
-            print(f"錯誤：找不到名稱為 '{sheet_name}' 的試算表")
-            return None
+            return None, f"找不到名稱為 '{sheet_name}' 的試算表。請確認名稱完全一致，或改用 URL 連線。"
+        except gspread.exceptions.APIError as e:
+            return None, f"Google API 錯誤：{e}"
+            
     except Exception as e:
-        print(f"Google Sheets 初始化失敗：{e}")
-        return None
+        return None, f"連線過程發生非預期錯誤：{str(e)}"
 
 # 初始化試算表物件
-try:
-    sheet = init_gsheets()
-    if sheet is None:
-        st.sidebar.error("⚠️ Google 試算表連線失敗。請檢查 Secrets 中的 gcp_service_account 是否正確，並確認試算表已分享給服務帳號 Email。")
-except Exception as e:
-    st.sidebar.error(f"⚠️ Google 試算表初始化發生錯誤：{e}")
-    sheet = None
+sheet, gs_error = init_gsheets()
+if gs_error:
+    st.sidebar.error(f"📊 試算表連線失敗：\n{gs_error}")
+    if "Permission denied" in gs_error or "not found" in gs_error:
+        st.sidebar.warning("💡 提示：請確保已將試算表「共用」給服務帳號 Email：\n`hugo-crm@hu-go-490206.iam.gserviceaccount.com`")
+elif sheet:
+    st.sidebar.success(f"✅ 已連線至：{sheet.spreadsheet.title}")
 
 def get_wuxing_color(char):
     """根據干支字元回傳對應的五行背景顏色"""
@@ -253,7 +258,7 @@ with st.sidebar:
         st.subheader("📊 資料庫連線狀態")
         
         if sheet:
-            st.info(f"� 已連線至：{sheet.spreadsheet.title}")
+            st.info(f"📁 已連線至：{sheet.spreadsheet.title}")
             if st.button("🔍 執行連線測試"):
                 try:
                     # 測試讀取標題
