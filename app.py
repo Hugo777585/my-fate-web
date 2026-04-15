@@ -189,37 +189,36 @@ with col_btn_right:
 加強維度：{', '.join(advanced_params.get('focus', []))}
 學理偏好：{advanced_params.get('theory', '標準')}
 
-【輸出要求】：必須使用 HTML 表格呈現四柱排盤，並根據五行屬性加上背景底色，字體加粗加大確保清晰易讀。
+【輸出要求】：必須使用 HTML 表格呈現四柱排盤。表格字體加粗加大，確保清晰易讀。
+請根據每一柱「地支」的五行屬性，為該行（Row）或單元格（Cell）加上背景底色。
 
-一、【命盤乾坤：四柱排盤】（HTML 表格，五行配色）
-<table border="2" cellpadding="8" cellspacing="2" style="border-collapse: collapse; width: 100%; font-size: 18px; font-weight: bold;">
+一、【命盤乾坤：四柱排盤】（HTML 彩色表格）
+<table border="2" cellpadding="8" cellspacing="2" style="border-collapse: collapse; width: 100%; font-size: 20px; font-weight: bold; text-align: center;">
 <tr style="background-color: #6C3483; color: white;">
 <th>四柱</th><th>天干</th><th>十神</th><th>地支</th><th>藏干</th><th>藏干十神</th>
 </tr>
-<tr style="background-color: #ffebee;"><td>年柱</td><td>天干</td><td>十神</td><td>地支</td><td>藏干</td><td>十神</td></tr>
-<tr style="background-color: #e3f2fd;"><td>月柱</td><td>天干</td><td>十神</td><td>地支</td><td>藏干</td><td>十神</td></tr>
-<tr style="background-color: #fff3e0;"><td>日柱日主</td><td>天干</td><td>(日主)</td><td>地支</td><td>藏干</td><td>十神</td></tr>
-<tr style="background-color: #f5f5f5;"><td>時柱</td><td>天干</td><td>十神</td><td>地支</td><td>藏干</td><td>十神</td></tr>
+<tr style="background-color: (根據年柱五行填入顏色);"><td>年柱</td><td>(填入)</td><td>(填入)</td><td>(填入)</td><td>(填入)</td><td>(填入)</td></tr>
+<tr style="background-color: (根據月柱五行填入顏色);"><td>月柱</td><td>(填入)</td><td>(填入)</td><td>(填入)</td><td>(填入)</td><td>(填入)</td></tr>
+<tr style="background-color: (根據日柱五行填入顏色);"><td>日柱日主</td><td>(填入)</td><td>(日主)</td><td>(填入)</td><td>(填入)</td><td>(填入)</td></tr>
+<tr style="background-color: (根據時柱五行填入顏色);"><td>時柱</td><td>(填入)</td><td>(填入)</td><td>(填入)</td><td>(填入)</td><td>(填入)</td></tr>
 </table>
 
-【五行配色規則】（請嚴格遵守）：
-- 木（甲乙寅卯）：背景色 #e8f5e9（淺綠色）
-- 火（丙丁巳午）：背景色 #ffebee（淺紅色）
-- 土（戊己辰戌丑未）：背景色 #fff3e0（淺黃色）
-- 金（庚辛申酉）：背景色 #f5f5f5（淺灰色）
-- 水（壬癸亥子）：背景色 #e3f2fd（淺藍色）
+【五行配色規則】：
+- 木 (甲乙寅卯)：#e8f5e9 (淺綠)
+- 火 (丙丁巳午)：#ffebee (淺紅)
+- 土 (戊己辰戌丑未)：#fff3e0 (淺黃)
+- 金 (庚辛申酉)：#f5f5f5 (淺灰)
+- 水 (壬癸亥子)：#e3f2fd (淺藍)
 
 二、【五行能量與喜忌】
-本命格局：(填入)
-日元強弱：(填入)
-喜用五行：(填入)
-忌諱五行：(填入)
+(請分析五行強弱權重，並列出本命格局、日元強弱、喜用五行、忌諱五行)
 
 三、【經典命理依據】
-依據《三命通會》、《滴天髓》、《窮通寶鑑》進行解析。
+依據《三命通會》、《滴天髓》、《窮通寶鑑》進行深度解析。
 
 四、【大師白話註解】
-針對職業狀態【{occupation}】給予溫暖建議與趨吉避凶方向。
+針對客人的職業狀態【{occupation}】給予專業且具同理心的現代建議與趨吉避凶指引。
+"""
                     elif analysis_mode == "【紫微斗數分析】":
                         prompt = f"""客人資料：{base_info}
 加強維度：{', '.join(advanced_params.get('focus', []))}
