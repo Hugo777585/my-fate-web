@@ -3,7 +3,7 @@ import google.generativeai as genai
 import datetime
 import time
 import os
-from lunar import Lunar
+from lunar_python import Lunar
 
 def calculate_bazi(birth_date, birth_time):
     try:

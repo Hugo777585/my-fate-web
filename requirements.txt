@@ -1,4 +1,10 @@
 streamlit
-google-generativeai
-pandas
+google-generativeai>=0.8.1
+gspread
+google-auth
+oauth2client
+fpdf
+borax
+iztro-py
+streamlit-extras
 lunar-python
