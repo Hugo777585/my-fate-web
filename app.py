@@ -33,7 +33,84 @@ def init_gsheets():
         return None
 
 # 初始化試算表物件
-sheet = init_gsheets()
+try:
+    sheet = init_gsheets()
+    if sheet is None:
+        st.sidebar.error("⚠️ Google 試算表連線失敗。請檢查 Secrets 中的 gcp_service_account 是否正確，並確認試算表已分享給服務帳號 Email。")
+except Exception as e:
+    st.sidebar.error(f"⚠️ Google 試算表初始化發生錯誤：{e}")
+    sheet = None
+
+def get_wuxing_color(char):
+    """根據干支字元回傳對應的五行背景顏色"""
+    if not char: return "#FFFFFF"
+    char = char[0] # 取第一個字
+    wuxing_map = {
+        # 木
+        '甲': '#C8E6C9', '乙': '#C8E6C9', '寅': '#C8E6C9', '卯': '#C8E6C9',
+        # 火
+        '丙': '#FFCDD2', '丁': '#FFCDD2', '巳': '#FFCDD2', '午': '#FFCDD2',
+        # 土
+        '戊': '#FFF9C4', '己': '#FFF9C4', '辰': '#FFF9C4', '戌': '#FFF9C4', '丑': '#FFF9C4', '未': '#FFF9C4',
+        # 金
+        '庚': '#F5F5F5', '辛': '#F5F5F5', '申': '#F5F5F5', '酉': '#F5F5F5',
+        # 水
+        '壬': '#BBDEFB', '癸': '#BBDEFB', '亥': '#BBDEFB', '子': '#BBDEFB',
+    }
+    return wuxing_map.get(char, "#FFFFFF")
+
+def render_bazi_table(bazi):
+    """產生彩色五行排盤 HTML 表格"""
+    if not bazi: return ""
+    
+    # 取得各柱顏色
+    y_color = get_wuxing_color(bazi['year_dz'])
+    m_color = get_wuxing_color(bazi['month_dz'])
+    d_color = get_wuxing_color(bazi['day_dz'])
+    h_color = get_wuxing_color(bazi['hour_dz'])
+    
+    html = f"""
+    <div style="overflow-x: auto;">
+        <table border="1" style="border-collapse: collapse; width: 100%; font-size: 22px; font-weight: bold; text-align: center; border: 2px solid #6C3483;">
+            <tr style="background-color: #6C3483; color: white;">
+                <th style="padding: 10px;">四柱</th>
+                <th style="padding: 10px;">天干</th>
+                <th style="padding: 10px;">十神</th>
+                <th style="padding: 10px;">地支</th>
+                <th style="padding: 10px;">藏干</th>
+            </tr>
+            <tr style="background-color: {y_color};">
+                <td style="padding: 10px; border: 1px solid #6C3483;">年柱</td>
+                <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['year_tg']}</td>
+                <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['year_ss']}</td>
+                <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['year_dz']}</td>
+                <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['year_hide']}</td>
+            </tr>
+            <tr style="background-color: {m_color};">
+                <td style="padding: 10px; border: 1px solid #6C3483;">月柱</td>
+                <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['month_tg']}</td>
+                <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['month_ss']}</td>
+                <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['month_dz']}</td>
+                <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['month_hide']}</td>
+            </tr>
+            <tr style="background-color: {d_color};">
+                <td style="padding: 10px; border: 1px solid #6C3483;">日柱 (日主)</td>
+                <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['day_tg']}【日主】</td>
+                <td style="padding: 10px; border: 1px solid #6C3483;">日主</td>
+                <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['day_dz']}</td>
+                <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['day_hide']}</td>
+            </tr>
+            <tr style="background-color: {h_color};">
+                <td style="padding: 10px; border: 1px solid #6C3483;">時柱</td>
+                <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['hour_tg']}</td>
+                <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['hour_ss']}</td>
+                <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['hour_dz']}</td>
+                <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['hour_hide']}</td>
+            </tr>
+        </table>
+    </div>
+    """
+    return html
 
 def calculate_bazi(y, m, d, h, minute):
     try:
@@ -290,35 +367,11 @@ with col_btn_right:
 加強維度：{', '.join(advanced_params.get('focus', []))}
 學理偏好：{advanced_params.get('theory', '標準')}
 
-【輸出要求】：必須使用 HTML 表格呈現四柱排盤。表格字體加粗加大，確保清晰易讀。
-請根據每一柱「地支」的五行屬性，為該行加上背景底色。
-
-一、【命盤乾坤：四柱排盤】（HTML 彩色表格）
-<table border="2" cellpadding="8" cellspacing="2" style="border-collapse: collapse; width: 100%; font-size: 22px; font-weight: bold; text-align: center;">
-<tr style="background-color: #6C3483; color: white;">
-<th>四柱</th><th>天干</th><th>十神</th><th>地支</th><th>藏干</th>
-</tr>
-<tr style="background-color: (根據地支【{bazi['year_dz'] if bazi else ''}】的五行填入顏色);"><td>年柱</td><td>{bazi['year_tg'] if bazi else ''}</td><td>{bazi['year_ss'] if bazi else ''}</td><td>{bazi['year_dz'] if bazi else ''}</td><td>{bazi['year_hide'] if bazi else ''}</td></tr>
-<tr style="background-color: (根據地支【{bazi['month_dz'] if bazi else ''}】的五行填入顏色);"><td>月柱</td><td>{bazi['month_tg'] if bazi else ''}</td><td>{bazi['month_ss'] if bazi else ''}</td><td>{bazi['month_dz'] if bazi else ''}</td><td>{bazi['month_hide'] if bazi else ''}</td></tr>
-<tr style="background-color: (根據地支【{bazi['day_dz'] if bazi else ''}】的五行填入顏色);"><td>日柱日主</td><td>{bazi['day_tg'] if bazi else ''}【日主】</td><td>(日主)</td><td>{bazi['day_dz'] if bazi else ''}</td><td>{bazi['day_hide'] if bazi else ''}</td></tr>
-<tr style="background-color: (根據地支【{bazi['hour_dz'] if bazi else ''}】的五行填入顏色);"><td>時柱</td><td>{bazi['hour_tg'] if bazi else ''}</td><td>{bazi['hour_ss'] if bazi else ''}</td><td>{bazi['hour_dz'] if bazi else ''}</td><td>{bazi['hour_hide'] if bazi else ''}</td></tr>
-</table>
-
-【五行配色規則】：
-- 木 (甲乙寅卯)：#C8E6C9 (綠)
-- 火 (丙丁巳午)：#FFCDD2 (紅)
-- 土 (戊己辰戌丑未)：#FFF9C4 (黃)
-- 金 (庚辛申酉)：#F5F5F5 (灰)
-- 水 (壬癸亥子)：#BBDEFB (藍)
-
-二、【五行能量與喜忌】
-依據《三命通會》、《滴天髓》、《窮通寶鑑》分析五行強弱，判定本命格局、日元強弱、喜用五行、忌諱五行。
-
-三、【經典命理依據】
-嚴格依據《三命通會》、《滴天髓》、《窮通寶鑑》進行深度解析。
-
-四、【大師白話註解】
-針對客人職業狀態【{occupation}】給予專業且具同理心的建議與趨吉避凶指引。
+【輸出要求】：
+1. 輸出格式必須包含：『 【經典命理依據】 』與『 【大師白話註解】 』。
+2. 『 【經典命理依據】 』：請嚴格依據《三命通會》、《滴天髓》、《窮通寶鑑》進行深度解析。
+3. 『 【大師白話註解】 』：針對客人的職業狀態【{occupation}】提供具同理心的專屬建議與趨吉避凶指引。
+4. 禁止輸出重複的排盤表格，系統已在上方顯示表格。
 """
                     elif analysis_mode == "【紫微斗數分析】":
                         prompt = f"""請以此經由萬年曆精算出的正確八字命盤輔助參考：
@@ -329,16 +382,14 @@ with col_btn_right:
 學理偏好：{advanced_params.get('theory', '標準')}
 
 一、【紫微命盤】
-（請排出紫微斗數命盤表格）
+（請用 Markdown 表格排出紫微斗數命盤，包含命宮主星、四化飛星等）
 
-二、【格局與喜忌】
-命宮主星、四化飛星、事業/財富分析。
+二、【經典命理依據】
+依據《紫微斗數全書》進行深度解析。
 
-三、【經典命理依據】
-依據《紫微斗數全書》進行解析。
-
-四、【大師白話註解】
-針對職業狀態【{occupation}】給予建議。"""
+三、【大師白話註解】
+針對客人的職業狀態【{occupation}】提供具同理心的專屬建議。
+"""
                     else:
                         prompt = f"""請以此經由萬年曆精算出的正確八字命盤為分析依據：
 {pillar_info}
@@ -347,48 +398,31 @@ with col_btn_right:
 加強維度：{', '.join(advanced_params.get('focus', []))}
 學理偏好：{advanced_params.get('theory', '標準')}
 
-一、【八字與紫微雙盤排盤】
-（請同時顯示八字四柱與紫微命盤簡表）
+一、【八紫交叉比對結論】
+（請針對八字喜忌與紫微流年進行深度對照分析）
 
 二、【經典命理依據】
-針對八字喜忌與紫微流年進行對照分析。
+綜合《三命通會》、《滴天髓》、《窮通寶鑑》與《紫微斗數全書》進行解析。
 
 三、【大師白話註解】
-綜合《三命通會》、《滴天髓》、《窮通寶鑑》與《紫微斗數全書》進行解析，禁止廢話。"""
+針對客人的職業狀態【{occupation}】提供具同理心的現代化建議。
+"""
                 else:
                     if analysis_mode == "【八字精論】":
-                        prompt = f"""請根據以下經由萬年曆精算出的正確八字命盤進行分析，禁止自行推算：
+                        prompt = f"""請根據以下經由萬年曆精算出的正確八字命盤進行分析：
 {pillar_info}
-
 客人資料：{base_info}
-
-一、【經典命理依據】
-提供八字解析。
-
-二、【大師白話註解】
-提供溫馨建議，並結合客人的職業背景【{occupation}】。"""
+請提供『 【經典命理依據】 』與『 【大師白話註解】 』，語氣親切，結合客人職業背景【{occupation}】。"""
                     elif analysis_mode == "【紫微斗數分析】":
-                        prompt = f"""請根據以下經由萬年曆精算出的正確八字命盤輔助參考，進行紫微斗數分析：
+                        prompt = f"""請輔助參考八字命盤進行紫微斗數分析：
 {pillar_info}
-
 客人資料：{base_info}
-
-一、【經典命理依據】
-提供專業的紫微斗數解析。
-
-二、【大師白話註解】
-提供溫馨建議。"""
+請提供專業解析與溫馨建議。"""
                     else:
-                        prompt = f"""請根據以下經由萬年曆精算出的正確八字命盤進行交叉比對分析：
+                        prompt = f"""請根據八字命盤進行交叉比對分析：
 {pillar_info}
-
 客人資料：{base_info}
-
-一、【經典命理依據】
-同時提供八字與紫微的綜合解析。
-
-二、【大師白話註解】
-提供綜合建議。"""
+同時提供八字與紫微的綜合解析與建議。"""
 
                 if enable_dual:
                     bazi2 = calculate_bazi(b_year2, b_month2, b_day2, b_hour2, b_min2)
@@ -412,6 +446,13 @@ with col_btn_right:
 
                     st.markdown('<div class="result-card">', unsafe_allow_html=True)
                     st.markdown(f'<p class="result-header">{result_title}</p>', unsafe_allow_html=True)
+                    
+                    # 在八字模式下，先顯示 Python 產生的彩色表格
+                    if "八字" in analysis_mode or analysis_mode == "【八紫交叉比對】":
+                        bazi_table_html = render_bazi_table(bazi)
+                        st.markdown(bazi_table_html, unsafe_allow_html=True)
+                        st.markdown("<br>", unsafe_allow_html=True)
+                    
                     st.markdown(result_text, unsafe_allow_html=True)
                     st.markdown('</div>', unsafe_allow_html=True)
                     st.caption(f"⏱️ 分析耗時：{elapsed:.1f} 秒")
@@ -420,28 +461,28 @@ with col_btn_right:
                     if sheet is not None:
                         try:
                             # 準備要寫入的一列資料
-                            # 欄位：日期時間, 姓名, 性別, 職業, 西元生年, 月, 日, 時, 分, 模式, 正確日主, AI回覆
+                            # 欄位：日期時間, 西元生年, 月, 日, 時, 分, 性別, 職業, 模式, 正確日主, AI回覆
                             now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                             day_master = bazi['day_tg'] if bazi else "未知"
                             
                             row_data = [
                                 now_str, 
-                                name, 
-                                gender, 
-                                occupation, 
                                 str(b_year), 
                                 str(b_month), 
                                 str(b_day), 
                                 str(b_hour), 
                                 str(b_min), 
+                                gender, 
+                                occupation, 
                                 analysis_mode, 
                                 day_master, 
-                                result_text[:5000] # 限制長度以免超出儲存格上限
+                                result_text[:5000]
                             ]
                             sheet.append_row(row_data)
                         except Exception as gs_err:
-                            st.warning(f"資料寫入試算表失敗，但不影響分析結果。")
-                            print(f"GS 寫入錯誤：{gs_err}")
+                            st.error(f"❌ 試算表寫入失敗：{gs_err}。請確認試算表權限是否已開放給服務帳號。")
+                    else:
+                        st.warning("⚠️ 試算表目前未連線，資料將不會被記錄。")
 
                 except Exception as e:
                     st.error(f"發生錯誤：{e}")
