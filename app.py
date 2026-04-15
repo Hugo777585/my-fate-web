@@ -3,34 +3,54 @@ import google.generativeai as genai
 import datetime
 import time
 import os
-from lunar_python import Lunar
+from lunar_python import Lunar, Solar
 
 def calculate_bazi(birth_date, birth_time):
     try:
-        lunar = Lunar.fromDate(birth_date)
-        year_ganzhi = lunar.getYearInGanZhi()
-        year_tiangan = year_ganzhi[:1]
-        year_dizhi = year_ganzhi[1:2]
+        # 使用 Solar 類來處理國曆日期與時間，確保節氣轉換精準
+        solar = Solar.fromYmdHms(
+            birth_date.year, 
+            birth_date.month, 
+            birth_date.day, 
+            birth_time.hour, 
+            birth_time.minute, 
+            0
+        )
+        lunar = solar.getLunar()
+        eight_char = lunar.getEightChar()
+        
+        # 取得八字四柱 (年、月、日、時)
+        year_pillar = eight_char.getYear()
+        month_pillar = eight_char.getMonth()
+        day_pillar = eight_char.getDay()
+        hour_pillar = eight_char.getHour()
 
-        month_ganzhi = lunar.getMonthInGanZhi()
-        month_tiangan = month_ganzhi[:1]
-        month_dizhi = month_ganzhi[1:2]
+        # 取得藏干
+        year_hide = "".join(eight_char.getYearHideGan())
+        month_hide = "".join(eight_char.getMonthHideGan())
+        day_hide = "".join(eight_char.getDayHideGan())
+        hour_hide = "".join(eight_char.getHourHideGan())
 
-        day_ganzhi = lunar.getDayInGanZhi()
-        day_tiangan = day_ganzhi[:1]
-        day_dizhi = day_ganzhi[1:2]
-
-        hour_ganzhi = lunar.getShiInGanZhi(birth_time.hour)
-        hour_tiangan = hour_ganzhi[:1]
-        hour_dizhi = hour_ganzhi[1:2]
+        # 取得十神 (以日主為中心)
+        day_stem = eight_char.getDayGan()
+        year_shishen = eight_char.getYearShiShenGan()
+        month_shishen = eight_char.getMonthShiShenGan()
+        hour_shishen = eight_char.getHourShiShenGan()
 
         return {
-            'year_tg': year_tiangan, 'year_dz': year_dizhi,
-            'month_tg': month_tiangan, 'month_dz': month_dizhi,
-            'day_tg': day_tiangan, 'day_dz': day_dizhi,
-            'hour_tg': hour_tiangan, 'hour_dz': hour_dizhi
+            'year_tg': year_pillar[:1], 'year_dz': year_pillar[1:2], 'year_ss': year_shishen, 'year_hide': year_hide,
+            'month_tg': month_pillar[:1], 'month_dz': month_pillar[1:2], 'month_ss': month_shishen, 'month_hide': month_hide,
+            'day_tg': day_pillar[:1], 'day_dz': day_pillar[1:2], 'day_ss': '日主', 'day_hide': day_hide,
+            'hour_tg': hour_pillar[:1], 'hour_dz': hour_pillar[1:2], 'hour_ss': hour_shishen, 'hour_hide': hour_hide,
+            'full': {
+                'year': year_pillar,
+                'month': month_pillar,
+                'day': day_pillar,
+                'hour': hour_pillar
+            }
         }
-    except:
+    except Exception as e:
+        print(f"Bazi Calculation Error: {e}")
         return None
 
 st.set_page_config(page_title="雨果大師｜命理 AI", page_icon="🔮", layout="wide")
@@ -211,18 +231,26 @@ with col_btn_right:
             start_time = time.time()
             with st.spinner("大師正在排盤與分析中，請稍候..."):
                 bazi = calculate_bazi(birth_date, birth_time)
+                
+                # 準備精確的四柱數據字串，供 Prompt 使用
+                if bazi:
+                    pillar_info = f"""
+【萬年曆精算命盤】：
+年柱：{bazi['full']['year']}
+月柱：{bazi['full']['month']}
+日柱：{bazi['full']['day']} (日主：{bazi['day_tg']})
+時柱：{bazi['full']['hour']}
+"""
+                else:
+                    pillar_info = "（命盤計算失敗，請檢查輸入日期）"
+
                 base_info = f"姓名：{name}，性別：{gender}，生日：{birth_date} {birth_time}，職業：{occupation}，提問：{question}"
 
                 if is_master:
                     if analysis_mode == "【八字精論】":
-                        pillar_data = f"""
-年柱：天干【{bazi['year_tg']}】地支【{bazi['year_dz']}】
-月柱：天干【{bazi['month_tg']}】地支【{bazi['month_dz']}】
-日柱：天干【{bazi['day_tg']}】地支【{bazi['day_dz']}】→ 日主
-時柱：天干【{bazi['hour_tg']}】地支【{bazi['hour_dz']}】""" if bazi else ""
+                        prompt = f"""請以此經由萬年曆精算出的正確命盤為【絕對依據】，禁止自行推算：
+{pillar_info}
 
-                        prompt = f"""以下是經由萬年曆精算出的正確命盤，請以此為絕對依據：
-{pillar_data}
 客人資料：{base_info}
 加強維度：{', '.join(advanced_params.get('focus', []))}
 學理偏好：{advanced_params.get('theory', '標準')}
@@ -233,12 +261,12 @@ with col_btn_right:
 一、【命盤乾坤：四柱排盤】（HTML 彩色表格）
 <table border="2" cellpadding="8" cellspacing="2" style="border-collapse: collapse; width: 100%; font-size: 20px; font-weight: bold; text-align: center;">
 <tr style="background-color: #6C3483; color: white;">
-<th>四柱</th><th>天干</th><th>十神</th><th>地支</th><th>藏干</th><th>藏干十神</th>
+<th>四柱</th><th>天干</th><th>十神</th><th>地支</th><th>藏干</th>
 </tr>
-<tr style="background-color: (請根據【{bazi['year_dz'] if bazi else '年'}】的五行填入顏色);"><td>年柱</td><td>{bazi['year_tg'] if bazi else '(年干)'}</td><td>(十神)</td><td>{bazi['year_dz'] if bazi else '(年支)'}</td><td>(藏干)</td><td>(十神)</td></tr>
-<tr style="background-color: (請根據【{bazi['month_dz'] if bazi else '月'}】的五行填入顏色);"><td>月柱</td><td>{bazi['month_tg'] if bazi else '(月干)'}</td><td>(十神)</td><td>{bazi['month_dz'] if bazi else '(月支)'}</td><td>(藏干)</td><td>(十神)</td></tr>
-<tr style="background-color: (請根據【{bazi['day_dz'] if bazi else '日'}】的五行填入顏色);"><td>日柱日主</td><td>{bazi['day_tg'] if bazi else '(日干)'}【日主】</td><td>(日主)</td><td>{bazi['day_dz'] if bazi else '(日支)'}</td><td>(藏干)</td><td>(十神)</td></tr>
-<tr style="background-color: (請根據【{bazi['hour_dz'] if bazi else '時'}】的五行填入顏色);"><td>時柱</td><td>{bazi['hour_tg'] if bazi else '(時干)'}</td><td>(十神)</td><td>{bazi['hour_dz'] if bazi else '(時支)'}</td><td>(藏干)</td><td>(十神)</td></tr>
+<tr style="background-color: (根據地支【{bazi['year_dz'] if bazi else ''}】的五行填入顏色);"><td>年柱</td><td>{bazi['year_tg'] if bazi else ''}</td><td>{bazi['year_ss'] if bazi else ''}</td><td>{bazi['year_dz'] if bazi else ''}</td><td>{bazi['year_hide'] if bazi else ''}</td></tr>
+<tr style="background-color: (根據地支【{bazi['month_dz'] if bazi else ''}】的五行填入顏色);"><td>月柱</td><td>{bazi['month_tg'] if bazi else ''}</td><td>{bazi['month_ss'] if bazi else ''}</td><td>{bazi['month_dz'] if bazi else ''}</td><td>{bazi['month_hide'] if bazi else ''}</td></tr>
+<tr style="background-color: (根據地支【{bazi['day_dz'] if bazi else ''}】的五行填入顏色);"><td>日柱日主</td><td>{bazi['day_tg'] if bazi else ''}【日主】</td><td>(日主)</td><td>{bazi['day_dz'] if bazi else ''}</td><td>{bazi['day_hide'] if bazi else ''}</td></tr>
+<tr style="background-color: (根據地支【{bazi['hour_dz'] if bazi else ''}】的五行填入顏色);"><td>時柱</td><td>{bazi['hour_tg'] if bazi else ''}</td><td>{bazi['hour_ss'] if bazi else ''}</td><td>{bazi['hour_dz'] if bazi else ''}</td><td>{bazi['hour_hide'] if bazi else ''}</td></tr>
 </table>
 
 【五行配色規則】：
@@ -258,73 +286,56 @@ with col_btn_right:
 針對客人職業狀態【{occupation}】給予專業且具同理心的建議與趨吉避凶指引。
 """
                     elif analysis_mode == "【紫微斗數分析】":
-                        prompt = f"""客人資料：{base_info}
+                        prompt = f"""請以此經由萬年曆精算出的正確八字命盤輔助參考：
+{pillar_info}
+
+客人資料：{base_info}
 加強維度：{', '.join(advanced_params.get('focus', []))}
 學理偏好：{advanced_params.get('theory', '標準')}
 
 一、【紫微命盤】
-| 宮位 | 主星 | 輔星 | 四化 |
-|------|------|------|------|
-| 命宮 | | | |
-| 兄弟宮 | | | |
-| 夫妻宮 | | | |
-| 子女宮 | | | |
-| 財帛宮 | | | |
-| 疾厄宮 | | | |
-| 遷移宮 | | | |
-| 奴僕宮 | | | |
-| 事業宮 | | | |
-| 田宅宮 | | | |
-| 福德宮 | | | |
-| 父母宮 | | | |
+（請排出紫微斗數命盤表格）
 
 二、【格局與喜忌】
-命宮主星：(填入)
-四化飛星：(填入)
-事業/財富分析：(填入)
+命宮主星、四化飛星、事業/財富分析。
 
 三、【古籍學理與大師白話指引】
-依據《紫微斗數全書》進行解析，禁止任何問候語與廢話。"""
+依據《紫微斗數全書》進行解析，針對職業狀態【{occupation}】給予建議。"""
                     else:
-                        prompt = f"""客人資料：{base_info}
+                        prompt = f"""請以此經由萬年曆精算出的正確八字命盤為分析依據：
+{pillar_info}
+
+客人資料：{base_info}
 加強維度：{', '.join(advanced_params.get('focus', []))}
 學理偏好：{advanced_params.get('theory', '標準')}
 
-一、【八字四柱】
-| 四柱 | 天干 | 十神 | 地支 | 藏干 |
-|------|------|------|------|------|
-| 年柱 | | | | |
-| 月柱 | | | | |
-| 日柱日主 | | | | |
-| 時柱 | | | | |
+一、【八字與紫微雙盤排盤】
+（請同時顯示八字四柱與紫微命盤簡表）
 
-二、【紫微命盤】
-| 宮位 | 主星 | 四化 |
-|------|------|------|
-| 命宮 | | |
-| 財帛宮 | | |
-| 事業宮 | | |
+二、【交叉比對結論】
+針對八字喜忌與紫微流年進行對照分析。
 
-三、【交叉比對結論】
-八字喜忌：(填入)
-紫微流年：(填入)
-對照結論：(填入)
-
-四、【古籍學理與大師白話指引】
-依據《三命通會》、《滴天髓》、《窮通寶鑑》與《紫微斗數全書》進行解析，禁止任何問候語與廢話。"""
+三、【古籍學理與大師白話指引】
+綜合《三命通會》、《滴天髓》、《窮通寶鑑》與《紫微斗數全書》進行解析，禁止廢話。"""
                 else:
                     if analysis_mode == "【八字精論】":
-                        prompt = f"""請用簡潔的 Markdown 格式分析以下八字命盤：
-{base_info}
-必须输出 Markdown 表格，禁止聊天式开场白。"""
+                        prompt = f"""請根據以下經由萬年曆精算出的正確八字命盤進行分析，禁止自行推算：
+{pillar_info}
+
+客人資料：{base_info}
+請用簡潔的 Markdown 格式（含表格）提供溫馨建議，並結合客人的職業背景【{occupation}】。"""
                     elif analysis_mode == "【紫微斗數分析】":
-                        prompt = f"""請用簡潔的 Markdown 格式分析以下紫微命盤：
-{base_info}
-必须输出 Markdown 表格，禁止聊天式开场白。"""
+                        prompt = f"""請根據以下經由萬年曆精算出的正確八字命盤輔助參考，進行紫微斗數分析：
+{pillar_info}
+
+客人資料：{base_info}
+請提供專業的紫微斗數解析與溫馨建議。"""
                     else:
-                        prompt = f"""請用簡潔的 Markdown 格式分析以下命盤：
-{base_info}
-必须输出 Markdown 表格，禁止聊天式开场白。"""
+                        prompt = f"""請根據以下經由萬年曆精算出的正確八字命盤進行交叉比對分析：
+{pillar_info}
+
+客人資料：{base_info}
+同時提供八字與紫微的綜合解析。"""
 
                 if enable_dual:
                     prompt += f"\n\n雙人合盤：對象性別：{gender2}，生日：{birth_date2} {birth_time2}，關係：{relation_type}"
