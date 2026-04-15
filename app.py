@@ -14,7 +14,11 @@ def init_gsheets():
         scopes = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
         
         # 從 st.secrets 讀取服務帳號資訊
-        # 注意：在 Streamlit Cloud 中，這應該是一個字典格式
+        # 在 Streamlit Cloud 中，這是一個字典格式
+        if "gcp_service_account" not in st.secrets:
+            print("錯誤：Secrets 中找不到 gcp_service_account 設定")
+            return None
+            
         service_account_info = st.secrets["gcp_service_account"]
         
         # 建立憑證
@@ -23,13 +27,18 @@ def init_gsheets():
         # 授權並開啟試算表
         client = gspread.authorize(creds)
         
-        # 開啟指定的試算表（請確保已將服務帳號 Email 加入該試算表的共用清單，並給予編輯權限）
-        # 如果試算表不存在，這會報錯
-        sheet = client.open("雨果天命智庫客戶紀錄").sheet1
-        return sheet
+        # 開啟指定的試算表
+        # 請確保已將服務帳號 Email 加入該試算表的共用清單，並給予編輯權限
+        sheet_name = "雨果天命智庫客戶紀錄"
+        try:
+            spreadsheet = client.open(sheet_name)
+            sheet = spreadsheet.sheet1
+            return sheet
+        except gspread.exceptions.SpreadsheetNotFound:
+            print(f"錯誤：找不到名稱為 '{sheet_name}' 的試算表")
+            return None
     except Exception as e:
-        # 不強制停止，以免影響 App 運行，但會記錄錯誤
-        print(f"Google Sheets 連線失敗：{e}")
+        print(f"Google Sheets 初始化失敗：{e}")
         return None
 
 # 初始化試算表物件
@@ -233,24 +242,35 @@ is_master = False
 
 with st.sidebar:
     st.header("🔐 系統授權")
-    auth_code = st.text_input("大師專用授權碼", type="password")
-    if auth_code.strip().upper() == MASTER_CODE:
+    auth_code_input = st.text_input("大師專用授權碼", type="password", key="auth_code_input")
+    
+    # 強制比對邏輯：去空格、轉大寫
+    if auth_code_input.strip().upper() == MASTER_CODE:
         is_master = True
         st.success("✅ 大師模式已開啟")
         
-        # 連線測試按鈕
-        if st.button("📊 Google Sheets 連線測試"):
-            if sheet:
+        st.markdown("---")
+        st.subheader("📊 資料庫連線狀態")
+        
+        if sheet:
+            st.info(f"� 已連線至：{sheet.spreadsheet.title}")
+            if st.button("🔍 執行連線測試"):
                 try:
-                    # 嘗試抓取第一列標題
+                    # 測試讀取標題
                     headers = sheet.row_values(1)
-                    st.write(f"✅ 連線成功！試算表標題：{sheet.title}")
-                    st.write(f"📋 目前欄位：{', '.join(headers)}")
+                    st.write("✅ 讀取測試成功！")
+                    st.write(f"📋 標題列：{', '.join(headers[:5])}...")
                 except Exception as e:
-                    st.error(f"❌ 連線測試失敗：{e}")
-            else:
-                st.error("❌ 試算表尚未連線，請檢查後台設定。")
-    elif auth_code != "":
+                    st.error(f"❌ 讀取失敗：{e}")
+        else:
+            st.error("❌ 試算表連線失敗")
+            st.markdown("""
+            **檢查清單：**
+            1. Secrets 是否已正確設定 `gcp_service_account`？
+            2. 試算表名稱是否為 `雨果天命智庫客戶紀錄`？
+            3. 是否已分享權限給服務帳號 Email？
+            """)
+    elif auth_code_input != "":
         st.error("❌ 授權碼錯誤")
 
 # 3. API 設定
