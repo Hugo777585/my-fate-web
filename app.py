@@ -108,7 +108,7 @@ def render_bazi_table(bazi):
     # 取得各柱顏色
     y_color = get_wuxing_color(bazi['year_dz'])
     m_color = get_wuxing_color(bazi['month_dz'])
-    d_color = get_wuxing_color(bazi['day_dz'])
+     d_color = get_wuxing_color(bazi['day_dz'])
     h_color = get_wuxing_color(bazi['hour_dz'])
     
     html = f"""
@@ -363,7 +363,7 @@ try:
         
     genai.configure(api_key=gemini_key)
     model = genai.GenerativeModel(
-        "gemini-1.5-flash", # 更新為穩定的 1.5-flash 模型
+        "gemini-1.5-flash-latest", # 使用相容性最高的最新穩定版模型
         system_instruction=SYSTEM_INSTRUCTION
     )
 except Exception as e:
