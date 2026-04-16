@@ -4,8 +4,10 @@ import datetime
 import time
 import os
 import gspread
+import re
 from google.oauth2.service_account import Credentials
 from lunar_python import Lunar, Solar
+from tone_engine import analyze_tone_strategy
 
 # --- Google Sheets 連線設定 ---
 def init_gsheets():
@@ -229,6 +231,18 @@ st.markdown("""
         border-radius: 10px;
         margin: 10px 0;
     }
+    /* 多步驟表單過場動畫 */
+    .st-step-container {
+        animation: fadeIn 0.5s ease-in-out;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .step-btn-active {
+        background-color: #6C3483 !important;
+        color: white !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -279,7 +293,16 @@ with st.sidebar:
         st.error("❌ 授權碼錯誤")
 
 # 3. API 設定
-SYSTEM_INSTRUCTION = "你是一個沒有感情的命理排盤伺服器。絕對禁止使用任何問候語（如：恩、你好、哈囉）。你只能輸出 Markdown 表格（使用 |---| 語法）與專業的古籍解析，禁止任何開場白。"
+SYSTEM_INSTRUCTION = """你是一個專業且具備心理學同理心的命理分析大師。
+請嚴格遵守以下『70/30 命運法則』進行所有分析：
+
+1. 禁止鐵口直斷：絕對禁止使用『絕對』、『一定會』、『命中註定逃不掉』等極端字眼。所有分析應視為『機率』與『趨勢』。
+2. 70/30 結構化分析：
+   - 70% 命理趨勢：分析先天命盤特質、五行喜忌與當前流年環境的客觀引導。
+   - 30% 自由意志：提出後天可以採取的具體行動、心態轉變或應對策略。
+3. 賦權用戶：結論必須強調八字只是人生的天氣預報，那 30% 的選擇權才是決定最終結局的關鍵。語氣應讓人感到『充滿力量』與『希望』，而非恐懼。
+4. 輸出格式：只能輸出 Markdown 格式，禁止任何無意義的開場白（如：你好、恩等）。
+"""
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
     model = genai.GenerativeModel(
@@ -327,7 +350,91 @@ with st.container():
     with col8:
         b_min = st.number_input("分", min_value=0, max_value=59, value=0)
 
-    question = st.text_area("有什麼特別想問的問題嗎？", placeholder="請簡述您的問題...", height=100)
+    # --- 引導式多步驟表單 (Multi-step Form) ---
+    st.markdown("#### 💬 告訴大師您的困惑")
+    
+    if 'form_step' not in st.session_state:
+        st.session_state.form_step = 1
+    if 'main_cat' not in st.session_state:
+        st.session_state.main_cat = None
+    if 'sub_cat' not in st.session_state:
+        st.session_state.sub_cat = None
+    if 'detail_text' not in st.session_state:
+        st.session_state.detail_text = ""
+
+    form_container = st.container()
+    
+    with form_container:
+        st.markdown('<div class="st-step-container">', unsafe_allow_html=True)
+        
+        # 步驟一：大分類選擇
+        if st.session_state.form_step == 1:
+            st.write("✨ **第一步：您想諮詢哪方面的問題？**")
+            col_cat1, col_cat2 = st.columns(2)
+            with col_cat1:
+                if st.button("💘 感情婚姻", use_container_width=True):
+                    st.session_state.main_cat = "感情"
+                    st.session_state.form_step = 2
+                    st.rerun()
+            with col_cat2:
+                if st.button("💼 事業財運", use_container_width=True):
+                    st.session_state.main_cat = "事業"
+                    st.session_state.form_step = 2
+                    st.rerun()
+        
+        # 步驟二：次級狀態選擇
+        elif st.session_state.form_step == 2:
+            st.write(f"✨ **第二步：關於「{st.session_state.main_cat}」，目前的具體狀態是？**")
+            
+            if st.session_state.main_cat == "感情":
+                options = ["曖昧中", "面臨分手", "懷疑欺瞞", "單身求緣", "婚姻危機", "其他"]
+            else:
+                options = ["想換工作", "創業諮詢", "財運不佳", "職場人際", "升遷機會", "其他"]
+            
+            # 使用按鈕矩陣呈現
+            cols = st.columns(3)
+            for i, opt in enumerate(options):
+                with cols[i % 3]:
+                    if st.button(opt, use_container_width=True):
+                        st.session_state.sub_cat = opt
+                        st.session_state.form_step = 3
+                        st.rerun()
+            
+            if st.button("⬅️ 返回上一步"):
+                st.session_state.form_step = 1
+                st.rerun()
+
+        # 步驟三：細節描述
+        elif st.session_state.form_step == 3:
+            st.write(f"✨ **第三步：描述一下「{st.session_state.sub_cat}」具體發生了什麼事？**")
+            
+            placeholder_text = "描述對方具體做了什麼讓你最在意的事？" if st.session_state.main_cat == "感情" else "請描述目前事業或財運上遇到的具體困難..."
+            
+            st.session_state.detail_text = st.text_area(
+                "詳細描述", 
+                value=st.session_state.detail_text,
+                placeholder=placeholder_text,
+                height=150,
+                label_visibility="collapsed"
+            )
+            
+            col_f1, col_f2 = st.columns([1, 1])
+            with col_f1:
+                if st.button("⬅️ 返回上一步", use_container_width=True):
+                    st.session_state.form_step = 2
+                    st.rerun()
+            with col_f2:
+                if st.button("✅ 確認輸入", use_container_width=True):
+                    # 確認後留在這一步，但顯示已確認
+                    st.success("資料已暫存，請點擊下方「大師發功」按鈕開始分析。")
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    # 整合最終提問字串
+    if st.session_state.main_cat and st.session_state.sub_cat:
+        question = f"【諮詢類別：{st.session_state.main_cat} - {st.session_state.sub_cat}】\n{st.session_state.detail_text}"
+    else:
+        question = ""
 
 # 5. 大師進階分析區 (僅在密碼正確時顯示)
 advanced_params = {}
@@ -382,6 +489,15 @@ with col_btn_right:
             with st.spinner("大師正在排盤與分析中，請稍候..."):
                 bazi = calculate_bazi(b_year, b_month, b_day, b_hour, b_min)
                 
+                # --- 動態語氣分析 ---
+                bazi_shishen = []
+                if bazi:
+                    # 收集八字中的十神，用於語氣引擎判斷
+                    bazi_shishen = [bazi['year_ss'], bazi['month_ss'], bazi['hour_ss']]
+                
+                tone_strategy = analyze_tone_strategy(question, bazi_shishen)
+                tone_instruction = f"\n\n【當前對話語氣指引】：\n{tone_strategy['system_prompt']}\n請確保在回覆中完美融入此語氣。"
+
                 # 準備精確的四柱數據字串，供 Prompt 使用
                 if bazi:
                     pillar_info = f"""
@@ -398,69 +514,67 @@ with col_btn_right:
 
                 if is_master:
                     if analysis_mode == "【八字精論】":
-                        prompt = f"""請以此經由萬年曆精算出的正確命盤為【絕對依據】，禁止自行推算：
+                        prompt = f"""請以此經由萬年曆精算出的正確命盤為【絕對依據】，進行『70/30 命運法則』深度分析：
 {pillar_info}
 
 客人資料：{base_info}
 加強維度：{', '.join(advanced_params.get('focus', []))}
 學理偏好：{advanced_params.get('theory', '標準')}
 
-【輸出要求】：
-1. 輸出格式必須包含：『 【經典命理依據】 』與『 【大師白話註解】 』。
-2. 『 【經典命理依據】 』：請嚴格依據《三命通會》、《滴天髓》、《窮通寶鑑》進行深度解析。
-3. 『 【大師白話註解】 』：針對客人的職業狀態【{occupation}】提供具同理心的專屬建議與趨吉避凶指引。
-4. 禁止輸出重複的排盤表格，系統已在上方顯示表格。
+【輸出架構要求】：
+1. 『 【70% 命運趨勢】 』：嚴格依據《三命通會》、《滴天髓》等古籍，分析先天格局、五行喜忌與當前流年走勢。
+2. 『 【30% 自由意志】 』：針對客人的職業【{occupation}】與提問，提供後天可優化的具體建議與行動。
+3. 『 【大師賦權結語】 』：強調 30% 的主動權，給予溫暖且有力量的總結。
+4. 禁止輸出重複的排盤表格。
+{tone_instruction}
 """
                     elif analysis_mode == "【紫微斗數分析】":
-                        prompt = f"""請以此經由萬年曆精算出的正確八字命盤輔助參考：
+                        prompt = f"""請輔助參考八字命盤進行『70/30 命運法則』之紫微斗數分析：
 {pillar_info}
 
 客人資料：{base_info}
 加強維度：{', '.join(advanced_params.get('focus', []))}
 學理偏好：{advanced_params.get('theory', '標準')}
 
-一、【紫微命盤】
-（請用 Markdown 表格排出紫微斗數命盤，包含命宮主星、四化飛星等）
-
-二、【經典命理依據】
-依據《紫微斗數全書》進行深度解析。
-
-三、【大師白話註解】
-針對客人的職業狀態【{occupation}】提供具同理心的專屬建議。
+【輸出架構要求】：
+1. 『 【70% 紫微趨勢】 』：分析命宮主星、四化飛星等先天配置。
+2. 『 【30% 自由意志】 』：後天心態調整與行動指引。
+3. 『 【大師賦權結語】 』：賦予希望與行動力的總結。
+{tone_instruction}
 """
                     else:
-                        prompt = f"""請以此經由萬年曆精算出的正確八字命盤為分析依據：
+                        prompt = f"""請進行『70/30 命運法則』之八紫交叉比對分析：
 {pillar_info}
 
 客人資料：{base_info}
 加強維度：{', '.join(advanced_params.get('focus', []))}
 學理偏好：{advanced_params.get('theory', '標準')}
 
-一、【八紫交叉比對結論】
-（請針對八字喜忌與紫微流年進行深度對照分析）
-
-二、【經典命理依據】
-綜合《三命通會》、《滴天髓》、《窮通寶鑑》與《紫微斗數全書》進行解析。
-
-三、【大師白話註解】
-針對客人的職業狀態【{occupation}】提供具同理心的現代化建議。
+【輸出架構要求】：
+1. 『 【70% 交叉趨勢結論】 』：綜合分析八字喜忌與紫微流年。
+2. 『 【30% 自由意志】 』：跨學理的具體改善方案。
+3. 『 【大師賦權結語】 』：充滿力量的人生指引。
+{tone_instruction}
 """
                 else:
                     if analysis_mode == "【八字精論】":
-                        prompt = f"""請根據以下經由萬年曆精算出的正確八字命盤進行分析：
+                        prompt = f"""請根據『70/30 命運法則』對以下命盤進行親切解析：
 {pillar_info}
 客人資料：{base_info}
-請提供『 【經典命理依據】 』與『 【大師白話註解】 』，語氣親切，結合客人職業背景【{occupation}】。"""
+請劃分『 【70% 命運趨勢】 』、『 【30% 自由意志】 』與『 【溫馨賦權結語】 』。
+{tone_instruction}"""
                     elif analysis_mode == "【紫微斗數分析】":
-                        prompt = f"""請輔助參考八字命盤進行紫微斗數分析：
+                        prompt = f"""請根據『70/30 命運法則』進行紫微斗數分析：
 {pillar_info}
 客人資料：{base_info}
-請提供專業解析與溫馨建議。"""
+請劃分『 【70% 紫微趨勢】 』、『 【30% 自由意志】 』與『 【溫馨賦權結語】 』。
+{tone_instruction}"""
                     else:
-                        prompt = f"""請根據八字命盤進行交叉比對分析：
+                        prompt = f"""請根據『70/30 命運法則』進行八紫交叉比對分析：
 {pillar_info}
 客人資料：{base_info}
-同時提供八字與紫微的綜合解析與建議。"""
+請劃分『 【70% 綜合趨勢】 』、『 【30% 自由意志】 』與『 【溫馨賦權結語】 』。
+{tone_instruction}"""
 
                 if enable_dual:
                     bazi2 = calculate_bazi(b_year2, b_month2, b_day2, b_hour2, b_min2)
@@ -485,6 +599,10 @@ with col_btn_right:
                     st.markdown('<div class="result-card">', unsafe_allow_html=True)
                     st.markdown(f'<p class="result-header">{result_title}</p>', unsafe_allow_html=True)
                     
+                    # --- 顯示大師私房建議 (僅在觸發特定語氣模式時) ---
+                    if tone_strategy['mode'] != "Neutral":
+                        st.info(f"🔮 **大師私房建議 ({tone_strategy['mode']})**：\n\n{tone_strategy['action_advice']}")
+
                     # 在八字模式下，先顯示 Python 產生的彩色表格
                     if "八字" in analysis_mode or analysis_mode == "【八紫交叉比對】":
                         bazi_table_html = render_bazi_table(bazi)
