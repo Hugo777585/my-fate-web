@@ -108,7 +108,7 @@ def render_bazi_table(bazi):
     # 取得各柱顏色
     y_color = get_wuxing_color(bazi['year_dz'])
     m_color = get_wuxing_color(bazi['month_dz'])
-     d_color = get_wuxing_color(bazi['day_dz'])
+    d_color = get_wuxing_color(bazi['day_dz'])
     h_color = get_wuxing_color(bazi['hour_dz'])
     
     html = f"""
