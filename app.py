@@ -95,28 +95,28 @@ def render_bazi_table(bazi):
                 <th style="padding: 10px;">地支</th>
                 <th style="padding: 10px;">藏干</th>
             </tr>
-            <tr style="background-color: {y_color};">
+            <tr style="background-color: {y_color}; color: #1A1A1A; font-weight: 600;">
                 <td style="padding: 10px; border: 1px solid #6C3483;">年柱</td>
                 <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['year_tg']}</td>
                 <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['year_ss']}</td>
                 <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['year_dz']}</td>
                 <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['year_hide']}</td>
             </tr>
-            <tr style="background-color: {m_color};">
+            <tr style="background-color: {m_color}; color: #1A1A1A; font-weight: 600;">
                 <td style="padding: 10px; border: 1px solid #6C3483;">月柱</td>
                 <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['month_tg']}</td>
                 <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['month_ss']}</td>
                 <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['month_dz']}</td>
                 <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['month_hide']}</td>
             </tr>
-            <tr style="background-color: {d_color};">
+            <tr style="background-color: {d_color}; color: #1A1A1A; font-weight: 600;">
                 <td style="padding: 10px; border: 1px solid #6C3483;">日柱 (日主)</td>
                 <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['day_tg']}【日主】</td>
                 <td style="padding: 10px; border: 1px solid #6C3483;">日主</td>
                 <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['day_dz']}</td>
                 <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['day_hide']}</td>
             </tr>
-            <tr style="background-color: {h_color};">
+            <tr style="background-color: {h_color}; color: #1A1A1A; font-weight: 600;">
                 <td style="padding: 10px; border: 1px solid #6C3483;">時柱</td>
                 <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['hour_tg']}</td>
                 <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['hour_ss']}</td>
@@ -242,6 +242,27 @@ st.markdown("""
     .step-btn-active {
         background-color: #6C3483 !important;
         color: white !important;
+    }
+    /* 進階服務區塊 CTA 樣式 */
+    .cta-container {
+        background: linear-gradient(135deg, #FFF4E6 0%, #FFF9F0 100%);
+        border: 2px dashed #E67E22;
+        border-radius: 16px;
+        padding: 25px;
+        margin-top: 30px;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(230, 126, 34, 0.15);
+    }
+    .cta-title {
+        font-size: 1.3em;
+        font-weight: 700;
+        color: #D35400;
+        margin-bottom: 10px;
+    }
+    .cta-text {
+        font-size: 0.95em;
+        color: #A04000;
+        margin-bottom: 20px;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -612,6 +633,23 @@ with col_btn_right:
                     st.markdown(result_text, unsafe_allow_html=True)
                     st.markdown('</div>', unsafe_allow_html=True)
                     st.caption(f"⏱️ 分析耗時：{elapsed:.1f} 秒")
+
+                    # --- 8. 進階服務區塊 (Call to Action) ---
+                    st.markdown("""
+                    <div class="cta-container">
+                        <p class="cta-title">🚀 想要更深層的改運指引嗎？</p>
+                        <p class="cta-text">免費建議只是開始，精準的行動指南能幫助您避開流月波折，或由大師親自為您撥雲見日。</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    col_cta1, col_cta2 = st.columns(2)
+                    with col_cta1:
+                        if st.button("🔓 解鎖進階流月行動指南 (付費)", use_container_width=True):
+                            st.toast("🔮 正在串接金流系統，即將開放...")
+                    with col_cta2:
+                        if st.button("💬 預約真人深度諮詢", use_container_width=True):
+                            st.toast("📅 正在跳轉預約系統...")
+                            st.info("💡 提示：真人諮詢目前採預約制，請洽客服人員。")
 
                     # --- 寫入 Google Sheets 邏輯 ---
                     if sheet is not None:
