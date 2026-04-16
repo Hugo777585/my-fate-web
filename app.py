@@ -363,7 +363,7 @@ try:
         
     genai.configure(api_key=gemini_key)
     model = genai.GenerativeModel(
-        "gemini-1.5-flash-latest", # 使用相容性最高的最新穩定版模型
+        "gemini-pro", # 強制改回最老牌穩定的模型
         system_instruction=SYSTEM_INSTRUCTION
     )
 except Exception as e:
