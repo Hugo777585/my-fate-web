@@ -4,8 +4,8 @@ gspread
 google-auth
 oauth2client
 fpdf
-borax
+pandas
 iztro-py
 streamlit-extras
-lunar-python
+lxml
 google-api-python-client
