@@ -1,5 +1,5 @@
 streamlit
-google-generativeai>=0.8.1
+google-generativeai>=0.ㄓ
 gspread
 google-auth
 oauth2client
