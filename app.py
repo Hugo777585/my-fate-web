@@ -14,46 +14,40 @@ from tone_engine import analyze_tone_strategy
 def init_gsheets():
     client_email = "未知"
     service_account_info = None
+    max_retries = 3
+    retry_delay = 2 # 秒
     
-    try:
-        # 定義存取範圍
-        scopes = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
-        
-        # 1. 優先嘗試讀取本地 hugo-key.json
-        key_file_path = "hugo-key.json"
-        if os.path.exists(key_file_path):
-            try:
-                with open(key_file_path, "r", encoding="utf-8") as f:
-                    service_account_info = json.load(f)
-            except Exception as e:
-                return None, client_email, f"🔑 鑰匙格式錯誤 (JSON 毀損)：{str(e)}"
-        
-        # 2. 如果本地檔案不存在，則嘗試讀取 Streamlit Secrets (雲端環境)
-        if not service_account_info:
-            if "gcp_service_account" in st.secrets:
-                # 注意：Streamlit Secrets 本身就是 Dict，不需 json.load
-                service_account_info = st.secrets["gcp_service_account"]
-            else:
-                return None, client_email, "🚫 找不到連線憑證：本地無 hugo-key.json，且雲端 Secrets 未設定 [gcp_service_account]。"
-            
-        client_email = service_account_info.get("client_email", "未知")
-        
-        # 3. 驗證金鑰內容是否完整
-        required_fields = ["project_id", "private_key", "client_email"]
-        if not all(field in service_account_info for field in required_fields):
-            return None, client_email, "🔑 鑰匙格式錯誤：JSON 內容遺漏必要欄位 (project_id, private_key 或 client_email)。"
-
-        # 建立憑證
-        creds = Credentials.from_service_account_info(service_account_info, scopes=scopes)
-        
-        # 授權並開啟試算表
-        client = gspread.authorize(creds)
-        
-        # 4. 開啟試算表
-        sheet_url = st.secrets.get("gsheets_url")
-        sheet_name = "雨果天命智庫客戶紀錄"
-        
+    for attempt in range(max_retries):
         try:
+            # 定義存取範圍
+            scopes = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
+            
+            # 1. 優先嘗試讀取本地 hugo-key.json
+            key_file_path = "hugo-key.json"
+            if os.path.exists(key_file_path):
+                try:
+                    with open(key_file_path, "r", encoding="utf-8") as f:
+                        service_account_info = json.load(f)
+                except Exception as e:
+                    return None, client_email, f"🔑 鑰匙格式錯誤 (JSON 毀損)：{str(e)}"
+            
+            # 2. 如果本地檔案不存在，則嘗試讀取 Streamlit Secrets (雲端環境)
+            if not service_account_info:
+                if "gcp_service_account" in st.secrets:
+                    service_account_info = st.secrets["gcp_service_account"]
+                else:
+                    return None, client_email, "🚫 找不到連線憑證：本地無 hugo-key.json，且雲端 Secrets 未設定 [gcp_service_account]。"
+                
+            client_email = service_account_info.get("client_email", "未知")
+            
+            # 3. 建立憑證與授權
+            creds = Credentials.from_service_account_info(service_account_info, scopes=scopes)
+            client = gspread.authorize(creds)
+            
+            # 4. 開啟試算表
+            sheet_url = st.secrets.get("gsheets_url")
+            sheet_name = "雨果天命智庫客戶紀錄"
+            
             if sheet_url:
                 spreadsheet = client.open_by_url(sheet_url)
             else:
@@ -61,15 +55,24 @@ def init_gsheets():
             
             sheet = spreadsheet.sheet1
             return sheet, client_email, None
-        except gspread.exceptions.SpreadsheetNotFound:
-            return None, client_email, f"📂 試算表權限沒開：找不到名為 '{sheet_name}' 的檔案，請確認名稱正確。"
+
+        except (gspread.exceptions.SpreadsheetNotFound, gspread.exceptions.NoValidUrlKeyFound):
+            return None, client_email, f"📂 試算表找不到：請確認名稱為 '{sheet_name}' 或 URL 正確。"
         except gspread.exceptions.APIError as e:
             if "Permission denied" in str(e):
-                return None, client_email, "📂 試算表權限沒開：請確保已將試算表「共用」給下方的服務帳號 Email。"
+                return None, client_email, "📂 權限不足：請確保已將試算表「共用」給服務帳號 Email。"
             return None, client_email, f"⚠️ Google API 錯誤：{str(e)}"
+        except Exception as e:
+            # 針對網路或 DNS 錯誤進行重試
+            err_str = str(e)
+            if "NameResolutionError" in err_str or "connection" in err_str.lower() or "timeout" in err_str.lower():
+                if attempt < max_retries - 1:
+                    time.sleep(retry_delay)
+                    continue
+                return None, client_email, f"🌐 網路連線或 DNS 解析失敗：{err_str}。請檢查雲端環境網路狀態。"
+            return None, client_email, f"🚨 連線系統錯誤：{err_str}"
             
-    except Exception as e:
-        return None, client_email, f"🚨 連線系統錯誤：{str(e)}"
+    return None, client_email, "🚨 連線失敗：已達最大重試次數。"
 
 # 初始化試算表物件
 sheet, current_client_email, gs_error = init_gsheets()
