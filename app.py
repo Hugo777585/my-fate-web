@@ -60,7 +60,7 @@ def create_pdf(user_name, body):
     clean_body = body.replace("**", "").replace("### ", "").replace("## ", "").replace("# ", "")
     pdf.multi_cell(0, 8, clean_body)
     
-    return pdf.output(dest='S').encode('latin-1')
+    return bytes(pdf.output())
 
 # 載入環境變數 (Local 開發用)
 load_dotenv()
