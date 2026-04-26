@@ -693,9 +693,14 @@ with col_btn_right:
 
                 base_info = f"姓名：{name}，性別：{gender}，生日：{b_year}/{b_month}/{b_day} {b_hour}:{b_min}，職業：{occupation}，提問：{question}"
 
+                # 動態抓取當前年份
+                current_year = datetime.datetime.now().year
+                next_year = current_year + 1
+                time_setting = f"【系統時間強制設定】：現在是 {current_year} 年。請務必以 {current_year} 年與 {next_year} 年的流年環境為基準，進行接下來的命理分析與建議。\n\n"
+
                 if is_master:
                     if analysis_mode == "【八字精論】":
-                        prompt = f"""請以此經由萬年曆精算出的正確命盤為【絕對依據】，進行『70/30 命運法則』深度分析，並同步偵測『紅色警戒模式』：
+                        prompt = f"""{time_setting}請以此經由萬年曆精算出的正確命盤為【絕對依據】，進行『70/30 命運法則』深度分析，並同步偵測『紅色警戒模式』：
 {pillar_info}
 
 客人資料：{base_info}
@@ -710,7 +715,7 @@ with col_btn_right:
 {tone_instruction}
 """
                     elif analysis_mode == "【紫微斗數分析】":
-                        prompt = f"""請輔助參考八字命盤進行『70/30 命運法則』之紫微斗數分析，並同步偵測『紅色警戒模式』：
+                        prompt = f"""{time_setting}請輔助參考八字命盤進行『70/30 命運法則』之紫微斗數分析，並同步偵測『紅色警戒模式』：
 {pillar_info}
 
 客人資料：{base_info}
@@ -724,7 +729,7 @@ with col_btn_right:
 {tone_instruction}
 """
                     else:
-                        prompt = f"""請進行『70/30 命運法則』之八紫交叉比對分析，並同步偵測『紅色警戒模式』：
+                        prompt = f"""{time_setting}請進行『70/30 命運法則』之八紫交叉比對分析，並同步偵測『紅色警戒模式』：
 {pillar_info}
 
 客人資料：{base_info}
@@ -739,19 +744,19 @@ with col_btn_right:
 """
                 else:
                     if analysis_mode == "【八字精論】":
-                        prompt = f"""請根據『70/30 命運法則』與『紅色警戒模式』對以下命盤進行親切解析：
+                        prompt = f"""{time_setting}請根據『70/30 命運法則』與『紅色警戒模式』對以下命盤進行親切解析：
 {pillar_info}
 客人資料：{base_info}
 請劃分『 【70% 命運趨勢】 』、『 【30% 自由意志】 』與『 【溫馨賦權結語】 』。
 {tone_instruction}"""
                     elif analysis_mode == "【紫微斗數分析】":
-                        prompt = f"""請根據『70/30 命運法則』與『紅色警戒模式』進行紫微斗數分析：
+                        prompt = f"""{time_setting}請根據『70/30 命運法則』與『紅色警戒模式』進行紫微斗數分析：
 {pillar_info}
 客人資料：{base_info}
 請劃分『 【70% 紫微趨勢】 』、『 【30% 自由意志】 』與『 【溫馨賦權結語】 』。
 {tone_instruction}"""
                     else:
-                        prompt = f"""請根據『70/30 命運法則』與『紅色警戒模式』進行八紫交叉比對分析：
+                        prompt = f"""{time_setting}請根據『70/30 命運法則』與『紅色警戒模式』進行八紫交叉比對分析：
 {pillar_info}
 客人資料：{base_info}
 請劃分『 【70% 綜合趨勢】 』、『 【30% 自由意志】 』與『 【溫馨賦權結語】 』。
