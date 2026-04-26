@@ -627,24 +627,33 @@ if is_master:
 
 # 6. 雙人合盤功能 (保留原本的邏輯)
 enable_dual = st.checkbox("💞 啟用雙人合盤 (感情/合夥)")
+# 初始化對象變數，避免未啟用時報錯
+name2 = "無"
+b_year2, b_month2, b_day2, b_hour2, b_min2 = 1980, 1, 1, 12, 0
+relation_type = "無"
+
 if enable_dual:
     st.subheader("💞 第二位對象資料")
-    col_p2_1, col_p2_2, col_p2_3, col_p2_4, col_p2_5, col_p2_6 = st.columns([1.2, 1, 1, 1, 1, 1])
-    with col_p2_1:
+    col_p2_name, col_p2_gender = st.columns(2)
+    with col_p2_name:
+        name2 = st.text_input("對象姓名/暱稱", placeholder="如何稱呼對方？", key="name2")
+    with col_p2_gender:
         gender2 = st.selectbox("對象性別", ["男", "女"], key="gender2")
-    with col_p2_2:
+        
+    col_p2_1, col_p2_2, col_p2_3, col_p2_4, col_p2_5 = st.columns(5)
+    with col_p2_1:
         years = list(range(1930, 2027))
         b_year2 = st.selectbox("年", options=years, index=years.index(1980), key="b_year2")
-    with col_p2_3:
+    with col_p2_2:
         months = list(range(1, 13))
         b_month2 = st.selectbox("月", options=months, index=0, key="b_month2")
-    with col_p2_4:
+    with col_p2_3:
         days = list(range(1, 32))
         b_day2 = st.selectbox("日", options=days, index=0, key="b_day2")
-    with col_p2_5:
+    with col_p2_4:
         hours = list(range(0, 24))
         b_hour2 = st.selectbox("時", options=hours, index=12, key="b_hour2")
-    with col_p2_6:
+    with col_p2_5:
         mins = list(range(0, 60))
         b_min2 = st.selectbox("分", options=mins, index=0, key="b_min2")
     relation_type = st.selectbox("雙方關係", ["情侶/夫妻", "事業合夥", "家人/朋友"])
@@ -834,29 +843,35 @@ with col_btn_right:
                         try:
                             # 檢查並確保標題列存在 (若試算表是空的)
                             if sheet.row_count == 0 or not sheet.row_values(1):
-                                headers = ["推算時間", "客戶姓名", "出生日期", "出生時間", "職業屬性", "對象姓名", "對象生日", "解析結果"]
+                                headers = ["推算時間", "客戶姓名", "出生日期", "出生時間", "職業/對象", "對象生日", "性別", "解析結果"]
                                 sheet.insert_row(headers, 1)
 
-                            # 準備要寫入的一列資料
+                            # 準備日期時間字串 (合併格式 YYYY-MM-DD, HH:MM)
                             now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                            birth_date_str = f"{b_year}/{b_month}/{b_day}"
+                            birth_date_str = f"{b_year}-{b_month:02d}-{b_day:02d}"
                             birth_time_str = f"{b_hour:02d}:{b_min:02d}"
                             
-                            partner_name = name2 if enable_dual else "無"
-                            partner_dob = f"{b_year2}/{b_month2}/{b_day2}" if enable_dual else "無"
+                            # 處理職業與對象資訊 (合併到第五欄)
+                            if enable_dual:
+                                occ_info = f"{occupation} (對象: {name2}/{relation_type})"
+                                partner_dob_str = f"{b_year2}-{b_month2:02d}-{b_day2:02d}"
+                            else:
+                                occ_info = occupation
+                                partner_dob_str = "無"
                             
-                            # 長文字處理：Google Sheets 單一儲存格上限約 50,000 字元，我們保守取 30,000
+                            # 長文字處理
                             safe_result_text = result_text[:30000] if result_text else ""
                             
+                            # 嚴格對齊 8 欄位：[目前推算時間, 姓名, 生日, 時間, 職業/對象, 對象生日, 性別, AI解析結果]
                             row_data = [
-                                now_str,          # A: 推算時間
-                                name,             # B: 客戶姓名
-                                birth_date_str,   # C: 出生日期
-                                birth_time_str,   # D: 出生時間
-                                occupation,       # E: 職業屬性
-                                partner_name,     # F: 對象姓名
-                                partner_dob,      # G: 對象生日
-                                safe_result_text  # H: 解析結果
+                                now_str,          # A: 目前推算時間
+                                name,             # B: 姓名
+                                birth_date_str,   # C: birth_date_str
+                                birth_time_str,   # D: birth_time_str
+                                occ_info,         # E: 職業屬性(或對象姓名/關係)
+                                partner_dob_str,  # F: 對象生日
+                                gender,           # G: 性別
+                                safe_result_text  # H: AI解析結果
                             ]
                             sheet.append_row(row_data)
                         except Exception as gs_err:
