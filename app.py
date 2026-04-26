@@ -497,17 +497,22 @@ with st.container():
     # 判斷是否為手機版排版 (Streamlit 寬度小於某值時會自動堆疊，但我們主動優化)
     col_date1, col_date2, col_date3 = st.columns(3)
     with col_date1:
-        b_year = st.number_input("年", min_value=1900, max_value=2030, value=1980)
+        years = list(range(1930, 2027))
+        b_year = st.selectbox("年", options=years, index=years.index(1980))
     with col_date2:
-        b_month = st.number_input("月", min_value=1, max_value=12, value=1)
+        months = list(range(1, 13))
+        b_month = st.selectbox("月", options=months, index=0)
     with col_date3:
-        b_day = st.number_input("日", min_value=1, max_value=31, value=1)
+        days = list(range(1, 32))
+        b_day = st.selectbox("日", options=days, index=0)
     
     col_time1, col_time2, col_spacer = st.columns([1, 1, 1])
     with col_time1:
-        b_hour = st.number_input("時", min_value=0, max_value=23, value=12)
+        hours = list(range(0, 24))
+        b_hour = st.selectbox("時", options=hours, index=12)
     with col_time2:
-        b_min = st.number_input("分", min_value=0, max_value=59, value=0)
+        mins = list(range(0, 60))
+        b_min = st.selectbox("分", options=mins, index=0)
     with col_spacer:
         st.write("") # 佔位符，讓時分在手機版看起來更平衡
 
@@ -624,19 +629,24 @@ if is_master:
 enable_dual = st.checkbox("💞 啟用雙人合盤 (感情/合夥)")
 if enable_dual:
     st.subheader("💞 第二位對象資料")
-    col_p2_1, col_p2_2, col_p2_3, col_p2_4, col_p2_5, col_p2_6 = st.columns([1, 1, 1, 1, 1, 1])
+    col_p2_1, col_p2_2, col_p2_3, col_p2_4, col_p2_5, col_p2_6 = st.columns([1.2, 1, 1, 1, 1, 1])
     with col_p2_1:
         gender2 = st.selectbox("對象性別", ["男", "女"], key="gender2")
     with col_p2_2:
-        b_year2 = st.number_input("年", min_value=1900, max_value=2030, value=1980, key="b_year2")
+        years = list(range(1930, 2027))
+        b_year2 = st.selectbox("年", options=years, index=years.index(1980), key="b_year2")
     with col_p2_3:
-        b_month2 = st.number_input("月", min_value=1, max_value=12, value=1, key="b_month2")
+        months = list(range(1, 13))
+        b_month2 = st.selectbox("月", options=months, index=0, key="b_month2")
     with col_p2_4:
-        b_day2 = st.number_input("日", min_value=1, max_value=31, value=1, key="b_day2")
+        days = list(range(1, 32))
+        b_day2 = st.selectbox("日", options=days, index=0, key="b_day2")
     with col_p2_5:
-        b_hour2 = st.number_input("時", min_value=0, max_value=23, value=12, key="b_hour2")
+        hours = list(range(0, 24))
+        b_hour2 = st.selectbox("時", options=hours, index=12, key="b_hour2")
     with col_p2_6:
-        b_min2 = st.number_input("分", min_value=0, max_value=59, value=0, key="b_min2")
+        mins = list(range(0, 60))
+        b_min2 = st.selectbox("分", options=mins, index=0, key="b_min2")
     relation_type = st.selectbox("雙方關係", ["情侶/夫妻", "事業合夥", "家人/朋友"])
 
 st.markdown("---")
@@ -819,28 +829,29 @@ with col_btn_right:
                         try:
                             # 檢查並確保標題列存在 (若試算表是空的)
                             if sheet.row_count == 0 or not sheet.row_values(1):
-                                headers = ["日期時間", "西元生年", "月", "日", "時", "分", "性別", "職業", "模式", "正確日主", "AI回覆"]
+                                headers = ["推算時間", "客戶姓名", "出生日期", "出生時間", "職業屬性", "對象姓名", "對象生日", "解析結果"]
                                 sheet.insert_row(headers, 1)
 
                             # 準備要寫入的一列資料
                             now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                            day_master = bazi['day_tg'] if bazi else "未知"
+                            birth_date_str = f"{b_year}/{b_month}/{b_day}"
+                            birth_time_str = f"{b_hour:02d}:{b_min:02d}"
+                            
+                            partner_name = name2 if enable_dual else "無"
+                            partner_dob = f"{b_year2}/{b_month2}/{b_day2}" if enable_dual else "無"
                             
                             # 長文字處理：Google Sheets 單一儲存格上限約 50,000 字元，我們保守取 30,000
                             safe_result_text = result_text[:30000] if result_text else ""
                             
                             row_data = [
-                                now_str, 
-                                str(b_year), 
-                                str(b_month), 
-                                str(b_day), 
-                                str(b_hour), 
-                                str(b_min), 
-                                gender, 
-                                occupation, 
-                                analysis_mode, 
-                                day_master, 
-                                safe_result_text
+                                now_str,          # A: 推算時間
+                                name,             # B: 客戶姓名
+                                birth_date_str,   # C: 出生日期
+                                birth_time_str,   # D: 出生時間
+                                occupation,       # E: 職業屬性
+                                partner_name,     # F: 對象姓名
+                                partner_dob,      # G: 對象生日
+                                safe_result_text  # H: 解析結果
                             ]
                             sheet.append_row(row_data)
                         except Exception as gs_err:
