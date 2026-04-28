@@ -1,24 +1,26 @@
 import streamlit as st
 
-st.set_page_config(page_title="AI感情心理分析", page_icon="🧠")
+st.set_page_config(
+    page_title="AI感情心理分析",
+    page_icon="🧠",
+    layout="wide"
+)
 
-st.title("🧠 AI 感情心理分析")
-st.markdown("這是第二層感情心理分析測試頁。")
+st.title("🧠 AI感情心理分析")
+st.caption("感情互動、關係卡關、訊息解讀與心理攻防分析")
 
-st.info("目前為測試版，先確認頁面能正常開啟。")
+st.markdown("""
+### 這裡是第二層功能：AI感情心理分析
 
-nickname = st.text_input("你的暱稱")
-relationship = st.selectbox("目前關係狀態", ["曖昧", "交往中", "冷淡中", "分手後", "不確定"])
-chat_text = st.text_area("請貼上對話內容", height=180)
+可提供：
+- 對方心理想法分析
+- 訊息對話解讀
+- 曖昧／分手／復合卡關分析
+- 兩人僵持不下的溝通建議
+- 情緒整理與自我安定建議
+""")
 
-if st.button("開始測試分析"):
-    if not chat_text:
-        st.warning("請先貼上對話內容")
-    else:
-        st.success("測試成功：第二層頁面可以正常運作。")
-        st.markdown("""
-        ### 基礎分析示範
-        目前這段互動看起來，對方可能有情緒反應，但還需要更多脈絡才能判斷。
+st.info("功能建置中，正式版即將開放。")
 
-        若要進一步分析，可以升級深度方案。
-        """)
+if st.button("回到首頁"):
+    st.switch_page("app.py")
