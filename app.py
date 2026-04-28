@@ -306,6 +306,15 @@ def calculate_bazi(y, m, d, h, minute):
 
 st.set_page_config(page_title="雨果大師｜命理 AI", page_icon="🔮", layout="wide")
 
+hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            header {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
 # CSS 注入：美化介面並隱藏 Streamlit 預設元素
 st.markdown("""
 <style>
@@ -357,9 +366,6 @@ st.markdown("""
         box-shadow: 0 6px 20px rgba(142, 68, 173, 0.5);
         transform: translateY(-2px);
     }
-    #MainMenu {display: none !important;}
-    footer {display: none !important;}
-    header {display: none !important;}
     .master-zone {
         background-color: #f4f0ff;
         border: 1px dashed #8e44ad;
@@ -1186,7 +1192,7 @@ with col_btn_right:
                         st.link_button("🔓 解鎖進階流月行動指南 (付費)", "https://your-payment-link.com", use_container_width=True, help="點擊開啟付費解鎖頁面")
                     with col_cta2:
                         # 此處請替換為實際的 LINE 或預約連結
-                        st.link_button("💬 預約真人深度諮詢", "https://line.me/ti/p/@hugo_master", use_container_width=True, help="點擊跳轉至 LINE 客服預約")
+                        st.link_button("💬 預約真人深度諮詢", "https://line.me/ti/p/@258hnnao", use_container_width=True, help="點擊跳轉至 LINE 客服預約")
 
                     # --- 寫入 Google Sheets 邏輯 ---
                     if sheet is not None:
