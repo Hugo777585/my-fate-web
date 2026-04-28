@@ -554,16 +554,14 @@ if module_name:
                     st.markdown(f"<div class='report-card'>{result}</div>", unsafe_allow_html=True)
                     
                     # --- 寫入 Google Sheets ---
+                    birth_dt_str = f"{bday} {btime.strftime('%H:%M')}"
                     save_to_google_sheet([
-                        now_tw_display,                      # A: 推算時間
-                        name,                                # B: 客戶姓名
-                        str(bday),                           # C: 出生日期
-                        str(btime),                          # D: 出生時間
-                        occ,                                 # E: 職業屬性
-                        p2_name if enable_partner else "",   # F: 對象姓名
-                        str(p2_bday) if enable_partner else "", # G: 對象生日
-                        "解析成功",                          # H: 解析結果
-                        "大師深度模式" if is_master_mode else "公眾引流模式" # I: 解盤模式
+                        now_tw_display,
+                        name,
+                        birth_dt_str,
+                        occ,
+                        gender,
+                        result[:5000] # 避免過長
                     ])
 
                     try:

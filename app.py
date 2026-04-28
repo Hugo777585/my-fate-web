@@ -1193,13 +1193,12 @@ with col_btn_right:
                         try:
                             # 檢查並確保標題列存在 (若試算表是空的)
                             if sheet.row_count == 0 or not sheet.row_values(1):
-                                headers = ["推算時間", "客戶姓名", "出生日期", "出生時間", "職業/對象", "對象生日", "性別", "解析結果"]
+                                headers = ["推算時間", "客戶姓名", "出生日期時間", "職業/對象", "對象生日", "性別", "解析結果"]
                                 sheet.insert_row(headers, 1)
 
-                            # 準備日期時間字串 (合併格式 YYYY-MM-DD, HH:MM)
+                            # 準備日期時間字串 (合併格式 YYYY-MM-DD HH:MM)
                             now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                            birth_date_str = f"{b_year}-{b_month:02d}-{b_day:02d}"
-                            birth_time_str = f"{b_hour:02d}:{b_min:02d}"
+                            birth_datetime_str = f"{b_year}-{b_month:02d}-{b_day:02d} {b_hour:02d}:{b_min:02d}"
                             
                             # 處理職業與對象資訊 (合併到第五欄)
                             if enable_dual:
@@ -1212,16 +1211,15 @@ with col_btn_right:
                             # 長文字處理
                             safe_result_text = result_text[:30000] if result_text else ""
                             
-                            # 嚴格對齊 8 欄位：[目前推算時間, 姓名, 生日, 時間, 職業/對象, 對象生日, 性別, AI解析結果]
+                            # 嚴格對齊 7 欄位：[目前推算時間, 姓名, 出生日期時間, 職業/對象, 對象生日, 性別, AI解析結果]
                             row_data = [
                                 now_str,          # A: 目前推算時間
                                 name,             # B: 姓名
-                                birth_date_str,   # C: birth_date_str
-                                birth_time_str,   # D: birth_time_str
-                                occ_info,         # E: 職業屬性(或對象姓名/關係)
-                                partner_dob_str,  # F: 對象生日
-                                gender,           # G: 性別
-                                safe_result_text  # H: AI解析結果
+                                birth_datetime_str, # C: 出生日期時間
+                                occ_info,         # D: 職業屬性(或對象姓名/關係)
+                                partner_dob_str,  # E: 對象生日
+                                gender,           # F: 性別
+                                safe_result_text  # G: AI解析結果
                             ]
                             sheet.append_row(row_data)
                         except Exception as gs_err:
