@@ -6,6 +6,7 @@ import os
 import gspread
 import re
 import json
+import csv
 from dotenv import load_dotenv
 from google.oauth2.service_account import Credentials
 from lunar_python import Lunar, Solar
@@ -68,6 +69,29 @@ load_dotenv()
 # --- 初始化付款狀態 ---
 if 'payment_status' not in st.session_state:
     st.session_state.payment_status = "free"
+if 'order_data' not in st.session_state:
+    st.session_state.order_data = None
+
+# --- 訂單處理邏輯 ---
+def save_order_to_csv(order_info):
+    file_exists = os.path.isfile('orders.csv')
+    with open('orders.csv', mode='a', newline='', encoding='utf-8-sig') as f:
+        writer = csv.writer(f)
+        if not file_exists:
+            writer.writerow(['order_id', 'created_at', 'name', 'contact', 'phone', 'birth_date', 'birth_time', 'gender', 'question', 'plan', 'payment_status'])
+        writer.writerow([
+            order_info['order_id'],
+            order_info['created_at'],
+            order_info['name'],
+            order_info['contact'],
+            order_info['phone'],
+            order_info['birth_date'],
+            order_info['birth_time'],
+            order_info['gender'],
+            order_info['question'],
+            order_info['plan'],
+            order_info['payment_status']
+        ])
 
 # --- Google Sheets 連線設定 ---
 def init_gsheets():
@@ -862,25 +886,68 @@ with col_btn_right:
 
                     # 模擬付款邏輯
                     if 'temp_pay_plan' in st.session_state:
-                        st.info("💳 **目前為測試模式**")
-                        st.write(f"您選擇了：{'299 深度版' if st.session_state.temp_pay_plan == 'paid_299' else '699 完整版'}")
-                        st.write("點擊下方確認付款後將解鎖內容。")
-                        col_pay1, col_pay2 = st.columns(2)
-                        with col_pay1:
-                            if st.button("✅ 確認付款完成", type="primary"):
-                                st.session_state.payment_status = st.session_state.temp_pay_plan
-                                del st.session_state.temp_pay_plan
-                                st.success("🎉 付款成功！內容已解鎖。")
-                                st.rerun()
-                        with col_pay2:
-                            if st.button("❌ 取消"):
-                                del st.session_state.temp_pay_plan
-                                st.rerun()
+                        st.markdown("### 📝 填寫訂單資料")
+                        with st.form("order_form"):
+                            o_name = st.text_input("姓名", value=name)
+                            o_contact = st.text_input("Email 或 LINE ID")
+                            o_phone = st.text_input("手機 (選填)")
+                            o_birth_date = st.text_input("出生年月日", value=f"{b_year}-{b_month}-{b_day}")
+                            o_birth_time = st.text_input("出生時間", value=f"{b_hour}:{b_min}")
+                            o_gender = st.selectbox("性別", options=["男", "女"], index=0 if gender == "男" else 1)
+                            o_question = st.text_area("想諮詢的問題", value=question)
+                            
+                            submit_order = st.form_submit_button("✅ 建立訂單")
+                            
+                            if submit_order:
+                                if not o_name or not o_contact:
+                                    st.error("請填寫姓名與聯絡資訊")
+                                else:
+                                    # 產生訂單 ID
+                                    order_id = f"HUGO_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}"
+                                    order_info = {
+                                        'order_id': order_id,
+                                        'created_at': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                        'name': o_name,
+                                        'contact': o_contact,
+                                        'phone': o_phone,
+                                        'birth_date': o_birth_date,
+                                        'birth_time': o_birth_time,
+                                        'gender': o_gender,
+                                        'question': o_question,
+                                        'plan': st.session_state.temp_pay_plan.split('_')[1],
+                                        'payment_status': 'unpaid'
+                                    }
+                                    st.session_state.order_data = order_info
+                                    save_order_to_csv(order_info)
+                                    st.success(f"訂單已建立！訂單編號：{order_id}")
+
+                        if st.session_state.order_data:
+                            st.info("💳 **目前為測試模式**")
+                            st.write(f"您選擇了：{'299 深度版' if st.session_state.temp_pay_plan == 'paid_299' else '699 完整版'}")
+                            st.write("點擊下方確認付款後將解鎖內容。")
+                            col_pay1, col_pay2 = st.columns(2)
+                            with col_pay1:
+                                if st.button("✅ 確認付款完成並解鎖", type="primary"):
+                                    # 更新訂單狀態為已支付
+                                    st.session_state.order_data['payment_status'] = 'test_paid'
+                                    save_order_to_csv(st.session_state.order_data) # 再次存入以更新狀態
+                                    
+                                    st.session_state.payment_status = st.session_state.temp_pay_plan
+                                    del st.session_state.temp_pay_plan
+                                    st.success(f"🎉 付款成功！訂單編號 {st.session_state.order_data['order_id']} 已解鎖。")
+                                    st.rerun()
+                            with col_pay2:
+                                if st.button("❌ 取消"):
+                                    del st.session_state.temp_pay_plan
+                                    st.session_state.order_data = None
+                                    st.rerun()
 
                     # --- 顯示已付款內容 ---
                     if st.session_state.payment_status in ["paid_299", "paid_699"]:
                         st.markdown("---")
                         st.markdown("## 🌟 進階解鎖內容")
+                        if st.session_state.order_data:
+                            st.caption(f"📄 訂單編號：{st.session_state.order_data['order_id']}")
                         
                         # 299 深度內容
                         st.markdown("### 📍 流年行動指引 & 建議")
