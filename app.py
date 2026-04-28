@@ -710,20 +710,26 @@ with st.container():
     with form_container:
         st.markdown('<div class="st-step-container">', unsafe_allow_html=True)
         
-        # 步驟一：大分類選擇
+        # 0. 大分類選擇 (始終顯示，滿足隨時切換需求)
+        st.write("✨ **請選擇諮詢分類：**")
+        col_cat1, col_cat2 = st.columns(2)
+        with col_cat1:
+            # 增加 key 確保狀態穩定，並在點擊時強制重置相關狀態
+            if st.button("💘 感情婚姻", use_container_width=True, key="main_cat_love"):
+                st.session_state.main_cat = "感情"
+                st.session_state.form_step = 2  # 切換後進入該分類的第二步
+                st.rerun()
+        with col_cat2:
+            if st.button("💼 事業財運", use_container_width=True, key="main_cat_job"):
+                st.session_state.main_cat = "事業"
+                st.session_state.form_step = 2
+                st.rerun()
+        
+        st.markdown("---")
+
+        # 步驟一：引導（如果尚未選擇）
         if st.session_state.form_step == 1:
-            st.write("✨ **第一步：您想諮詢哪方面的問題？**")
-            col_cat1, col_cat2 = st.columns(2)
-            with col_cat1:
-                if st.button("💘 感情婚姻", use_container_width=True):
-                    st.session_state.main_cat = "感情"
-                    st.session_state.form_step = 2
-                    st.rerun()
-            with col_cat2:
-                if st.button("💼 事業財運", use_container_width=True):
-                    st.session_state.main_cat = "事業"
-                    st.session_state.form_step = 2
-                    st.rerun()
+            st.info("💡 請點選上方按鈕選擇諮詢分類")
         
         # 步驟二：次級狀態選擇
         elif st.session_state.form_step == 2:
