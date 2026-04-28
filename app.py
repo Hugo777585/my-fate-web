@@ -447,22 +447,116 @@ st.markdown("""
     }
     .plan-card {
         background: white;
-        border: 1px solid #E0E0E0;
-        border-radius: 16px;
+        border: 2px solid #E0E0E0;
+        border-radius: 20px;
         padding: 30px;
         text-align: center;
-        transition: transform 0.3s ease;
+        transition: all 0.3s ease;
         height: 100%;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
     }
     .plan-card:hover {
-        transform: translateY(-10px);
-        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        transform: translateY(-5px);
+        box-shadow: 0 12px 30px rgba(108, 52, 131, 0.15);
+    }
+    .plan-card.popular {
+        border: 3px solid #A569BD;
+        background: linear-gradient(180deg, #FFFFFF 0%, #F5EEF8 100%);
+        position: relative;
+    }
+    .popular-badge {
+        position: absolute;
+        top: -15px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #A569BD;
+        color: white;
+        padding: 4px 15px;
+        border-radius: 20px;
+        font-size: 0.8em;
+        font-weight: 700;
+        letter-spacing: 1px;
+        z-index: 10;
+    }
+    .plan-title {
+        font-size: 1.5em;
+        font-weight: 800;
+        color: #4A235A;
+        margin-bottom: 10px;
     }
     .plan-price {
-        font-size: 2em;
+        font-size: 2.2em;
+        font-weight: 900;
+        color: #6C3483;
+        margin-bottom: 20px;
+    }
+    .plan-price span {
+        font-size: 0.5em;
+        color: #7B7B7B;
+        font-weight: 400;
+    }
+    .plan-features {
+        text-align: left;
+        margin-bottom: 25px;
+        list-style: none;
+        padding: 0;
+    }
+    .plan-features li {
+        margin-bottom: 12px;
+        color: #4D5656;
+        font-size: 0.95em;
+        display: flex;
+        align-items: center;
+    }
+    .plan-features li:before {
+        content: "✅";
+        margin-right: 10px;
+        font-size: 0.8em;
+    }
+    .plan-features li.locked {
+        color: #ABB2B9;
+    }
+    .plan-features li.locked:before {
+        content: "🔒";
+    }
+    
+    /* 結尾解鎖區塊樣式 */
+    .locked-preview {
+        background: #F4F6F7;
+        border-radius: 12px;
+        padding: 25px;
+        margin-top: 25px;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid #D7BDE2;
+    }
+    .locked-preview-blur {
+        filter: blur(5px);
+        opacity: 0.5;
+        user-select: none;
+    }
+    .locked-overlay {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.5);
+        z-index: 10;
+    }
+    .locked-text {
+        background: white;
+        padding: 12px 30px;
+        border-radius: 50px;
+        box-shadow: 0 4px 20px rgba(108, 52, 131, 0.2);
         font-weight: 800;
         color: #6C3483;
-        margin-bottom: 15px;
+        border: 2px solid #6C3483;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
     }
     .trust-section {
         background-color: #F0E6FF;
@@ -844,22 +938,33 @@ st.markdown("---")
 # 7. 試算按鈕與 Prompt 邏輯
 # --- 4. 付費方案區 ---
 with st.container():
-    st.markdown('<h2 style="text-align: center; color: #6C3483;">付費方案建議</h2>', unsafe_allow_html=True)
+    st.markdown('<h2 style="text-align: center; color: #6C3483; margin-bottom: 30px;">深度分析方案預覽</h2>', unsafe_allow_html=True)
     col_plan_a, col_plan_b = st.columns(2)
     with col_plan_a:
         st.markdown("""
-        <div class="plan-card">
-            <h3>299 深度分析</h3>
+        <div class="plan-card popular">
+            <div class="popular-badge">熱門首選</div>
+            <div class="plan-title">🥈 299 深度分析</div>
             <div class="plan-price">NT$ 299</div>
-            <p>適合想知道對方心態、互動卡關、下一步怎麼做的人。</p>
+            <p style="color: #6C3483; font-weight: 600;">適合：想知道對方心態、互動卡關、下一步怎麼做的人。</p>
+            <ul class="plan-features">
+                <li>解鎖「行動指引」與「破解方案」</li>
+                <li>針對具體提問的深度回答</li>
+                <li>流年/流月關鍵轉折提醒</li>
+            </ul>
         </div>
         """, unsafe_allow_html=True)
     with col_plan_b:
         st.markdown("""
         <div class="plan-card">
-            <h3>699 完整分析</h3>
+            <div class="plan-title">🥇 699 完整分析</div>
             <div class="plan-price">NT$ 699</div>
-            <p>適合想看完整感情走向、流年影響、策略建議與後續提問的人。</p>
+            <p style="color: #6C3483; font-weight: 600;">適合：想看完整走向、PDF 報告存檔、與大師親自追問的人。</p>
+            <ul class="plan-features">
+                <li>包含 299 版所有內容</li>
+                <li><b>專屬 PDF 完整報告下載</b></li>
+                <li><b>3 次提問權限 (Hugo 親自回覆)</b></li>
+            </ul>
         </div>
         """, unsafe_allow_html=True)
 
@@ -1034,6 +1139,27 @@ with col_btn_right:
                         st.markdown("<br>", unsafe_allow_html=True)
                     
                     st.markdown(result_text, unsafe_allow_html=True)
+                    
+                    # --- 免費版結尾引導 (如果尚未付費) ---
+                    if st.session_state.payment_status == "free":
+                        st.markdown(f"""
+                        <div class="locked-preview">
+                            <div class="locked-preview-blur">
+                                <h3>🔮 深度解析預覽：您的專屬行動建議</h3>
+                                <p>根據您的日主 {bazi['day_tg']} 與流年感應，在接下來的三個月內，您最需要注意的一個關鍵轉折點在於...</p>
+                                <p>針對您提問的「{question[:20]}...」，具體的破解步驟建議如下：第一步是調整您的... 第二步則是在關鍵時刻選擇...</p>
+                            </div>
+                            <div class="locked-overlay">
+                                <div class="locked-text">
+                                    🔓 解鎖完整深度報告與行動指引
+                                </div>
+                                <p style="margin-top:10px; color:#6C3483; font-size:0.9em; font-weight:600;">
+                                    Hugo：這份報告將為你揭示隱藏的轉機。
+                                </p>
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                        
                     st.markdown('</div>', unsafe_allow_html=True)
                     
                     # --- 付費解鎖架構 ---
@@ -1044,36 +1170,63 @@ with col_btn_right:
                     col_plan1, col_plan2, col_plan3 = st.columns(3)
                     
                     with col_plan1:
-                        st.markdown("### 🥉 免費版")
-                        st.write("✅ 基礎命理分析")
-                        st.write("❌ 進階行動指引")
+                        st.markdown("""
+                        <div class="plan-card">
+                            <div class="plan-title">🥉 免費版</div>
+                            <div class="plan-price">NT$ 0</div>
+                            <ul class="plan-features">
+                                <li>基礎命理分析</li>
+                                <li class="locked">流年行動指引</li>
+                                <li class="locked">感情/事業深度建議</li>
+                                <li class="locked">PDF 完整報告</li>
+                                <li class="locked">3 次提問權限</li>
+                            </ul>
+                        </div>
+                        """, unsafe_allow_html=True)
                         if st.session_state.payment_status == "free":
                             st.button("目前方案", disabled=True, key="btn_free")
                         else:
                             if st.button("切換回免費版", key="btn_switch_free"):
                                 st.session_state.payment_status = "free"
                                 st.rerun()
-
+                                
                     with col_plan2:
-                        st.markdown("### 🥈 299 深度版")
-                        st.write("✅ 基礎命理分析")
-                        st.write("✅ 流年行動指引")
-                        st.write("✅ 感情/事業建議")
+                        st.markdown("""
+                        <div class="plan-card popular">
+                            <div class="popular-badge">MOST POPULAR</div>
+                            <div class="plan-title">🥈 299 深度版</div>
+                            <div class="plan-price">NT$ 299 <span>/ 案</span></div>
+                            <ul class="plan-features">
+                                <li>基礎命理分析</li>
+                                <li><b>流年行動指引</b></li>
+                                <li><b>感情/事業深度建議</b></li>
+                                <li class="locked">PDF 完整報告</li>
+                                <li class="locked">3 次提問權限</li>
+                            </ul>
+                        </div>
+                        """, unsafe_allow_html=True)
                         if st.session_state.payment_status == "paid_299":
                             st.button("✅ 已解鎖", disabled=True, key="btn_299_active")
                         elif st.session_state.payment_status == "paid_699":
-                            st.write("✨ 已包含在完整版")
+                            st.info("✨ 已包含在完整版")
                         else:
                             if st.button("🔓 解鎖 299 深度版", key="btn_unlock_299"):
                                 st.session_state.temp_pay_plan = "paid_299"
                                 st.rerun()
 
                     with col_plan3:
-                        st.markdown("### 🥇 699 完整版")
-                        st.write("✅ 299 版所有內容")
-                        st.write("✅ 完整深度報告")
-                        st.write("✅ PDF 下載權限")
-                        st.write("✅ 3 次提問權限")
+                        st.markdown("""
+                        <div class="plan-card">
+                            <div class="plan-title">🥇 699 完整版</div>
+                            <div class="plan-price">NT$ 699 <span>/ 案</span></div>
+                            <ul class="plan-features">
+                                <li>299 版所有內容</li>
+                                <li><b>完整 PDF 深度報告</b></li>
+                                <li><b>3 次追問權限 (Hugo 親回)</b></li>
+                                <li>專屬開運建議</li>
+                            </ul>
+                        </div>
+                        """, unsafe_allow_html=True)
                         if st.session_state.payment_status == "paid_699":
                             st.button("✅ 已解鎖", disabled=True, key="btn_699_active")
                         else:
