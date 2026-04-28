@@ -143,7 +143,24 @@ with st.sidebar:
 
     st.markdown("---")
     st.page_link("pages/02_love_analysis.py", label="🧠 AI感情心理分析")
+完成修改後，請幫我：
 
+1. 先在本機檢查：
+   python -m py_compile app.py
+
+2. 如果有新增或修改 pages / utils 檔案，也請逐一 py_compile 檢查。
+
+3. 確認沒有錯誤後，執行：
+   git status
+   git add .
+   git commit -m "本次修改摘要"
+   git push origin main
+
+4. 推送完成後，請回報：
+   - 修改了哪些檔案
+   - 是否已成功 push
+   - 最新 commit hash
+   - Streamlit Cloud 是否已開始重新部署
 def get_wuxing_color(char):
     """根據干支字元回傳對應的五行背景顏色"""
     if not char: return "#FFFFFF"
