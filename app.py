@@ -400,17 +400,154 @@ st.markdown("""
         color: #A04000;
         margin-bottom: 20px;
     }
+    /* 新增首頁排版樣式 */
+    .hero-section {
+        text-align: center;
+        padding: 40px 20px;
+        background-color: #000000;
+        color: #D4AF37; /* 金色 */
+        border-radius: 20px;
+        margin-bottom: 40px;
+    }
+    .hero-title {
+        font-size: 3.5em;
+        font-weight: 900;
+        margin-bottom: 10px;
+        color: #D4AF37;
+    }
+    .hero-subtitle {
+        font-size: 1.5em;
+        margin-bottom: 20px;
+        color: #FFFFFF;
+    }
+    .hero-copy {
+        font-size: 1.2em;
+        margin-bottom: 30px;
+        color: #CCCCCC;
+    }
+    .section-container {
+        padding: 60px 20px;
+        margin-bottom: 40px;
+        border-radius: 20px;
+    }
+    .pain-points-section {
+        background-color: #F8F9FA;
+    }
+    .pain-point-item {
+        font-size: 1.2em;
+        margin-bottom: 15px;
+        padding-left: 20px;
+        border-left: 4px solid #6C3483;
+    }
+    .plan-card {
+        background: white;
+        border: 1px solid #E0E0E0;
+        border-radius: 16px;
+        padding: 30px;
+        text-align: center;
+        transition: transform 0.3s ease;
+        height: 100%;
+    }
+    .plan-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    .plan-price {
+        font-size: 2em;
+        font-weight: 800;
+        color: #6C3483;
+        margin-bottom: 15px;
+    }
+    .trust-section {
+        background-color: #F0E6FF;
+        padding: 40px;
+        border-radius: 20px;
+    }
+    .final-cta {
+        background: linear-gradient(135deg, #6C3483, #8E44AD);
+        color: white;
+        text-align: center;
+        padding: 60px 20px;
+        border-radius: 20px;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# 1. Logo 置頂
-st.markdown('<p class="main-title">🔮 雨果大師</p>', unsafe_allow_html=True)
-col_logo1, col_logo2, col_logo3 = st.columns([1, 2, 1])
-with col_logo2:
-    logo_path = "logo.JPG" if os.path.exists("logo.JPG") else "logo.jpg"
-    if os.path.exists(logo_path):
-        st.image(logo_path, use_container_width=True)
-st.markdown('<p class="sub-title">古典命理與 AI 的深度對話｜專業八字・紫微斗數・人生指引</p>', unsafe_allow_html=True)
+# --- 1. Hero 主視覺 ---
+if st.session_state.get('scroll_to_analysis'):
+    st.markdown('<script>window.parent.document.getElementById("analysis_section").scrollIntoView({behavior: "smooth"});</script>', unsafe_allow_html=True)
+    st.session_state.scroll_to_analysis = False
+
+with st.container():
+    st.markdown("""
+    <div class="hero-section">
+        <h1 class="hero-title">HUGO 天命智庫</h1>
+        <p class="hero-subtitle">八字命理 × AI分析 × 感情諮詢</p>
+        <p class="hero-copy">不是叫你迷信命運，而是幫你看懂現在的卡關點。</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # 這裡放黑金星盤形象圖
+    # 嘗試使用使用者可能存放的路徑，若無則顯示佔位符
+    hero_img_path = r"G:\AI下載\頭像\黑金星盤.png" # 假設路徑
+    if os.path.exists(hero_img_path):
+        st.image(hero_img_path, use_container_width=True)
+    else:
+        # 如果找不到，嘗試使用 logo.JPG 作為替代或提示
+        if os.path.exists("logo.JPG"):
+            st.image("logo.JPG", caption="黑金HUGO星盤形象圖 (請確認路徑)", use_container_width=True)
+        else:
+            st.warning("⚠️ 找不到黑金HUGO星盤形象圖，請確認圖片路徑。")
+
+    col_hero1, col_hero2 = st.columns(2)
+    with col_hero1:
+        if st.button("立即免費分析", key="hero_free_btn"):
+            # 使用 anchor 或 session_state 讓頁面滾動到分析區
+            st.session_state.scroll_to_analysis = True
+            st.rerun()
+    with col_hero2:
+        st.link_button("加入 LINE 解鎖深度分析", "https://line.me/ti/p/@258hnnao", use_container_width=True)
+
+st.markdown("---")
+
+# --- 2. 痛點區 ---
+with st.container():
+    col_pain_img, col_pain_text = st.columns([1, 1])
+    with col_pain_img:
+        pain_img_path = r"G:\AI下載\頭像\真人桌前.png" # 假設路徑
+        if os.path.exists(pain_img_path):
+            st.image(pain_img_path, use_container_width=True)
+        else:
+            st.info("📷 [真人感桌前形象圖 佔位]")
+    
+    with col_pain_text:
+        st.markdown('<h2 style="color: #6C3483;">你是不是也正在被這些問題困住？</h2>', unsafe_allow_html=True)
+        st.markdown("""
+        <div class="pain-point-item">・他到底在想什麼？</div>
+        <div class="pain-point-item">・這段感情還有沒有機會？</div>
+        <div class="pain-point-item">・為什麼每次投入後都受傷？</div>
+        <div class="pain-point-item">・現在該主動，還是該放手？</div>
+        <div class="pain-point-item">・工作、感情、人生方向同時卡住？</div>
+        """, unsafe_allow_html=True)
+
+st.markdown("---")
+
+# --- 3. 免費分析區 ---
+st.markdown('<div id="analysis_section"></div>', unsafe_allow_html=True) # 錨點
+with st.container():
+    st.markdown('<h2 style="text-align: center; color: #6C3483;">先用免費分析，看見你的命盤底色</h2>', unsafe_allow_html=True)
+    st.markdown('<p style="text-align: center; font-size: 1.1em;">輸入出生資料後，系統會先提供基礎命盤分析，讓你了解自己的性格、感情模式與近期運勢。</p>', unsafe_allow_html=True)
+    
+    col_free_btn1, col_free_btn2, col_free_btn3 = st.columns([1, 2, 1])
+    with col_free_btn2:
+        if st.button("開始免費分析", key="start_free_analysis_btn"):
+            st.session_state.scroll_to_analysis = True
+            # 這裡其實表單就在下方，點擊後會 rerun，我們可以利用這個 rerun
+            st.rerun()
+
+    # 原本的分析功能入口
+    st.markdown("---")
+    # 這裡接續原本的 4. 功能模式選擇 與 5. 基礎輸入介面
 
 # 2. 管理員密碼鎖 (大師盤)
 MASTER_CODE = "HUGO888"
@@ -693,6 +830,51 @@ if enable_dual:
 st.markdown("---")
 
 # 7. 試算按鈕與 Prompt 邏輯
+# --- 4. 付費方案區 ---
+with st.container():
+    st.markdown('<h2 style="text-align: center; color: #6C3483;">付費方案建議</h2>', unsafe_allow_html=True)
+    col_plan_a, col_plan_b = st.columns(2)
+    with col_plan_a:
+        st.markdown("""
+        <div class="plan-card">
+            <h3>299 深度分析</h3>
+            <div class="plan-price">NT$ 299</div>
+            <p>適合想知道對方心態、互動卡關、下一步怎麼做的人。</p>
+        </div>
+        """, unsafe_allow_html=True)
+    with col_plan_b:
+        st.markdown("""
+        <div class="plan-card">
+            <h3>699 完整分析</h3>
+            <div class="plan-price">NT$ 699</div>
+            <p>適合想看完整感情走向、流年影響、策略建議與後續提問的人。</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+st.markdown("---")
+
+# --- 5. 信任區 ---
+with st.container():
+    st.markdown("""
+    <div class="trust-section">
+        <h2 style="text-align: center; color: #6C3483;">由 Hugo 親自解讀與回覆</h2>
+        <p style="text-align: center; font-size: 1.1em;">AI負責整理命盤與結構，Hugo負責判斷重點、看懂情緒脈絡，並提供可以實際執行的建議。</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+st.markdown("---")
+
+# --- 6. 最後 CTA ---
+with st.container():
+    st.markdown("""
+    <div class="final-cta">
+        <h2>你不一定要立刻做決定，但你可以先看清楚自己卡在哪裡。</h2>
+    </div>
+    """, unsafe_allow_html=True)
+    st.link_button("👉 加入 LINE 官方帳號", "https://line.me/ti/p/@258hnnao", use_container_width=True)
+
+st.markdown("---")
+
 col_btn_left, col_btn_right, col_btn_end = st.columns([1, 2, 1])
 with col_btn_right:
     btn_label = "✨ 大師深度發功" if is_master else "✨ 開始溫馨試算"
