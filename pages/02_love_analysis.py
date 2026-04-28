@@ -90,43 +90,43 @@ if st.button("開始 AI 模擬分析"):
 
     # 模擬付款邏輯
     if 'temp_pay_plan_love' in st.session_state:
-        st.markdown("### 📝 填寫感情分析訂單")
-        with st.form("love_order_form"):
-            lo_name = st.text_input("姓名")
-            lo_contact = st.text_input("Email 或 LINE ID")
-            lo_phone = st.text_input("手機 (選填)")
-            lo_birth_date = st.text_input("出生年月日 (YYYY-MM-DD)")
-            lo_birth_time = st.text_input("出生時間 (HH:MM)")
-            lo_gender = st.selectbox("性別", options=["男", "女"])
-            lo_question = st.text_area("想諮詢的感情問題")
-            
-            submit_lo_order = st.form_submit_button("✅ 建立訂單")
-            
-            if submit_lo_order:
-                if not lo_name or not lo_contact:
-                    st.error("請填寫姓名與聯絡資訊")
-                else:
-                    order_id = f"HUGO_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}"
-                    order_info = {
-                        'order_id': order_id,
-                        'created_at': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                        'name': lo_name,
-                        'contact': lo_contact,
-                        'phone': lo_phone,
-                        'birth_date': lo_birth_date,
-                        'birth_time': lo_birth_time,
-                        'gender': lo_gender,
-                        'question': lo_question,
-                        'plan': st.session_state.temp_pay_plan_love.split('_')[1],
-                        'payment_status': 'unpaid'
-                    }
-                    st.session_state.order_data = order_info
-                    save_order_to_csv(order_info)
-                    st.success(f"訂單已建立！訂單編號：{order_id}")
+        selected_plan_val = 299 if st.session_state.temp_pay_plan_love == "paid_299" else 699
+        st.subheader(f"📝 建立訂單（{selected_plan_val} 方案）")
+        
+        lo_name = st.text_input("姓名")
+        lo_contact = st.text_input("LINE ID 或 Email")
+        lo_phone = st.text_input("手機 (選填)")
+        lo_birth_date = st.date_input("出生年月日", value=datetime.date.today())
+        lo_birth_time = st.text_input("出生時間 (例：08:20)")
+        lo_gender = st.selectbox("性別", options=["男", "女"])
+        lo_question = st.text_area("想諮詢的感情問題")
+        
+        if st.button("建立訂單", key="btn_create_order_love"):
+            if not lo_name or not lo_contact:
+                st.error("請填寫姓名與聯絡資訊")
+            else:
+                order_id = f"HUGO_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}"
+                order_info = {
+                    'order_id': order_id,
+                    'created_at': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    'name': lo_name,
+                    'contact': lo_contact,
+                    'phone': lo_phone,
+                    'birth_date': str(lo_birth_date),
+                    'birth_time': lo_birth_time,
+                    'gender': lo_gender,
+                    'question': lo_question,
+                    'plan': selected_plan_val,
+                    'payment_status': 'unpaid'
+                }
+                st.session_state.order_data = order_info
+                save_order_to_csv(order_info)
+                st.success("訂單已建立！請加入LINE完成付款與分析")
+                st.json(st.session_state.order_data)
 
         if st.session_state.order_data:
             st.info("💳 **目前為測試模式**")
-            st.write(f"您選擇了：{'299 深度版' if st.session_state.temp_pay_plan_love == 'paid_299' else '699 完整版'}")
+            st.write(f"您選擇了：{st.session_state.order_data['plan']} 方案")
             if st.button("✅ 確認付款完成並解鎖 (測試)", type="primary"):
                 st.session_state.order_data['payment_status'] = 'test_paid'
                 save_order_to_csv(st.session_state.order_data)
