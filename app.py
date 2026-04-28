@@ -886,44 +886,52 @@ with col_btn_right:
 
                     # 模擬付款邏輯
                     if 'temp_pay_plan' in st.session_state:
-                        st.markdown("### 📝 填寫訂單資料")
-                        with st.form("order_form"):
-                            o_name = st.text_input("姓名", value=name)
-                            o_contact = st.text_input("Email 或 LINE ID")
-                            o_phone = st.text_input("手機 (選填)")
-                            o_birth_date = st.text_input("出生年月日", value=f"{b_year}-{b_month}-{b_day}")
-                            o_birth_time = st.text_input("出生時間", value=f"{b_hour}:{b_min}")
-                            o_gender = st.selectbox("性別", options=["男", "女"], index=0 if gender == "男" else 1)
-                            o_question = st.text_area("想諮詢的問題", value=question)
+                        selected_plan_val = 299 if st.session_state.temp_pay_plan == "paid_299" else 699
+                        st.subheader(f"📝 建立訂單（{selected_plan_val} 方案）")
+                        
+                        # 使用使用者偏好的表單樣式
+                        o_name = st.text_input("姓名", value=name)
+                        o_contact = st.text_input("LINE ID 或 Email")
+                        o_phone = st.text_input("手機 (選填)")
+                        
+                        # 嘗試轉換日期字串為 date 物件以供 date_input 使用
+                        try:
+                            default_date = datetime.date(int(b_year), int(b_month), int(b_day))
+                        except:
+                            default_date = datetime.date.today()
                             
-                            submit_order = st.form_submit_button("✅ 建立訂單")
-                            
-                            if submit_order:
-                                if not o_name or not o_contact:
-                                    st.error("請填寫姓名與聯絡資訊")
-                                else:
-                                    # 產生訂單 ID
-                                    order_id = f"HUGO_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}"
-                                    order_info = {
-                                        'order_id': order_id,
-                                        'created_at': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                                        'name': o_name,
-                                        'contact': o_contact,
-                                        'phone': o_phone,
-                                        'birth_date': o_birth_date,
-                                        'birth_time': o_birth_time,
-                                        'gender': o_gender,
-                                        'question': o_question,
-                                        'plan': st.session_state.temp_pay_plan.split('_')[1],
-                                        'payment_status': 'unpaid'
-                                    }
-                                    st.session_state.order_data = order_info
-                                    save_order_to_csv(order_info)
-                                    st.success(f"訂單已建立！訂單編號：{order_id}")
+                        o_birth_date = st.date_input("出生年月日", value=default_date)
+                        o_birth_time = st.text_input("出生時間（例：08:20）", value=f"{b_hour}:{b_min}")
+                        o_gender = st.selectbox("性別", options=["男", "女"], index=0 if gender == "男" else 1)
+                        o_question = st.text_area("想諮詢的問題", value=question)
+                        
+                        if st.button("建立訂單"):
+                            if not o_name or not o_contact:
+                                st.error("請填寫姓名與聯絡資訊")
+                            else:
+                                # 產生訂單 ID
+                                order_id = f"HUGO_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}"
+                                order_info = {
+                                    'order_id': order_id,
+                                    'created_at': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                    'name': o_name,
+                                    'contact': o_contact,
+                                    'phone': o_phone,
+                                    'birth_date': str(o_birth_date),
+                                    'birth_time': o_birth_time,
+                                    'gender': o_gender,
+                                    'question': o_question,
+                                    'plan': selected_plan_val,
+                                    'payment_status': 'unpaid'
+                                }
+                                st.session_state.order_data = order_info
+                                save_order_to_csv(order_info)
+                                st.success("訂單已建立！請加入LINE完成付款與分析")
+                                st.json(st.session_state.order_data)
 
                         if st.session_state.order_data:
                             st.info("💳 **目前為測試模式**")
-                            st.write(f"您選擇了：{'299 深度版' if st.session_state.temp_pay_plan == 'paid_299' else '699 完整版'}")
+                            st.write(f"您選擇了：{st.session_state.order_data['plan']} 方案")
                             st.write("點擊下方確認付款後將解鎖內容。")
                             col_pay1, col_pay2 = st.columns(2)
                             with col_pay1:
