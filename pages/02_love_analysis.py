@@ -11,6 +11,103 @@ st.set_page_config(
 
 st.title("🧠 AI感情心理分析")
 
+# CSS 注入 (與 app.py 同步)
+st.markdown("""
+<style>
+    .plan-card {
+        background: white;
+        border: 2px solid #E0E0E0;
+        border-radius: 20px;
+        padding: 30px;
+        text-align: center;
+        transition: all 0.3s ease;
+        height: 100%;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+    .plan-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 30px rgba(108, 52, 131, 0.15);
+    }
+    .plan-card.popular {
+        border: 3px solid #A569BD;
+        background: linear-gradient(180deg, #FFFFFF 0%, #F5EEF8 100%);
+        position: relative;
+    }
+    .popular-badge {
+        position: absolute;
+        top: -15px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #A569BD;
+        color: white;
+        padding: 4px 15px;
+        border-radius: 20px;
+        font-size: 0.8em;
+        font-weight: 700;
+        letter-spacing: 1px;
+        z-index: 10;
+    }
+    .plan-title {
+        font-size: 1.5em;
+        font-weight: 800;
+        color: #4A235A;
+        margin-bottom: 10px;
+    }
+    .plan-price {
+        font-size: 2.2em;
+        font-weight: 900;
+        color: #6C3483;
+        margin-bottom: 20px;
+    }
+    .plan-price span {
+        font-size: 0.5em;
+        color: #7B7B7B;
+        font-weight: 400;
+    }
+    .plan-features {
+        text-align: left;
+        margin-bottom: 25px;
+        list-style: none;
+        padding: 0;
+    }
+    .plan-features li {
+        margin-bottom: 12px;
+        color: #4D5656;
+        font-size: 0.95em;
+        display: flex;
+        align-items: center;
+    }
+    .plan-features li:before {
+        content: "✅";
+        margin-right: 10px;
+        font-size: 0.8em;
+    }
+    .plan-features li.locked {
+        color: #ABB2B9;
+    }
+    .plan-features li.locked:before {
+        content: "🔒";
+    }
+    .stButton>button {
+        background: linear-gradient(135deg, #8E44AD, #A569BD);
+        color: white;
+        font-weight: 700;
+        font-size: 1.1em;
+        padding: 0.6em 2em;
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 4px 15px rgba(142, 68, 173, 0.4);
+        transition: all 0.3s ease;
+        width: 100%;
+    }
+    .stButton>button:hover {
+        background: linear-gradient(135deg, #9B59B6, #BB8FCE);
+        box-shadow: 0 6px 20px rgba(142, 68, 173, 0.5);
+        transform: translateY(-2px);
+    }
+</style>
+""", unsafe_allow_html=True)
+
 # --- 初始化付款狀態 ---
 if 'payment_status' not in st.session_state:
     st.session_state.payment_status = "free"
@@ -52,8 +149,18 @@ if st.button("開始 AI 模擬分析"):
     col_plan1, col_plan2, col_plan3 = st.columns(3)
     
     with col_plan1:
-        st.markdown("### 🥉 免費版")
-        st.write("✅ 基礎感情分析")
+        st.markdown("""
+        <div class="plan-card">
+            <div class="plan-title">🥉 免費版</div>
+            <div class="plan-price">NT$ 0</div>
+            <ul class="plan-features">
+                <li>基礎感情分析</li>
+                <li class="locked">對方真實想法解析</li>
+                <li class="locked">具體行動建議指引</li>
+                <li class="locked">PDF 完整報告</li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
         if st.session_state.payment_status == "free":
             st.button("目前方案", disabled=True, key="love_btn_free")
         else:
@@ -62,25 +169,41 @@ if st.button("開始 AI 模擬分析"):
                 st.rerun()
 
     with col_plan2:
-        st.markdown("### 🥈 299 深度版")
-        st.write("✅ 基礎感情分析")
-        st.write("✅ 對方真實想法解析")
-        st.write("✅ 行動建議指引")
+        st.markdown("""
+        <div class="plan-card popular">
+            <div class="popular-badge">熱門推薦</div>
+            <div class="plan-title">🥈 299 深度版</div>
+            <div class="plan-price">NT$ 299</div>
+            <ul class="plan-features">
+                <li>基礎感情分析</li>
+                <li><b>對方真實想法解析</b></li>
+                <li><b>具體行動建議指引</b></li>
+                <li class="locked">PDF 下載權限</li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
         if st.session_state.payment_status == "paid_299":
             st.button("✅ 已解鎖", disabled=True, key="love_btn_299_active")
         elif st.session_state.payment_status == "paid_699":
-            st.write("✨ 已包含在完整版")
+            st.info("✨ 已包含在完整版")
         else:
             if st.button("🔓 解鎖 299 深度版", key="love_btn_unlock_299"):
                 st.session_state.temp_pay_plan_love = "paid_299"
                 st.rerun()
 
     with col_plan3:
-        st.markdown("### 🥇 699 完整版")
-        st.write("✅ 299 版所有內容")
-        st.write("✅ 完整對話拆解報告")
-        st.write("✅ PDF 下載權限")
-        st.write("✅ 3 次線上提問權限")
+        st.markdown("""
+        <div class="plan-card">
+            <div class="plan-title">🥇 699 完整版</div>
+            <div class="plan-price">NT$ 699</div>
+            <ul class="plan-features">
+                <li>299 版所有內容</li>
+                <li><b>完整對話拆解報告</b></li>
+                <li><b>PDF 下載權限</b></li>
+                <li><b>3 次提問權限 (Hugo 親回)</b></li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
         if st.session_state.payment_status == "paid_699":
             st.button("✅ 已解鎖", disabled=True, key="love_btn_699_active")
         else:
