@@ -81,4 +81,4 @@ with col2:
     st.link_button("🏠 回首頁", "https://hugomaster.io", use_container_width=True)
 
 st.markdown("---")
-st.caption("⚠️ 本分析僅供參考，不構成任何感情建議。請自律判斷。"
+st.caption("⚠️ 本分析僅供參考，不構成任何感情建議。請自律判斷。")
