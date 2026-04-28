@@ -142,7 +142,8 @@ with st.sidebar:
         st.info(f"📧 服務帳號：`{current_client_email}`")
 
     st.markdown("---")
-    st.page_link("pages/02_love_analysis.py", label="🧠 AI感情心理分析")
+    if st.button("🧠 AI感情心理分析", use_container_width=True):
+        st.switch_page("pages/02_love_analysis.py")
 
 def get_wuxing_color(char):
     """根據干支字元回傳對應的五行背景顏色"""
