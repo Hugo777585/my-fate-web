@@ -927,6 +927,7 @@ with col_btn_right:
                                 st.session_state.order_data = order_info
                                 save_order_to_csv(order_info)
                                 st.success("訂單已建立！請加入LINE完成付款與分析")
+                                st.image(r"G:\AI下載\頭像\ChatGPT Image 2026年4月28日 下午11_50_51.png", use_container_width=True)
                                 st.json(st.session_state.order_data)
 
                         if st.session_state.order_data:
