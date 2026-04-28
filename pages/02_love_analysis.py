@@ -152,6 +152,10 @@ if st.button("開始 AI 模擬分析"):
             st.warning("🔒 完整報告與 PDF 下載僅限「699 完整版」")
     else:
         st.info("🔒 付費解鎖後即可查看深度想法解析與行動建議")
+        st.link_button(
+            "👉 加入LINE解鎖完整分析",
+            "https://line.me/ti/p/@hugo_master"
+        )
 
 st.info("系統建置中")
 
