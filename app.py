@@ -142,7 +142,7 @@ with st.sidebar:
         st.info(f"📧 服務帳號：`{current_client_email}`")
 
     st.markdown("---")
-    if st.button("🧠 AI感情心理分析", use_container_width=True):
+    if st.button("🧠 AI感情心理分析"):
         st.switch_page("pages/02_love_analysis.py")
 
 def get_wuxing_color(char):
