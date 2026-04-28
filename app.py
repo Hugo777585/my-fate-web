@@ -65,6 +65,10 @@ def create_pdf(user_name, body):
 # 載入環境變數 (Local 開發用)
 load_dotenv()
 
+# --- 初始化付款狀態 ---
+if 'payment_status' not in st.session_state:
+    st.session_state.payment_status = "free"
+
 # --- Google Sheets 連線設定 ---
 def init_gsheets():
     client_email = "未知"
@@ -811,18 +815,102 @@ with col_btn_right:
                     st.markdown(result_text, unsafe_allow_html=True)
                     st.markdown('</div>', unsafe_allow_html=True)
                     
-                    # --- 下載報告功能 ---
-                    try:
-                        pdf_bytes = create_pdf(name, result_text)
-                        st.download_button(
-                            label="📥 下載完整命理報告 (PDF)",
-                            data=pdf_bytes,
-                            file_name=f"雨果大師_{name}_命理報告.pdf",
-                            mime="application/pdf",
-                            use_container_width=True
-                        )
-                    except Exception as pdf_err:
-                        st.error(f"PDF 產生失敗：{pdf_err}")
+                    # --- 付費解鎖架構 ---
+                    st.markdown("---")
+                    st.subheader("🚀 升級您的解析報告")
+                    
+                    # 方案顯示
+                    col_plan1, col_plan2, col_plan3 = st.columns(3)
+                    
+                    with col_plan1:
+                        st.markdown("### 🥉 免費版")
+                        st.write("✅ 基礎命理分析")
+                        st.write("❌ 進階行動指引")
+                        if st.session_state.payment_status == "free":
+                            st.button("目前方案", disabled=True, key="btn_free")
+                        else:
+                            if st.button("切換回免費版", key="btn_switch_free"):
+                                st.session_state.payment_status = "free"
+                                st.rerun()
+
+                    with col_plan2:
+                        st.markdown("### 🥈 299 深度版")
+                        st.write("✅ 基礎命理分析")
+                        st.write("✅ 流年行動指引")
+                        st.write("✅ 感情/事業建議")
+                        if st.session_state.payment_status == "paid_299":
+                            st.button("✅ 已解鎖", disabled=True, key="btn_299_active")
+                        elif st.session_state.payment_status == "paid_699":
+                            st.write("✨ 已包含在完整版")
+                        else:
+                            if st.button("🔓 解鎖 299 深度版", key="btn_unlock_299"):
+                                st.session_state.temp_pay_plan = "paid_299"
+                                st.rerun()
+
+                    with col_plan3:
+                        st.markdown("### 🥇 699 完整版")
+                        st.write("✅ 299 版所有內容")
+                        st.write("✅ 完整深度報告")
+                        st.write("✅ PDF 下載權限")
+                        st.write("✅ 3 次提問權限")
+                        if st.session_state.payment_status == "paid_699":
+                            st.button("✅ 已解鎖", disabled=True, key="btn_699_active")
+                        else:
+                            if st.button("🔓 解鎖 699 完整版", key="btn_unlock_699"):
+                                st.session_state.temp_pay_plan = "paid_699"
+                                st.rerun()
+
+                    # 模擬付款邏輯
+                    if 'temp_pay_plan' in st.session_state:
+                        st.info("💳 **目前為測試模式**")
+                        st.write(f"您選擇了：{'299 深度版' if st.session_state.temp_pay_plan == 'paid_299' else '699 完整版'}")
+                        st.write("點擊下方確認付款後將解鎖內容。")
+                        col_pay1, col_pay2 = st.columns(2)
+                        with col_pay1:
+                            if st.button("✅ 確認付款完成", type="primary"):
+                                st.session_state.payment_status = st.session_state.temp_pay_plan
+                                del st.session_state.temp_pay_plan
+                                st.success("🎉 付款成功！內容已解鎖。")
+                                st.rerun()
+                        with col_pay2:
+                            if st.button("❌ 取消"):
+                                del st.session_state.temp_pay_plan
+                                st.rerun()
+
+                    # --- 顯示已付款內容 ---
+                    if st.session_state.payment_status in ["paid_299", "paid_699"]:
+                        st.markdown("---")
+                        st.markdown("## 🌟 進階解鎖內容")
+                        
+                        # 299 深度內容
+                        st.markdown("### 📍 流年行動指引 & 建議")
+                        st.success(f"【{st.session_state.main_cat if 'main_cat' in st.session_state else '整體'}建議】根據您的命盤，今年應以『穩』為主，適合學習與內省，不宜大動作投資。")
+                        
+                        # 699 完整版內容
+                        if st.session_state.payment_status == "paid_699":
+                            st.markdown("### 📘 完整深度報告")
+                            st.write("這裡顯示更完整的深度分析內容，包含大運流年的細部拆解與五行補運建議。")
+                            st.info("💡 **售後服務**：您目前擁有 **3 次** 後續提問權限，請透過下方 LINE 聯繫大師。")
+
+                            # --- 下載報告功能 (僅限 699) ---
+                            try:
+                                pdf_bytes = create_pdf(name, result_text)
+                                st.download_button(
+                                    label="📥 下載完整命理報告 (PDF)",
+                                    data=pdf_bytes,
+                                    file_name=f"雨果大師_{name}_命理報告.pdf",
+                                    mime="application/pdf",
+                                    use_container_width=True
+                                )
+                            except Exception as pdf_err:
+                                st.error(f"PDF 產生失敗：{pdf_err}")
+                        else:
+                            st.warning("🔒 完整深度報告與 PDF 下載僅限「699 完整版」")
+                            if st.button("升級至 699 完整版"):
+                                st.session_state.temp_pay_plan = "paid_699"
+                                st.rerun()
+                    else:
+                        st.info("🔒 付費解鎖後即可查看進階行動指引與下載 PDF 報告")
 
                     st.caption(f"⏱️ 分析耗時：{elapsed:.1f} 秒")
 
