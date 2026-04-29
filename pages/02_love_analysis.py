@@ -126,10 +126,14 @@ def generate_free_reply(event, wish, attitude):
     這裡如果處理錯，容易變成你越追，對方越冷。」
     
     ---
-    ⚠️ **以上為初步情緒與狀況理解。**
-    目前的分析只幫你看清楚了「卡在哪裡」，但還沒有揭露對方的真實心態與具體做法。
+    「今年在感情與人際上會出現變動， 
+    特別是在某些月份容易產生誤解或衝突。 
     
-    💡 **建議：** 若想主導結果，建議參考下方的 **299 深度解說** 或 **699 完整決策分析**。
+    � **（299方案）** 可針對你目前的問題做更深入拆解與建議 
+    👉 **（699方案）** 可直接給你應對策略與後續走向推演」
+    
+    ---
+    👉 **「若想更深入了解對方心態與實際做法，可升級進階分析」**
     """
 
 def generate_299_reply(event, wish, attitude):
@@ -277,18 +281,40 @@ if st.session_state.analysis_result:
 st.markdown("---")
 st.subheader("🚀 選擇適合您的轉運方案")
 
-# 這裡接續原本的方案展示卡片
-col_plan1, col_plan2 = st.columns(2)
+# 任務：使用 st.columns(3) 做三欄方案卡
+col_plan1, col_plan2, col_plan3 = st.columns(3)
 
 with col_plan1:
+    st.markdown("""
+    <div class="plan-card">
+        <div class="plan-title">🥉 免費分析</div>
+        <div class="plan-price">NT$ 0</div>
+        <ul class="plan-features">
+            <li>顯示基礎分析（AI初步掃描）</li>
+            <li>初步情緒與狀況理解</li>
+            <li>可能的關係卡點提醒</li>
+        </ul>
+        <p style="color: #7B7B7B; font-size: 0.9em; font-weight: 600; margin-top: 10px;">
+            👉「若想更深入了解對方心態與實際做法，可升級進階分析」
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    if st.session_state.payment_status == "free":
+        st.button("目前方案", disabled=True, key="love_btn_free_active")
+    else:
+        if st.button("切換回免費分析", key="love_btn_switch_free"):
+            st.session_state.payment_status = "free"
+            st.rerun()
+
+with col_plan2:
     st.markdown("""
     <div class="plan-card">
         <div class="plan-title">🥈 299 深度解說</div>
         <div class="plan-price">NT$ 299</div>
         <ul class="plan-features">
-            <li>深入解析流年＋本命盤交互影響</li>
-            <li>精準分析目前遇到的人與問題</li>
-            <li>給予明確方向，解決目前困境的專屬解說</li>
+            <li>深度分析對方心理狀態</li>
+            <li>提供「多選項建議」，不給單一結論</li>
+            <li>標註：可提問 3~5 次（5天內）</li>
         </ul>
         <p style="color: #6C3483; font-size: 0.9em; font-weight: 600; margin-top: 10px;">
             適合對象：「已經遇到問題，需要大師指引方向與解方的人」
@@ -304,17 +330,16 @@ with col_plan1:
             st.session_state.temp_pay_plan_love = "paid_299"
             st.rerun()
 
-with col_plan2:
+with col_plan3:
     st.markdown("""
     <div class="plan-card popular">
         <div class="popular-badge">熱門推薦</div>
         <div class="plan-title">🥇 699 完整決策分析</div>
         <div class="plan-price">NT$ 699</div>
         <ul class="plan-features">
-            <li>包含 299 所有深度解析內容</li>
-            <li>不只解析，直接「幫您判斷與決策」</li>
-            <li>結合命盤＋兩性心理 → 看透對方真實心態與局勢</li>
-            <li>提供具體做法（給予明確的下一步行動策略）</li>
+            <li>更精準推演＋行動建議</li>
+            <li>提供「方向性結論」，但避免寫死</li>
+            <li>加入「持續追蹤機制」（7天內）</li>
             <li><b>📌 可提問 3 次（由 Hugo 大師親自針對您的狀況回覆解答）</b></li>
         </ul>
         <p style="color: #6C3483; font-size: 0.9em; font-weight: 600; margin-top: 10px;">
