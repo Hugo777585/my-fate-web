@@ -129,7 +129,7 @@ def generate_free_reply(event, wish, attitude):
     「今年在感情與人際上會出現變動， 
     特別是在某些月份容易產生誤解或衝突。 
     
-    � **（299方案）** 可針對你目前的問題做更深入拆解與建議 
+    👉 **（299方案）** 可針對你目前的問題做更深入拆解與建議 
     👉 **（699方案）** 可直接給你應對策略與後續走向推演」
     
     ---
@@ -287,10 +287,10 @@ col_plan1, col_plan2, col_plan3 = st.columns(3)
 with col_plan1:
     st.markdown("""
     <div class="plan-card">
-        <div class="plan-title">🥉 免費分析</div>
+        <div class="plan-title">🥉 免費初步分析</div>
         <div class="plan-price">NT$ 0</div>
         <ul class="plan-features">
-            <li>顯示基礎分析（AI初步掃描）</li>
+            <li>顯示基礎分析（目前AI輸出內容）</li>
             <li>初步情緒與狀況理解</li>
             <li>可能的關係卡點提醒</li>
         </ul>
