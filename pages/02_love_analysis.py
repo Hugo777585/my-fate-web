@@ -182,9 +182,10 @@ def generate_free_reply(event, wish, attitude):
     
     ---
     「今年在感情與人際上會出現變動， 
-    特別是在某些月份容易產生誤解或衝突。 
+    特別是在某些月份容易產生誤解或衝突。」 
+    """
     
-   
+
 def generate_299_reply(event, wish, attitude):
     return f"""
     ### 📜 AI 感情深度分析 (299 深度版)
