@@ -581,6 +581,9 @@ if st.session_state.get('scroll_to_analysis'):
 st.markdown('<h1 class="main-title">HUGO 天命智庫</h1>', unsafe_allow_html=True)
 st.markdown('<p class="sub-title">八字命理 × AI分析 × 感情諮詢</p>', unsafe_allow_html=True)
 
+# LINE 客服按鈕
+st.link_button("🔮 加LINE免費諮詢", "https://line.me/ti/p/@323ohobf", use_container_width=True)
+
 # 2. 管理員密碼鎖 (大師盤)
 MASTER_CODE = "HUGO888"
 is_master = False
@@ -1031,6 +1034,9 @@ with col_btn_right:
                         """, unsafe_allow_html=True)
                         
                     st.markdown('</div>', unsafe_allow_html=True)
+                    
+                    # LINE 完整分析按鈕
+                    st.link_button("👉 加LINE看完整分析", "https://line.me/ti/p/@323ohobf", use_container_width=True)
                     
                     # --- 付費解鎖架構 ---
                     st.markdown("---")
