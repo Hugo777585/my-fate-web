@@ -29,6 +29,33 @@ def ai_reply(prompt):
     )
     return response.output[0].content[0].text
 
+def ai_love_consult_reply(context_prompt, is_master=False):
+    """
+    第二層 AI 感情心理諮詢回覆函數
+    """
+    system_role = """你是一位結合命理分析、感情心理諮詢與關係策略的顧問。請用沉穩、理性、具同理心的方式分析，不要鐵口直斷，不要恐嚇使用者。"""
+    
+    # 根據權限調整輸出要求
+    permission_instruction = ""
+    if is_master:
+        permission_instruction = "\n請提供完整深度分析，不限制字數，包含：對方心理、關係互動模式、使用者情緒盲點、可執行策略、風險判斷、後續追蹤建議。"
+    else:
+        permission_instruction = "\n請提供簡短初步分析，字數控制在 300～500 字之間。最後必須包含引導文案：『這只是初步方向判斷。如果你想看完整版本，可以加 LINE 做深度分析。』"
+
+    full_prompt = f"{system_role}\n\n{context_prompt}\n{permission_instruction}"
+    
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini", # 修正為正確的 chat 模型名稱
+            messages=[
+                {"role": "system", "content": system_role},
+                {"role": "user", "content": full_prompt}
+            ]
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"AI 諮詢暫時無法連線：{str(e)}"
+
 # --- PDF 報告產生器 ---
 class ReportPDF(FPDF):
     def footer(self):
@@ -601,7 +628,7 @@ st.markdown('<p class="sub-title">八字命理 × AI分析 × 感情諮詢</p>',
 st.link_button("🔮 加LINE免費諮詢", "https://line.me/ti/p/@323ohobf", use_container_width=True)
 
 # 2. 管理員密碼鎖 (大師盤)
-MASTER_CODE = st.secrets.get("MASTER_CODE", None) or os.getenv("MASTER_CODE")
+MASTER_CODE = st.secrets.get("MASTER_CODE", None) or os.getenv("MASTER_CODE", "hugo888")
 is_master = False
 
 with st.sidebar:
@@ -1046,6 +1073,56 @@ with col_btn_right:
                     # LINE 完整分析按鈕
                     st.link_button("👉 加LINE看完整分析", "https://line.me/ti/p/@323ohobf", use_container_width=True)
                     
+                    # --- 第二層｜AI感情心理諮詢師 ---
+                    st.markdown("---")
+                    st.markdown("### 💗 第二層｜AI感情心理諮詢師")
+                    st.markdown("""
+                    命盤可以看出趨勢， 
+                    但真正讓人卡住的，往往是對方的態度、沉默、忽冷忽熱與不確定感。 
+
+                    你可以在這裡補充目前最想問的感情問題， 
+                    AI會延續第一層命盤與關係資料， 
+                    幫你做更深入的感情心理分析。
+                    """)
+                    
+                    consult_input = st.text_area(
+                        "請輸入你想進一步追問的感情問題", 
+                        placeholder="例如：他現在到底還有沒有在意我？我該主動聯絡還是先退一步？",
+                        key="love_consult_input"
+                    )
+                    
+                    if st.button("🔮 啟動 AI 深度諮詢"):
+                        if not consult_input:
+                            st.warning("⚠️ 請輸入您想追問的問題內容")
+                        else:
+                            with st.spinner("AI 諮詢師正在深入分析您的情況..."):
+                                # 組合第二層背景資料
+                                context_prompt = f"""
+【第一層背景資料】
+- 姓名：{name}
+- 性別：{gender}
+- 職業/狀態：{occupation}
+- 出生時間：{b_year}/{b_month}/{b_day} {b_hour}:{b_min}
+- 諮詢分類：{st.session_state.get('main_cat', '未提供')}
+- 具體狀態：{st.session_state.get('sub_cat', '未提供')}
+- 詳細描述：{st.session_state.get('detail_text', '未提供')}
+- 命主八字：{pillar_info}
+"""
+                                if enable_dual:
+                                    context_prompt += f"\n- 對象資料：{name2}, {gender2}, {b_year2}/{b_month2}/{b_day2} {b_hour2}:{b_min2}, 關係:{relation_type}"
+                                
+                                context_prompt += f"\n\n【使用者第二層追問問題】\n{consult_input}"
+                                
+                                consult_result = ai_love_consult_reply(context_prompt, is_master=is_master)
+                                
+                                st.markdown("#### 💌 諮詢師分析建議")
+                                st.markdown(consult_result)
+                                
+                                if not is_master:
+                                    st.markdown("---")
+                                    st.info("👉 以上為初步方向判斷。如果你想看完整版本，可以加 LINE 做深度分析。")
+                                    st.link_button("👉 加LINE看完整深度分析", "https://line.me/ti/p/@323ohobf", use_container_width=True)
+
                     # --- 付費解鎖架構 ---
                     st.markdown("---")
                     st.subheader("🚀 升級您的解析報告")
