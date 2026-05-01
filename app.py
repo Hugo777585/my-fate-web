@@ -1062,7 +1062,7 @@ with col_btn_right:
                         st.write("🔥 大師完整版分析啟動")
                         st.markdown(result_text, unsafe_allow_html=True)
                     else:
-                        st.write("👉 目前為基礎分析，解鎖完整內容請升級方案")
+                        st.write("👉 以上為您的初步命理分析報告")
                         # 基礎分析可能只顯示前段或特定內容，這裡先保留原本顯示 result_text 的邏輯
                         st.markdown(result_text, unsafe_allow_html=True)
                     
@@ -1090,85 +1090,43 @@ with col_btn_right:
                     # LINE 完整分析按鈕
                     st.link_button("👉 加LINE看完整分析", "https://line.me/ti/p/@323ohobf", use_container_width=True)
                     
-                    # --- 第二層｜AI感情心理諮詢師 ---
+                    # --- 第二層｜AI感情心理諮詢師 (高轉換引導版) ---
                     st.markdown("---")
-                    st.markdown("### 💗 第二層｜AI感情心理諮詢師")
                     st.markdown("""
-                    很多人來到這一步，其實心裡已經有答案了。 
-  
-                    只是那個答案，可能讓你不太敢面對， 
-                    或還在期待會有不一樣的結果。 
+                    ### � 延伸分析｜感情心理解析 
                     
-                    感情最難的，不是發生什麼， 
-                    而是對方的態度讓你開始不確定。 
+                    很多時候，真正讓人放不下的， 
+                    不是發生了什麼， 
+                    而是你始終看不懂「對方現在到底在想什麼」。 
                     
-                    你可以把現在最卡、最想知道的問題打出來， 
-                    不用整理，也不用想太多。 
+                    你可能會開始反覆想： 
+                    👉 他現在對我是認認真真的，還是只是剛好有人陪？ 
+                    👉 這段關係，還有沒有機會走下去？ 
+                    👉 我現在該主動，還是該慢慢退？ 
                     
-                    我會從你剛剛的命盤， 
-                    結合你現在的狀態， 
-                    幫你看清楚這段關係真正的走向。
+                    有些答案，其實你心裡已經隱約知道， 
+                    只是還沒有被看清楚。 
+                    
+                    **HUGO 天命智庫會透過：**
+                    **八字命盤 × 關係互動 × 心理狀態** 
+                    
+                    幫你把「現在這段關係的真實狀態」拆開來看。 
+                    
+                    不是告訴你一個結果， 
+                    而是讓你知道： 
+                    
+                    👉 **對方現在的情緒位置** 
+                    👉 **你們之間的關係落差** 
+                    👉 **以及你下一步做什麼，結果會開始改變** 
+                    
+                    💗 **如果你準備好看清楚這段關係** 
+                    
+                    👉 **請點擊下方，進入 AI 感情心理解析** 
                     """)
                     
-                    consult_input = st.text_area(
-                        "請輸入你想進一步追問的感情問題", 
-                        placeholder="例如：他現在到底還有沒有在意我？我該主動聯絡還是先退一步？",
-                        key="love_consult_input"
-                    )
+                    if st.button("🚀 進入 AI 感情心理解析", use_container_width=True, type="primary"):
+                        st.switch_page("pages/02_love_analysis.py")
                     
-                    if st.button("🔮 啟動 AI 深度諮詢"):
-                        if not consult_input:
-                            st.warning("⚠️ 請輸入您想追問的問題內容")
-                        else:
-                            with st.spinner("AI 諮詢師正在深入分析您的情況..."):
-                                # 組合第二層背景資料
-                                context_prompt = f"""
-【第一層背景資料】
-- 姓名：{name}
-- 性別：{gender}
-- 職業/狀態：{occupation}
-- 出生時間：{b_year}/{b_month}/{b_day} {b_hour}:{b_min}
-- 諮詢分類：{st.session_state.get('main_cat', '未提供')}
-- 具體狀態：{st.session_state.get('sub_cat', '未提供')}
-- 詳細描述：{st.session_state.get('detail_text', '未提供')}
-- 命主八字：{pillar_info}
-"""
-                                if enable_dual:
-                                    context_prompt += f"\n- 對象資料：{name2}, {gender2}, {b_year2}/{b_month2}/{b_day2} {b_hour2}:{b_min2}, 關係:{relation_type}"
-                                
-                                context_prompt += f"\n\n【使用者第二層追問問題】\n{consult_input}"
-                                
-                                consult_result = ai_love_consult_reply(context_prompt, is_master=is_master)
-                                
-                                st.markdown("#### 💌 諮詢師分析建議")
-                                st.markdown(consult_result)
-                                
-                                if not is_master:
-                                    st.markdown("---")
-                                    st.markdown("""
-                                    其實你現在卡住的，不只是表面這件事， 
-                                    而是你們之間的互動模式，已經開始固定下來了。 
-                                    
-                                    如果這一段沒有調整， 
-                                    後面很容易一直重複類似的狀況。 
-                                    
-                                    我可以幫你把這段關係接下來的走向， 
-                                    以及「怎麼做會對你比較有利」拆得更清楚， 
-                                    包含對方後面可能的反應。
-                                    
-                                    這部分我會用比較完整的方式幫你看， 
-                                    不是只講結果， 
-                                    而是讓你知道為什麼會這樣、接下來怎麼走。
-                                    """)
-                                    
-                                    st.link_button("👉 看完整分析（含對方心理＋後續走向）", "https://line.me/ti/p/@323ohobf", use_container_width=True)
-                                    
-                                    st.markdown("""
-                                    如果你比較習慣用LINE， 
-                                    也可以直接加我，我會幫你看完整一版。
-                                    """)
-                                    st.markdown("👉 [https://line.me/ti/p/@323ohobf](https://line.me/ti/p/@323ohobf)")
-
                     # 移除舊有的付費解鎖架構 (針對一般用戶)
                     if is_master:
                         st.markdown("---")
