@@ -1,7 +1,62 @@
 import streamlit as st
+from openai import OpenAI
 import datetime
 import os
 import csv
+from dotenv import load_dotenv
+
+load_dotenv()
+openai_key = st.secrets.get("OPENAI_API_KEY", None) or os.getenv("OPENAI_API_KEY")
+
+if not openai_key:
+    st.error("尚未設定 OPENAI_API_KEY，請先到 Streamlit Cloud Secrets 加入金鑰。")
+    st.stop()
+
+client = OpenAI(api_key=openai_key)
+
+def ai_love_consult_reply(context_prompt, is_master=False):
+    """
+    第二層 AI 感情心理諮詢回覆函數 (優化轉單版)
+    """
+    system_role = """你是一位結合命理分析、感情心理諮詢與關係策略的顧問。請用沉穩、理性、具同理心的方式分析，像是在理解人、有洞察力。不要鐵口直斷，不要恐嚇使用者。"""
+    
+    # 根據權限調整輸出要求
+    if is_master:
+        permission_instruction = """
+【大師模式：完整分析】
+請提供完整深度分析，不限制字數，包含：
+1. 對方目前真實心理狀態
+2. 目前關係的核心卡點
+3. 使用者內心真正不安的核心
+4. 具體建議採取的做法（實戰策略）
+5. 絕對不建議做的事
+6. 潛在風險提醒
+7. 明確的下一步行動建議
+"""
+    else:
+        permission_instruction = """
+【一般模式：初步引導】
+請嚴格遵守以下三段式結構，字數約 300～500 字：
+1. ① 對方心理：描述對方的心理狀態，要準確且有畫面感。
+2. ② 關係卡點：點出關係中讓使用者產生共鳴的阻礙。
+3. ③ 方向指引：給予一點點處理方向，但務必保留「關鍵沒說破」，創造好奇感。
+
+❌ 禁止出現「購買」、「方案」、「價格」等商業字眼。
+"""
+
+    full_prompt = f"{system_role}\n\n{context_prompt}\n{permission_instruction}"
+    
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": system_role},
+                {"role": "user", "content": full_prompt}
+            ]
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"AI 諮詢暫時無法連線：{str(e)}"
 
 st.set_page_config(
     page_title="AI感情心理分析",
@@ -236,34 +291,45 @@ with st.container():
 
 # --- 分析執行邏輯 ---
 st.markdown("<br>", unsafe_allow_html=True)
+
+love_question = st.text_area(
+    "請輸入你想進一步追問的感情問題",
+    placeholder="例如：他為什麼突然不讀不回？我該主動傳訊息給他嗎？",
+    key="love_question"
+)
+
 if st.button("✨ 開始 AI 感情心理分析", use_container_width=True):
-    if not event_happening:
+    if not love_question.strip():
+        st.warning("請先輸入想分析的感情問題")
+    elif not event_happening:
         st.warning("⚠️ 請先填寫「目前發生什麼事」，大師才能為您分析喔！")
     else:
-        try:
-            if analysis_scheme == "免費初步分析":
-                st.session_state.analysis_result = generate_free_reply(event_happening, wish_to_know, partner_attitude)
-                st.session_state.payment_status = "free"
-            
-            elif analysis_scheme == "299 深度分析":
-                # 檢查是否已付費
-                if st.session_state.payment_status == "paid_299" or st.session_state.payment_status == "paid_699":
-                    st.session_state.analysis_result = generate_299_reply(event_happening, wish_to_know, partner_attitude)
-                else:
-                    st.session_state.temp_pay_plan_love = "paid_299"
-                    st.session_state.analysis_result = None # 先不顯示結果
-                    st.info("💡 您選擇了 299 深度分析，請先完成下方訂單以解鎖內容。")
-
-            elif analysis_scheme == "699 完整分析":
-                # 檢查是否已付費
-                if st.session_state.payment_status == "paid_699":
-                    st.session_state.analysis_result = generate_699_reply(event_happening, wish_to_know, partner_attitude)
-                else:
-                    st.session_state.temp_pay_plan_love = "paid_699"
-                    st.session_state.analysis_result = None # 先不顯示結果
-                    st.info("💡 您選擇了 699 完整分析，請先完成下方訂單以解鎖內容。")
-        except Exception as e:
-            st.error(f"❌ 執行分析時發生錯誤：{e}")
+        with st.spinner("正在進行感情心理分析..."):
+            try:
+                # 建立 AI 分析用的 Prompt
+                context_prompt = f"""
+【使用者描述的現況】
+1. 目前發生什麼事：{event_happening}
+2. 關鍵事件補充：{key_events}
+3. 使用者最想知道的是：{wish_to_know}
+4. 對方目前的態度：{partner_attitude}
+5. 針對此狀況的具體追問：{love_question}
+"""
+                # 根據方案決定是否為大師模式
+                is_master = (st.session_state.payment_status == "paid_699")
+                
+                # 呼叫 AI 函數
+                result = ai_love_consult_reply(context_prompt, is_master)
+                
+                # 儲存結果到 session_state 以便持久顯示
+                st.session_state.analysis_result = result
+                
+                # 直接顯示結果 (如用戶要求)
+                st.markdown("---")
+                st.markdown(result)
+                
+            except Exception as e:
+                st.error(f"AI 分析失敗：{e}")
 
 # --- 顯示分析結果 ---
 if st.session_state.analysis_result:
