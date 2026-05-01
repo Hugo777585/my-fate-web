@@ -1,5 +1,5 @@
 streamlit
-google-generativeai
+openai
 borax
 fpdf2
 iztro-py
