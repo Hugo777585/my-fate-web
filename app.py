@@ -1127,98 +1127,11 @@ with col_btn_right:
                     if st.button("🚀 進入 AI 感情心理解析", use_container_width=True, type="primary"):
                         st.switch_page("pages/02_love_analysis.py")
                     
-                    # 移除舊有的付費解鎖架構 (針對一般用戶)
+                    # 移除舊有的付費解鎖架構 (已隱藏)
                     if is_master:
                         st.markdown("---")
                         st.subheader("� 大師後台管理")
                         # 這裡可以保留一些大師才看的到的數據或功能
-
-                    if 'temp_pay_plan' in st.session_state:
-                        selected_plan_val = 299 if st.session_state.temp_pay_plan == "paid_299" else 699
-                        st.subheader(f"📝 建立訂單（{selected_plan_val} 方案）")
-                        o_name = st.text_input("姓名", value=name)
-                        o_contact = st.text_input("LINE ID 或 Email")
-                        o_phone = st.text_input("手機 (選填)")
-                        
-                        try:
-                            default_date = datetime.date(int(b_year), int(b_month), int(b_day))
-                        except:
-                            default_date = datetime.date.today()
-                            
-                        o_birth_date = st.date_input("出生年月日", value=default_date)
-                        o_birth_time = st.text_input("出生時間（例：08:20）", value=f"{b_hour}:{b_min}")
-                        o_gender = st.selectbox("性別", options=["男", "女"], index=0 if gender == "男" else 1)
-                        o_question = st.text_area("想諮詢的問題", value=question)
-                        
-                        if st.button("建立訂單"):
-                            if not o_name or not o_contact:
-                                st.error("請填寫姓名與聯絡資訊")
-                            else:
-                                order_id = f"HUGO_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}"
-                                order_info = {
-                                    'order_id': order_id,
-                                    'created_at': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                                    'name': o_name,
-                                    'contact': o_contact,
-                                    'phone': o_phone,
-                                    'birth_date': str(o_birth_date),
-                                    'birth_time': o_birth_time,
-                                    'gender': o_gender,
-                                    'question': o_question,
-                                    'plan': selected_plan_val,
-                                    'payment_status': 'unpaid'
-                                }
-                                st.session_state.order_data = order_info
-                                save_order_to_csv(order_info)
-                                st.success("訂單已建立！請加入LINE完成付款與分析")
-                                st.json(st.session_state.order_data)
-
-                        if st.session_state.order_data:
-                            st.info("💳 **目前為測試模式**")
-                            col_pay1, col_pay2 = st.columns(2)
-                            with col_pay1:
-                                if st.button("✅ 確認付款完成並解鎖", type="primary"):
-                                    st.session_state.order_data['payment_status'] = 'test_paid'
-                                    save_order_to_csv(st.session_state.order_data)
-                                    st.session_state.payment_status = st.session_state.temp_pay_plan
-                                    del st.session_state.temp_pay_plan
-                                    st.success(f"🎉 付款成功！訂單編號 {st.session_state.order_data['order_id']} 已解鎖。")
-                                    st.rerun()
-                            with col_pay2:
-                                if st.button("❌ 取消"):
-                                    del st.session_state.temp_pay_plan
-                                    st.session_state.order_data = None
-                                    st.rerun()
-
-                    if st.session_state.payment_status in ["paid_299", "paid_699"]:
-                        st.markdown("---")
-                        st.markdown("## 🌟 進階解鎖內容")
-                        if st.session_state.order_data:
-                            st.caption(f"📄 訂單編號：{st.session_state.order_data['order_id']}")
-                        
-                        st.markdown("### 📍 流年行動指引 & 建議")
-                        st.success(f"【{st.session_state.main_cat if 'main_cat' in st.session_state else '整體'}建議】根據您的命盤，今年應以『穩』為主，適合學習與內省，不宜大動作投資。")
-                        
-                        if st.session_state.payment_status == "paid_699":
-                            st.markdown("### 📘 完整深度報告")
-                            st.write("這裡顯示更完整的深度分析內容，包含大運流年的細部拆解與五行補運建議。")
-                            try:
-                                pdf_bytes = create_pdf(name, result_text)
-                                st.download_button(
-                                    label="📥 下載完整命理報告 (PDF)",
-                                    data=pdf_bytes,
-                                    file_name=f"雨果大師_{name}_命理報告.pdf",
-                                    mime="application/pdf",
-                                    use_container_width=True
-                                )
-                            except Exception as pdf_err:
-                                st.error(f"PDF 產生失敗：{pdf_err}")
-                        else:
-                            if st.button("升級至 699 完整版"):
-                                st.session_state.temp_pay_plan = "paid_699"
-                                st.rerun()
-                    else:
-                        st.info("🔒 付費解鎖後即可查看進階行動指引與下載 PDF 報告")
 
                     st.caption(f"⏱️ 分析耗時：{elapsed:.1f} 秒")
 

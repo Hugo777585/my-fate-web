@@ -278,11 +278,6 @@ with st.container():
             "逃避", 
             "曖昧不明"
         ])
-        analysis_scheme = st.radio("5. 選擇分析方案：", [
-            "免費初步分析", 
-            "299 深度分析", 
-            "699 完整分析"
-        ], horizontal=True)
 
 # --- 分析執行邏輯 ---
 st.markdown("<br>", unsafe_allow_html=True)
@@ -310,173 +305,47 @@ if st.button("✨ 開始 AI 感情心理分析", use_container_width=True):
 4. 對方目前的態度：{partner_attitude}
 5. 針對此狀況的具體追問：{love_question}
 """
-                # 根據方案決定是否為大師模式
-                is_master = (st.session_state.payment_status == "paid_699")
+                # 目前統一使用一般模式，或根據需求調整
+                is_master = False 
                 
                 # 呼叫 AI 函數
                 result = ai_love_consult_reply(context_prompt, is_master)
                 
                 # 儲存結果到 session_state 以便持久顯示
                 st.session_state.analysis_result = result
-                
-                # 直接顯示結果 (如用戶要求)
-                st.markdown("---")
-                st.markdown(result)
-                
+                st.rerun()
+
             except Exception as e:
                 st.error(f"AI 分析失敗：{e}")
 
-# --- 顯示分析結果 ---
+# --- 顯示分析結果 (持久化) ---
 if st.session_state.analysis_result:
     st.markdown("---")
-    st.markdown('<div style="background-color: #FDFEFE; padding: 25px; border-radius: 15px; border-left: 5px solid #8E44AD; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">', unsafe_allow_html=True)
     st.markdown(st.session_state.analysis_result)
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    # 免費版顯示付費引導
-    if st.session_state.payment_status == "free":
-        st.markdown("<br>", unsafe_allow_html=True)
-        st.info("🔒 以上為初步分析。解鎖 299 或 699 方案可獲得更具體的對象心態與行動策略。")
 
-# --- 方案展示與訂單區 ---
-st.markdown("---")
-st.subheader("🚀 選擇適合您的轉運方案")
-
-# 任務：使用 st.columns(3) 做三欄方案卡
-col_plan1, col_plan2, col_plan3 = st.columns(3)
-
-with col_plan1:
+    # --- 加入自然引導文案 ---
     st.markdown("""
-    <div class="plan-card">
-        <div class="plan-title">🥉 免費初步分析</div>
-        <div class="plan-price">NT$ 0</div>
-        <ul class="plan-features">
-            <li>顯示基礎分析（目前AI輸出內容）</li>
-            <li>初步情緒與狀況理解</li>
-            <li>可能的關係卡點提醒</li>
-        </ul>
-        <p style="color: #7B7B7B; font-size: 0.9em; font-weight: 600; margin-top: 10px;">
-            👉「若想更深入了解對方心態與實際做法，可升級進階分析」
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-    if st.session_state.payment_status == "free":
-        st.button("目前方案", disabled=True, key="love_btn_free_active")
-    else:
-        if st.button("切換回免費分析", key="love_btn_switch_free"):
-            st.session_state.payment_status = "free"
-            st.rerun()
+### 🔮 延伸分析｜感情心理解析 
 
-with col_plan2:
-    st.markdown("""
-    <div class="plan-card">
-        <div class="plan-title">🥈 299 深度解說</div>
-        <div class="plan-price">NT$ 299</div>
-        <ul class="plan-features">
-            <li>深度分析對方心理狀態</li>
-            <li>提供「多選項建議」，不給單一結論</li>
-            <li>標註：可提問 3~5 次（5天內）</li>
-        </ul>
-        <p style="color: #6C3483; font-size: 0.9em; font-weight: 600; margin-top: 10px;">
-            適合對象：「已經遇到問題，需要大師指引方向與解方的人」
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-    if st.session_state.payment_status == "paid_299":
-        st.button("✅ 已解鎖", disabled=True, key="love_btn_299_active")
-    elif st.session_state.payment_status == "paid_699":
-        st.info("✨ 已包含在完整版")
-    else:
-        if st.button("🔓 解鎖 299 深度解說", key="love_btn_unlock_299"):
-            st.session_state.temp_pay_plan_love = "paid_299"
-            st.rerun()
+很多時候，真正讓人放不下的， 
+不是發生了什麼， 
+而是你始終看不懂「對方現在到底在想什麼」。 
 
-with col_plan3:
-    st.markdown("""
-    <div class="plan-card popular">
-        <div class="popular-badge">熱門推薦</div>
-        <div class="plan-title">🥇 699 完整決策分析</div>
-        <div class="plan-price">NT$ 699</div>
-        <ul class="plan-features">
-            <li>更精準推演＋行動建議</li>
-            <li>提供「方向性結論」，但避免寫死</li>
-            <li>加入「持續追蹤機制」（7天內）</li>
-            <li><b>📌 可提問 3 次（由 Hugo 大師親自針對您的狀況回覆解答）</b></li>
-        </ul>
-        <p style="color: #6C3483; font-size: 0.9em; font-weight: 600; margin-top: 10px;">
-            適合對象：「卡關混亂、想要明確答案，且需要大師親自為您解惑的人」
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-    if st.session_state.payment_status == "paid_699":
-        st.button("✅ 已解鎖", disabled=True, key="love_btn_699_active")
-    else:
-        if st.button("🔓 解鎖 699 完整決策分析", key="love_btn_unlock_699"):
-            st.session_state.temp_pay_plan_love = "paid_699"
-            st.rerun()
+你可能會開始反覆想： 
 
-# 模擬付款邏輯
-if 'temp_pay_plan_love' in st.session_state:
-    selected_plan_val = 299 if st.session_state.temp_pay_plan_love == "paid_299" else 699
-    st.subheader(f"📝 建立訂單（{selected_plan_val} 方案）")
-    
-    lo_name = st.text_input("姓名")
-    lo_contact = st.text_input("LINE ID 或 Email")
-    lo_phone = st.text_input("手機 (選填)")
-    lo_birth_date = st.date_input("出生年月日", value=datetime.date.today())
-    lo_birth_time = st.text_input("出生時間 (例：08:20)")
-    lo_gender = st.selectbox("性別", options=["男", "女"])
-    lo_question = st.text_area("想諮詢的感情問題")
-    
-    if st.button("建立訂單", key="btn_create_order_love"):
-        if not lo_name or not lo_contact:
-            st.error("請填寫姓名與聯絡資訊")
-        else:
-            order_id = f"HUGO_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}"
-            order_info = {
-                'order_id': order_id,
-                'created_at': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                'name': lo_name,
-                'contact': lo_contact,
-                'phone': lo_phone,
-                'birth_date': str(lo_birth_date),
-                'birth_time': lo_birth_time,
-                'gender': lo_gender,
-                'question': lo_question,
-                'plan': selected_plan_val,
-                'payment_status': 'unpaid'
-            }
-            st.session_state.order_data = order_info
-            save_order_to_csv(order_info)
-            st.success("訂單已建立！請加入LINE完成付款與分析")
-            st.image(r"G:\AI下載\頭像\ChatGPT Image 2026年4月28日 下午11_50_51.png", use_container_width=True)
-            st.json(st.session_state.order_data)
+👉 他現在對我是認真的，還是只是剛好有人陪？ 
+👉 這段關係，還有沒有機會走下去？ 
+👉 我現在該主動，還是該慢慢退？ 
 
-if st.session_state.order_data and st.session_state.order_data.get('payment_status') == 'unpaid':
-    st.info("💳 **目前為測試模式**")
-    st.write(f"您選擇了：{st.session_state.order_data['plan']} 方案")
-    if st.button("✅ 確認付款完成並解鎖 (測試)", type="primary"):
-        st.session_state.order_data['payment_status'] = 'test_paid'
-        save_order_to_csv(st.session_state.order_data)
-        
-        st.session_state.payment_status = st.session_state.temp_pay_plan_love
-        del st.session_state.temp_pay_plan_love
-        st.success(f"🎉 付款成功！訂單編號 {st.session_state.order_data['order_id']} 已解鎖。")
-        st.rerun()
+HUGO 天命智庫會透過： 
 
-# --- 顯示已付款內容 ---
-if st.session_state.payment_status in ["paid_299", "paid_699"] and st.session_state.analysis_result:
-    # 這裡的 analysis_result 已經在上面 generate 了
-    pass
-else:
-    if st.session_state.payment_status == "free":
-        pass
-    else:
-        st.info("🔒 付費解鎖後即可查看深度想法解析與行動建議")
-        st.link_button(
-            "👉 加入LINE解鎖完整分析",
-            "https://line.me/ti/p/@258hnnao"
-        )
+**八字命盤 × 關係互動 × 心理狀態** 
+
+幫你把「現在這段關係的真實狀態」拆開來看。 
+
+👉 如果你想進一步看清這段關係，可以加 LINE 做完整分析。 
+""")
+    st.link_button("👉 加 LINE 進一步諮詢", "https://line.me/ti/p/@323ohobf", use_container_width=True)
 
 if st.button("⬅️ 回到首頁"):
     st.switch_page("app.py")
