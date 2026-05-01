@@ -14,7 +14,13 @@ from tone_engine import analyze_tone_strategy
 from fpdf import FPDF
 
 load_dotenv()
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+openai_key = st.secrets.get("OPENAI_API_KEY", None) or os.getenv("OPENAI_API_KEY")
+
+if not openai_key:
+    st.error("尚未設定 OPENAI_API_KEY，請先到 Streamlit Cloud Secrets 加入金鑰。")
+    st.stop()
+
+client = OpenAI(api_key=openai_key)
 
 def ai_reply(prompt):
     response = client.responses.create(
