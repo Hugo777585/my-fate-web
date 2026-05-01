@@ -31,22 +31,39 @@ def ai_reply(prompt):
 
 def ai_love_consult_reply(context_prompt, is_master=False):
     """
-    第二層 AI 感情心理諮詢回覆函數
+    第二層 AI 感情心理諮詢回覆函數 (優化轉單版)
     """
-    system_role = """你是一位結合命理分析、感情心理諮詢與關係策略的顧問。請用沉穩、理性、具同理心的方式分析，不要鐵口直斷，不要恐嚇使用者。"""
+    system_role = """你是一位結合命理分析、感情心理諮詢與關係策略的顧問。請用沉穩、理性、具同理心的方式分析，像是在理解人、有洞察力。不要鐵口直斷，不要恐嚇使用者。"""
     
     # 根據權限調整輸出要求
-    permission_instruction = ""
     if is_master:
-        permission_instruction = "\n請提供完整深度分析，不限制字數，包含：對方心理、關係互動模式、使用者情緒盲點、可執行策略、風險判斷、後續追蹤建議。"
+        permission_instruction = """
+【大師模式：完整分析】
+請提供完整深度分析，不限制字數，包含：
+1. 對方目前真實心理狀態
+2. 目前關係的核心卡點
+3. 使用者內心真正不安的核心
+4. 具體建議採取的做法（實戰策略）
+5. 絕對不建議做的事
+6. 潛在風險提醒
+7. 明確的下一步行動建議
+"""
     else:
-        permission_instruction = "\n請提供簡短初步分析，字數控制在 300～500 字之間。最後必須包含引導文案：『這只是初步方向判斷。如果你想看完整版本，可以加 LINE 做深度分析。』"
+        permission_instruction = """
+【一般模式：初步引導】
+請嚴格遵守以下三段式結構，字數約 300～500 字：
+1. ① 對方心理：描述對方的心理狀態，要準確且有畫面感。
+2. ② 關係卡點：點出關係中讓使用者產生共鳴的阻礙。
+3. ③ 方向指引：給予一點點處理方向，但務必保留「關鍵沒說破」，創造好奇感。
+
+❌ 禁止出現「購買」、「方案」、「價格」等商業字眼。
+"""
 
     full_prompt = f"{system_role}\n\n{context_prompt}\n{permission_instruction}"
     
     try:
         response = client.chat.completions.create(
-            model="gpt-4o-mini", # 修正為正確的 chat 模型名稱
+            model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": system_role},
                 {"role": "user", "content": full_prompt}
@@ -1077,12 +1094,20 @@ with col_btn_right:
                     st.markdown("---")
                     st.markdown("### 💗 第二層｜AI感情心理諮詢師")
                     st.markdown("""
-                    命盤可以看出趨勢， 
-                    但真正讓人卡住的，往往是對方的態度、沉默、忽冷忽熱與不確定感。 
-
-                    你可以在這裡補充目前最想問的感情問題， 
-                    AI會延續第一層命盤與關係資料， 
-                    幫你做更深入的感情心理分析。
+                    很多人來到這一步，其實心裡已經有答案了。 
+  
+                    只是那個答案，可能讓你不太敢面對， 
+                    或還在期待會有不一樣的結果。 
+                    
+                    感情最難的，不是發生什麼， 
+                    而是對方的態度讓你開始不確定。 
+                    
+                    你可以把現在最卡、最想知道的問題打出來， 
+                    不用整理，也不用想太多。 
+                    
+                    我會從你剛剛的命盤， 
+                    結合你現在的狀態， 
+                    幫你看清楚這段關係真正的走向。
                     """)
                     
                     consult_input = st.text_area(
@@ -1120,79 +1145,35 @@ with col_btn_right:
                                 
                                 if not is_master:
                                     st.markdown("---")
-                                    st.info("👉 以上為初步方向判斷。如果你想看完整版本，可以加 LINE 做深度分析。")
-                                    st.link_button("👉 加LINE看完整深度分析", "https://line.me/ti/p/@323ohobf", use_container_width=True)
+                                    st.markdown("""
+                                    其實你現在卡住的，不只是表面這件事， 
+                                    而是你們之間的互動模式，已經開始固定下來了。 
+                                    
+                                    如果這一段沒有調整， 
+                                    後面很容易一直重複類似的狀況。 
+                                    
+                                    我可以幫你把這段關係接下來的走向， 
+                                    以及「怎麼做會對你比較有利」拆得更清楚， 
+                                    包含對方後面可能的反應。
+                                    
+                                    這部分我會用比較完整的方式幫你看， 
+                                    不是只講結果， 
+                                    而是讓你知道為什麼會這樣、接下來怎麼走。
+                                    """)
+                                    
+                                    st.link_button("👉 看完整分析（含對方心理＋後續走向）", "https://line.me/ti/p/@323ohobf", use_container_width=True)
+                                    
+                                    st.markdown("""
+                                    如果你比較習慣用LINE， 
+                                    也可以直接加我，我會幫你看完整一版。
+                                    """)
+                                    st.markdown("👉 [https://line.me/ti/p/@323ohobf](https://line.me/ti/p/@323ohobf)")
 
-                    # --- 付費解鎖架構 ---
-                    st.markdown("---")
-                    st.subheader("🚀 升級您的解析報告")
-                    
-                    col_plan1, col_plan2, col_plan3 = st.columns(3)
-                    
-                    with col_plan1:
-                        st.markdown("""
-                        <div class="plan-card">
-                            <div class="plan-title">🥉 免費版</div>
-                            <div class="plan-price">NT$ 0</div>
-                            <ul class="plan-features">
-                                <li>基礎命理分析</li>
-                                <li class="locked">流年行動指引</li>
-                                <li class="locked">感情/事業深度建議</li>
-                                <li class="locked">PDF 完整報告</li>
-                                <li class="locked">3 次提問權限</li>
-                            </ul>
-                        </div>
-                        """, unsafe_allow_html=True)
-                        if st.session_state.payment_status == "free":
-                            st.button("目前方案", disabled=True, key="btn_free")
-                        else:
-                            if st.button("切換回免費版", key="btn_switch_free"):
-                                st.session_state.payment_status = "free"
-                                st.rerun()
-                                
-                    with col_plan2:
-                        st.markdown("""
-                        <div class="plan-card popular">
-                            <div class="popular-badge">MOST POPULAR</div>
-                            <div class="plan-title">🥈 299 深度版</div>
-                            <div class="plan-price">NT$ 299 <span>/ 案</span></div>
-                            <ul class="plan-features">
-                                <li>基礎命理分析</li>
-                                <li><b>流年行動指引</b></li>
-                                <li><b>感情/事業深度建議</b></li>
-                                <li class="locked">PDF 完整報告</li>
-                                <li class="locked">3 次提問權限</li>
-                            </ul>
-                        </div>
-                        """, unsafe_allow_html=True)
-                        if st.session_state.payment_status == "paid_299":
-                            st.button("✅ 已解鎖", disabled=True, key="btn_299_active")
-                        elif st.session_state.payment_status == "paid_699":
-                            st.info("✨ 已包含在完整版")
-                        else:
-                            if st.button("🔓 解鎖 299 深度版", key="btn_unlock_299"):
-                                st.session_state.temp_pay_plan = "paid_299"
-                                st.rerun()
-
-                    with col_plan3:
-                        st.markdown("""
-                        <div class="plan-card">
-                            <div class="plan-title">🥇 699 完整版</div>
-                            <div class="plan-price">NT$ 699 <span>/ 案</span></div>
-                            <ul class="plan-features">
-                                <li>299 版所有內容</li>
-                                <li><b>完整 PDF 深度報告</b></li>
-                                <li><b>3 次追問權限 (Hugo 親回)</b></li>
-                                <li>專屬開運建議</li>
-                            </ul>
-                        </div>
-                        """, unsafe_allow_html=True)
-                        if st.session_state.payment_status == "paid_699":
-                            st.button("✅ 已解鎖", disabled=True, key="btn_699_active")
-                        else:
-                            if st.button("🔓 解鎖 699 完整版", key="btn_unlock_699"):
-                                st.session_state.temp_pay_plan = "paid_699"
-                                st.rerun()
+                    # 移除舊有的付費解鎖架構 (針對一般用戶)
+                    if is_master:
+                        st.markdown("---")
+                        st.subheader("� 大師後台管理")
+                        # 這裡可以保留一些大師才看的到的數據或功能
 
                     if 'temp_pay_plan' in st.session_state:
                         selected_plan_val = 299 if st.session_state.temp_pay_plan == "paid_299" else 699
