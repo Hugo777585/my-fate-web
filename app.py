@@ -601,18 +601,21 @@ st.markdown('<p class="sub-title">八字命理 × AI分析 × 感情諮詢</p>',
 st.link_button("🔮 加LINE免費諮詢", "https://line.me/ti/p/@323ohobf", use_container_width=True)
 
 # 2. 管理員密碼鎖 (大師盤)
-MASTER_CODE = "HUGO888"
+MASTER_CODE = st.secrets.get("MASTER_CODE", None) or os.getenv("MASTER_CODE")
 is_master = False
 
 with st.sidebar:
     st.header("🔐 系統授權")
-    auth_code_input = st.text_input("大師專用授權碼", type="password", key="auth_code_input")
+    auth_code_input = st.text_input("🔒 大師專用授權碼", type="password", key="auth_code_input")
     
-    # 強制比對邏輯：去空格、轉大寫
-    if auth_code_input.strip().upper() == MASTER_CODE:
-        is_master = True
-        st.success("✅ 大師模式已開啟")
-        
+    if auth_code_input and MASTER_CODE:
+        if auth_code_input.strip().lower() == MASTER_CODE.strip().lower():
+            is_master = True
+            st.success("✅ 已啟用大師模式")
+        else:
+            st.error("❌ 授權碼錯誤")
+    
+    if is_master:
         st.markdown("---")
         st.subheader("📊 資料庫連線狀態")
         
@@ -1011,7 +1014,13 @@ with col_btn_right:
                     st.markdown(bazi_table_html, unsafe_allow_html=True)
                     st.markdown("<br>", unsafe_allow_html=True)
                     
-                    st.markdown(result_text, unsafe_allow_html=True)
+                    if is_master:
+                        st.write("🔥 大師完整版分析啟動")
+                        st.markdown(result_text, unsafe_allow_html=True)
+                    else:
+                        st.write("👉 目前為基礎分析，解鎖完整內容請升級方案")
+                        # 基礎分析可能只顯示前段或特定內容，這裡先保留原本顯示 result_text 的邏輯
+                        st.markdown(result_text, unsafe_allow_html=True)
                     
                     if st.session_state.payment_status == "free":
                         st.markdown(f"""
