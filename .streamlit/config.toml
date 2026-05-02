@@ -9,3 +9,7 @@ secondaryBackgroundColor = "#FFFFFF"
 textColor = "#3E3A39"
 # 字體：使用帶有底蘊的襯線體
 font = "serif"
+
+[server]
+# 開啟靜態檔案讀取功能，允許讀取 static 資料夾下的檔案
+enableStaticServing = true

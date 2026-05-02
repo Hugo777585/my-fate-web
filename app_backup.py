@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 from openai import OpenAI
 import datetime
 import time
@@ -376,6 +377,14 @@ st.markdown("""
     [data-testid="stHeader"] {display: none;}
 </style>
 """, unsafe_allow_html=True)
+
+# --- 0. 頂部動態橫幅 (HTML 嵌入) ---
+# 這裡讀取位於 static/ 資料夾下的 HTML 檔案
+# 注意：HTML 檔案內部若有引用 MP3，請確保路徑正確
+try:
+    components.iframe(src="/static/banner.html", height=750, scrolling=False)
+except Exception as e:
+    st.error(f"無法載入頂部橫幅：{e}")
 
 # --- 1. Hero 主視覺 ---
 if st.session_state.get('scroll_to_analysis'):
