@@ -24,22 +24,34 @@ if not openai_key:
 
 client = OpenAI(api_key=openai_key)
 
-# --- 全域高級視覺 CSS 魔法 --- 
+# --- 護眼淺灰色：Hugo 大師版背景 --- 
 st.markdown(""" 
 <style> 
-    /* 整體網頁背景顏色 */ 
-    .stApp { background-color: #f1f2f6; } 
-    
-    /* 側邊欄背景顏色 */ 
-    [data-testid="stSidebar"] { 
-        background-color: #ffffff; 
-        border-right: 1px solid #dfe6e9; 
+    /* 整體底層改為溫和淺灰，降低亮度不刺眼 */ 
+    .stApp { 
+        background-color: #e6e9ef; 
+        color: #2d3436; 
     } 
     
-    /* 調整內容區塊的間距，讓它更美觀 */ 
+    /* 側邊欄維持白色或極淺灰，增加層次感 */ 
+    [data-testid="stSidebar"] { 
+        background-color: #f8f9fa; 
+        border-right: 1px solid #dcdde1; 
+    } 
+
+    /* 調整內容區塊的間距 */ 
     .block-container { 
         padding-top: 2rem; 
         padding-bottom: 2rem; 
+    } 
+
+    /* 讓輸入區塊與卡片有淡淡的陰影，看起來更立體 */ 
+    div[data-testid="stVerticalBlock"] > div { 
+        background-color: white; 
+        padding: 10px; 
+        border-radius: 10px; 
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
+        margin-bottom: 5px; 
     } 
 
     div[data-testid="stMarkdownContainer"], 
