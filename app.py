@@ -584,6 +584,9 @@ with st.container():
     with col_time1:
         hours = list(range(0, 24))
         b_hour = st.selectbox("時", options=hours, index=12)
+    with col_time2:
+        mins = list(range(0, 60))
+        b_min = st.selectbox("分", options=mins, index=0)
     with col_spacer:
         pass # 佔位符，讓時分在手機版看起來更平衡
 
