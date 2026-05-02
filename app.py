@@ -8,6 +8,7 @@ import gspread
 import re
 import json
 import csv
+import base64
 from dotenv import load_dotenv
 from google.oauth2.service_account import Credentials
 from lunar_python import Lunar, Solar
@@ -22,6 +23,23 @@ if not openai_key:
     st.stop()
 
 client = OpenAI(api_key=openai_key)
+
+# --- 全域高級視覺 CSS 魔法 --- 
+st.markdown(""" 
+<style> 
+    .stApp { background-color: #f1f2f6; } 
+    div[data-testid="stMarkdownContainer"], 
+    div[data-testid="stTable"], 
+    div.element-container { 
+        background-color: #ffffff; border-radius: 16px; padding: 15px; 
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05); margin-bottom: 15px; 
+    } 
+    h1, h2, h3 { color: #2d3436 !important; border-left: 6px solid #6c5ce7; padding-left: 15px; } 
+    table { border-collapse: collapse; width: 100%; } 
+    th { background-color: #f0f4ff !important; color: #6c5ce7 !important; font-weight: 900 !important; font-size: 18px !important; } 
+    td { font-size: 16px !important; text-align: center !important; } 
+</style> 
+""", unsafe_allow_html=True)
 
 def ai_reply(prompt):
     response = client.responses.create(
@@ -378,21 +396,36 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 0. 頂部動態橫幅 (HTML 嵌入) ---
-# 這裡讀取位於 static/ 資料夾下的 HTML 檔案
-# 注意：HTML 檔案內部若有引用 MP3，請確保路徑正確
-try:
-    components.iframe(src="/static/banner.html", height=750, scrolling=False)
-except Exception as e:
-    st.error(f"無法載入頂部橫幅：{e}")
+# --- 0. 頂部動態橫幅與音樂 ---
+# 1. 音樂轉碼 (確保 Streamlit 播得出聲音) 
+def get_audio_base64(audio_file_path): 
+    try: 
+        with open(audio_file_path, 'rb') as f: 
+            return base64.b64encode(f.read()).decode() 
+    except Exception as e: 
+        st.error(f"找不到音樂檔：{e}") 
+        return "" 
 
-# --- 1. Hero 主視覺 ---
+audio_b64 = get_audio_base64("温暖而有力量的人.mp3.mp3") 
+
+# 2. 讀取並崁入 HTML 
+try: 
+    with open("hugo_banner.html", "r", encoding="utf-8") as f: 
+        html_content = f.read() 
+        if audio_b64: 
+             html_content = html_content.replace( 
+                 'src="温暖而有力量的人.mp3.mp3"', 
+                 f'src="data:audio/mpeg;base64,{audio_b64}"' 
+             ) 
+        # 滿版渲染出橫幅 
+        components.html(html_content, height=750, scrolling=False) 
+except FileNotFoundError: 
+    st.error("找不到 hugo_banner.html 檔案，請確認有放在同一個資料夾。")
+
+# --- 1. Hero 主視覺 (已替換為橫幅) ---
 if st.session_state.get('scroll_to_analysis'):
     st.markdown('<script>window.parent.document.getElementById("analysis_section").scrollIntoView({behavior: "smooth"});</script>', unsafe_allow_html=True)
     st.session_state.scroll_to_analysis = False
-
-st.markdown('<h1 class="main-title">HUGO 天命智庫</h1>', unsafe_allow_html=True)
-st.markdown('<p class="sub-title">八字命理 × AI分析 × 感情諮詢</p>', unsafe_allow_html=True)
 
 # LINE 客服按鈕
 st.link_button("🔮 加LINE免費諮詢", "https://line.me/ti/p/@323ohobf", use_container_width=True)
