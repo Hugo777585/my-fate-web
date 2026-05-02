@@ -116,24 +116,75 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 一、頂部主視覺 ---
-st.markdown(f"""
-<div class="hero-card">
-    <div class="hero-title">💗 兩性情感心理諮詢</div>
-    <div class="hero-subtitle">Relationship Psychological Analysis System</div>
-    <div class="hero-text">
-        <strong>八字命盤 × 關係互動 × 心理狀態</strong><br>
-        用數據看清關係，用策略找回主導權<br><br>
-        很多時候，讓人痛苦的不是分開，而是「不確定」。<br>
-        他到底怎麼想？這段關係還有沒有機會？我要主動？還是該退？<br><br>
-        這裡不是單純聊天，而是透過命盤結構、互動狀態與心理模型，幫你建立一份感情決策分析報告。
-    </div>
-</div>
-""", unsafe_allow_html=True)
+# --- 一、頂部動態導引 (Slides) ---
+slides = [ 
+    { 
+        "title": "你現在卡住的，不是感情", 
+        "desc": "而是你不知道\n他到底在想什麼", 
+        "color": "#6C5CE7" 
+    },           { 
+        "title": "你是不是也這樣？", 
+        "desc": "忽冷忽熱、已讀不回\n越想越亂、越做越錯", 
+        "color": "#A29BFE" 
+    },             { 
+        "title": "多數人會做錯的事", 
+        "desc": "拼命問、情緒爆、想確認關係\n結果反而把人推走", 
+        "color": "#FD79A8" 
+    },          { 
+        "title": "這裡不只是聊天", 
+        "desc": "我們用三個維度分析\n命盤 × 行為 × 心理", 
+        "color": "#00B894" 
+    },          { 
+        "title": "你會看到的是", 
+        "desc": "關係數據分析\n心理模型判讀\n行動策略建議", 
+        "color": "#0984E3" 
+    },         { 
+        "title": "不是算命，是決策", 
+        "desc": "看清關係\n再決定你要不要繼續", 
+        "color": "#2D3436" 
+    } 
+]
 
-col_hero_btn1, col_hero_btn2, col_hero_btn3 = st.columns([1, 2, 1])
-with col_hero_btn2:
-    st.link_button("👉 加 LINE 免費諮詢", "https://line.me/ti/p/@323ohobf", use_container_width=True)
+if "slide_index" not in st.session_state: 
+    st.session_state.slide_index = 0 
+
+slide = slides[st.session_state.slide_index] 
+
+st.markdown(f""" 
+<div style=" 
+background: {slide['color']}; 
+padding: 40px; 
+border-radius: 20px; 
+text-align: center; 
+color: white; 
+min-height: 220px; 
+display: flex; 
+flex-direction: column; 
+justify-content: center; 
+box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+margin-bottom: 20px;
+"> 
+    <h2 style="color: white !important; border: none !important; padding: 0 !important;">{slide['title']}</h2> 
+    <p style="font-size:18px; white-space: pre-line;"> 
+    {slide['desc']} 
+    </p> 
+</div> 
+""", unsafe_allow_html=True) 
+
+col_nav1, col_nav2, col_nav3 = st.columns([1,2,1]) 
+
+with col_nav1: 
+    if st.button("⬅️", use_container_width=True): 
+        st.session_state.slide_index = max(0, st.session_state.slide_index - 1) 
+        st.rerun()
+
+with col_nav3: 
+    if st.button("➡️", use_container_width=True): 
+        st.session_state.slide_index = min(len(slides)-1, st.session_state.slide_index + 1)
+        st.rerun()
+
+st.markdown("### 👇 開始你的感情心理分析")
+st.link_button("👉 加 LINE 免費諮詢", "https://line.me/ti/p/@323ohobf", use_container_width=True)
 
 # --- 二、分析模型說明區 ---
 st.markdown("### 🛡️ 分析模型說明")
