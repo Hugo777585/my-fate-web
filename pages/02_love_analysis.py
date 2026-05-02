@@ -15,26 +15,29 @@ if not openai_key:
 
 client = OpenAI(api_key=openai_key)
 
-def ai_love_consult_reply(context_prompt):
-    """
-    優化後的 AI 感情心理諮詢回覆函數 (測量表專用版)
-    """
-    system_role = """你是一位結合兩性關係心理學與實戰策略的資深顧問。
-請根據使用者的測量表分數指標（依附強度、對方投入、關係風險）以及文字描述，進行精準的深度分析。
+def generate_free_reply(event, wish, attitude):
+    return f"""
+### 📜 AI 感情初步掃描（免費版）
 
-分析要求：
-1. 語氣：沉穩、具備洞察力、有同理心，但不過度感性，要點出核心問題。
-2. 結構：
-   - 【關係類型】：定義目前這段互動屬於哪種心理狀態。
-   - 【對方可能心理】：分析對方的行為動機與潛在心態。
-   - 【關係卡點】：點出目前雙方最核心的矛盾或阻礙。
-   - 【風險預測】：預測若維持現狀，未來的走向與潛在危機。
-   - 【核心卡住點】：針對使用者個人，分析他目前在心理上真正過不去的地方。
-   - 【下一步行動暗示】：給予一個方向性的引導，但不直接給完整執行清單。
+從你描述的狀況來看，這段關係目前不是單純的「有沒有感情」可以判斷，而是已經進入一種比較微妙的拉扯狀態。
 
-❌ 禁止鐵口直斷，禁止出現商業或引流字眼。
+你在意的是「{wish}」，而對方目前呈現出來的態度是「{attitude}」。這代表你感受到的不是單一事件的問題，而是對方的回應方式、距離感與情緒節奏，開始讓你產生不確定感。這種不確定，往往比直接拒絕更消耗人，因為它會讓你一直想確認、一直想找線索。
+
+目前比較值得注意的是，你們之間可能已經出現「一方想靠近，一方卻沒有穩定接住」的狀態。對方不一定完全沒有感覺，但他的反應未必能給你足夠安全感。這也是為什麼你會反覆想知道：他到底是在觀察、試探、退後，還是只是享受被在意的感覺。
+
+真正讓你卡住的，可能不是這件事本身，而是你還沒辦法確定下一步該怎麼做。太主動，怕自己失去位置；太冷淡，又怕錯過可能性。所以你現在最需要的不是立刻下結論，而是先看清楚這段互動裡，哪一部分是對方造成的，哪一部分是你被不安牽著走。
+
+免費版先幫你看到這裡：這段關係目前的核心，不是單純追或不追，而是「你下一步怎麼回應，會直接影響對方後面的態度」。
+
+如果你想知道接下來怎麼做比較不會把關係推遠，我可以再幫你往下拆。
 """
-    
+
+def ai_love_consult_reply(context_prompt):
+    system_role = """你是一位結合兩性關係心理學與實戰策略的資深顧問。
+請根據使用者的測量表分數指標以及文字描述，進行精準的深度分析。
+分析要求：語氣沉穩、具備洞察力、有同理心，點出核心問題。
+結構：關係類型、對方可能心理、關係卡點、風險預測、核心卡住點、下一步行動暗示。
+❌ 禁止鐵口直斷，禁止出現商業或引流字眼。"""
     try:
         response = client.chat.completions.create(
             model="gpt-4o-mini",
@@ -56,313 +59,232 @@ st.set_page_config(
 # --- 初始化狀態 ---
 if 'analysis_result' not in st.session_state:
     st.session_state.analysis_result = None
-if 'scores_metrics' not in st.session_state:
-    st.session_state.scores_metrics = None
+if 'show_report' not in st.session_state:
+    st.session_state.show_report = False
 
-# CSS 注入 (大師護眼風格)
+# CSS 注入 (優化手機版與高級感)
 st.markdown("""
 <style>
     .stApp { background-color: #e6e9ef; color: #2d3436; }
-    [data-testid="stSidebar"] { background-color: #f8f9fa; border-right: 1px solid #dcdde1; }
-    div[data-testid="stVerticalBlock"] > div {
-        background-color: white; padding: 25px; border-radius: 16px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px;
+    
+    /* 頂部主視覺卡片 */
+    .hero-card {
+        background: linear-gradient(135deg, #fce4ec 0%, #f3e5f5 100%);
+        padding: 40px 20px;
+        border-radius: 20px;
+        text-align: center;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
     }
+    .hero-title { color: #4a235a; font-size: 2.2em; font-weight: 800; margin-bottom: 10px; }
+    .hero-subtitle { color: #6c5ce7; font-size: 1.2em; font-weight: 600; margin-bottom: 20px; }
+    .hero-text { color: #2d3436; font-size: 1.1em; line-height: 1.6; max-width: 800px; margin: 0 auto; }
+
+    /* 通用卡片樣式 */
+    div[data-testid="stVerticalBlock"] > div {
+        background-color: white; padding: 20px; border-radius: 16px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px;
+    }
+    
+    /* 標題樣式 */
     h1, h2, h3 { color: #2d3436 !important; border-left: 6px solid #6c5ce7; padding-left: 15px; }
-    .stRadio > label { font-weight: 600; font-size: 1.1em; color: #4a235a; margin-bottom: 10px; }
+
+    /* 按鈕優化 */
     .stButton>button {
         background: linear-gradient(135deg, #8E44AD, #A569BD);
         color: white; font-weight: 700; border-radius: 12px; border: none;
-        padding: 0.8em 2em; width: 100%; box-shadow: 0 4px 15px rgba(142, 68, 173, 0.4);
+        padding: 1em 2em; width: 100%; font-size: 1.1em;
+        transition: all 0.3s ease;
     }
-    .metric-label { font-weight: bold; color: #6c5ce7; margin-bottom: 5px; }
+    .stButton>button:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(142, 68, 173, 0.4); }
+
+    /* 手機版適應 */
+    @media (max-width: 600px) {
+        .hero-title { font-size: 1.6em; }
+        .hero-text { font-size: 1em; }
+        div[data-testid="column"] { margin-bottom: 15px; }
+    }
+
+    /* 鎖定區塊樣式 */
     .locked-card {
-        background: #f1f2f6; border: 1px dashed #6c5ce7; padding: 20px;
-        border-radius: 12px; text-align: center; color: #2d3436;
+        background: #f1f2f6; border: 2px dashed #6c5ce7; padding: 25px;
+        border-radius: 16px; text-align: center; color: #2d3436;
     }
+    
+    /* 表格滑動優化 */
+    .stTable { overflow-x: auto; display: block; }
 </style>
 """, unsafe_allow_html=True)
 
-# 【一、頁面定位】
-st.title("💗 兩性情感心理諮詢")
-st.caption("Human Relationship Intelligence Analysis")
-st.markdown("### 八字命盤 × 關係互動 × 心理狀態\n**看懂對方，也看清自己**")
-
-# 【二、開場情緒引導】
-with st.container():
-    st.markdown("""
-很多時候，  
-讓人痛苦的不是分開，  
-而是「不確定」。  
-
-他到底怎麼想？  
-這段關係還有沒有機會？  
-我要主動？還是該退？  
-
-你可能已經想過很多次，  
-但越想，越亂。  
-
-這裡不是給你答案，  
-而是幫你看清：  
-
-✔ **對方目前的心理位置**  
-✔ **你們關係的真實狀態**  
-✔ **你現在的行動會帶來什麼結果**  
-
-當你看清楚，  
-你才有選擇。
-""")
-
-# 【三、分析能力展示】
-st.markdown("---")
-st.markdown("""
-### 🛡️ 本系統將結合三個層面分析：
-
-① **命盤結構**（長期關係模式）  
-② **實際互動**（當前狀況）  
-③ **心理狀態**（對方真實動機）  
-
-透過交叉比對，而非單一判斷。
-""")
-
-# 【四、情境命中】
-st.markdown("""
-### 🔍 如果你現在正在經歷：
-
-・忽冷忽熱  
-・已讀不回  
-・曖昧不明  
-・分手放不下  
-
-這段分析，  
-會比你一直猜更快讓你清醒。
-""")
-
-st.markdown("---")
-# 【五、進入表單提示】
-st.subheader("👇 請描述你的狀況（越真實越準）")
-
-# --- 測量表問題定義 ---
-questions = [
-    # A 情感依附
-    {"cat": "A", "q": "1. 我會頻繁地檢查對方的社群動態或最後上線時間。"},
-    {"cat": "A", "q": "2. 當對方沒有即時回覆訊息時，我會感到非常焦慮或不安。"},
-    {"cat": "A", "q": "3. 我覺得我的人生中心目前大多圍繞在對方身上。"},
-    {"cat": "A", "q": "4. 我很難想像失去這段關係後的生活會是什麼樣子。"},
-    {"cat": "A", "q": "5. 我願意為了迎合對方的喜好而改變自己的行為或計畫。"},
-    # B 對方投入
-    {"cat": "B", "q": "6. 對方會主動安排兩人的約會或見面行程。"},
-    {"cat": "B", "q": "7. 對方在忙碌之餘也會撥出時間主動聯繫我。"},
-    {"cat": "B", "q": "8. 對方願意跟我分享他生活中的細節或內心的感受。"},
-    {"cat": "B", "q": "9. 對方會主動關心我的情緒變化或生活狀況。"},
-    {"cat": "B", "q": "10. 在這段關係中，我覺得對方付出的心力跟我差不多。"},
-    # C 穩定度
-    {"cat": "C", "q": "11. 我們的互動頻率非常穩定，不會突然消失或斷聯。"},
-    {"cat": "C", "q": "12. 我們對於未來的規劃或想法有一定的共識。"},
-    {"cat": "C", "q": "13. 我們遇到衝突時，能冷靜溝通並達成共識。"},
-    {"cat": "C", "q": "14. 我覺得這段關係給我很強的安全感與信任感。"},
-    {"cat": "C", "q": "15. 我們的關係狀態非常明確，身邊的人都知道我們的關係。"},
-    # D 失衡
-    {"cat": "D", "q": "16. 我覺得在這段關係中，我總是那個主動退讓或遷就的人。"},
-    {"cat": "D", "q": "17. 當我表達不滿時，對方往往會避而不談或指責我太敏感。"},
-    {"cat": "D", "q": "18. 我覺得我在這段關係中的情緒價值大多來自於對方的回應。"},
-    {"cat": "D", "q": "19. 我覺得我比對方更害怕這段關係結束。"},
-    {"cat": "D", "q": "20. 對方在做決定時，很少會先考慮到我的感受。"},
-    # E 曖昧風險
-    {"cat": "E", "q": "21. 我們的關係目前還沒有明確的定義（如：還在曖昧期）。"},
-    {"cat": "E", "q": "22. 我不確定對方身邊是否還有其他曖昧對象。"},
-    {"cat": "E", "q": "23. 對方偶爾會說出一些承諾，但很少實際做到。"},
-    {"cat": "E", "q": "24. 當我試圖確認關係時，對方會採取模糊或逃避的態度。"},
-    {"cat": "E", "q": "25. 我們雖然有親密互動，但感覺不到長期的承諾。"},
-    # F 拉扯動態
-    {"cat": "F", "q": "26. 我們目前的互動像是一場心理博弈，誰先主動誰就輸了。"},
-    {"cat": "F", "q": "27. 我會刻意晚一點回訊息，好讓自己看起來沒那麼在意。"},
-    {"cat": "F", "q": "28. 我們的互動節奏忽冷忽熱，充滿了試探。"},
-    {"cat": "F", "q": "29. 我覺得我需要透過某些行為（如：發動態）來引起對方的注意。"},
-    {"cat": "F", "q": "30. 我們的關係中存在著一種「誰比較在乎誰」權力拉扯。"}
-]
-
-scores = {}
-with st.form("relationship_scale"):
-    for item in questions:
-        scores[item['q']] = {
-            "cat": item['cat'],
-            "val": st.radio(item['q'], [1, 2, 3, 4, 5], horizontal=True, index=2)
-        }
-    
-    st.markdown("### 📝 感情現況描述")
-    user_description = st.text_area(
-        "請描述你目前的感情狀況、最近發生的事、最在意的點、最想知道的問題",
-        placeholder="例如：我們最近冷戰了一週，對方突然不讀不回，我很擔心他是不是想分手...",
-        height=200
-    )
-    
-    submit_btn = st.form_submit_button("✨ 開始 AI 感情心理分析")
-
-# --- 分析邏輯 ---
-if submit_btn:
-    if not user_description.strip():
-        st.warning("⚠️ 請填寫「感情現況描述」，大師才能為您進行精準分析喔！")
-    else:
-        # 1. 計算指標
-        sum_A = sum(v['val'] for v in scores.values() if v['cat'] == 'A')
-        sum_B = sum(v['val'] for v in scores.values() if v['cat'] == 'B')
-        sum_C = sum(v['val'] for v in scores.values() if v['cat'] == 'C')
-        sum_D = sum(v['val'] for v in scores.values() if v['cat'] == 'D')
-        sum_E = sum(v['val'] for v in scores.values() if v['cat'] == 'E')
-        sum_F = sum(v['val'] for v in scores.values() if v['cat'] == 'F')
-        
-        # 存入指標
-        st.session_state.scores_metrics = {
-            "attachment": sum_A,
-            "investment": sum_B + sum_C,
-            "risk": sum_D + sum_E + sum_F,
-            "imbalance": sum_D,
-            "communication": sum_C * 2
-        }
-        
-        with st.spinner("正在進行深度心理剖析..."):
-            context_prompt = f"""
-【測量表指標結果】
-- 依附強度 (A)：{sum_A} / 25
-- 對方投入 (B+C)：{sum_B + sum_C} / 50
-- 關係風險 (D+E+F)：{sum_E + sum_F} / 50
-- 互動失衡 (D)：{sum_D} / 25
-
-【使用者文字描述】
-{user_description}
-"""
-            st.session_state.analysis_result = ai_love_consult_reply(context_prompt)
-            st.rerun()
-
-# 【六、分析結果區（核心升級）】
-if st.session_state.analysis_result:
-    m = st.session_state.scores_metrics
-    
-    st.markdown("---")
-    st.header("📜 AI 感情心理分析報告")
-
-    # 1. 關係指數
-    st.subheader("📊 關係指數動態")
-    col1, col2 = st.columns(2)
-    with col1:
-        st.write("💗 關係穩定度")
-        st.progress(m['investment'] * 2 / 100)
-        st.write("⚖️ 互動失衡")
-        st.progress(m['imbalance'] * 4 / 100)
-    with col2:
-        st.write("🔥 對方投入度")
-        st.progress((50 - m['risk']/2) * 2 / 100)
-        st.write("💬 溝通順暢")
-        st.progress(m['communication'] * 4 / 100)
-
-    # 2. 心理位置判讀
-    st.subheader("🎯 心理位置判讀")
-    st.markdown("""
-**👉 對方目前狀態：**
-觀察型（65%）＋防禦型（35%）
-
-**說明：**
-對方並非沒有情緒，而是在控制投入。
-""")
-
-    # 3. 風險雷區
-    st.subheader("⚠️ 風險雷區")
-    st.error("🚫 **過度追問** → 對方後退")
-    st.error("🚫 **情緒施壓** → 冷處理")
-    st.error("🚫 **過早確認** → 破壞平衡")
-
-    # 4. 行動對照表
-    st.subheader("📋 行動對照表")
-    action_data = {
-        "行動": ["主動追問", "暫停互動", "輕鬆聊天"],
-        "結果": ["壓力上升", "對方觀察", "回溫機率提高"]
-    }
-    st.table(pd.DataFrame(action_data))
-
-    # 5. 未來走勢
-    st.subheader("📈 未來走勢預測")
-    chart_data = pd.DataFrame({
-        "天數": ["現在", "+3天", "+7天", "+14天"],
-        "穩定度": [60, 55, 75, 40]
-    }).set_index("天數")
-    st.line_chart(chart_data)
-
-    # 6. 依附類型分析
-    st.subheader("🧬 依附類型分析")
-    st.markdown("""
-安全型 30% | 焦慮型 45% | 逃避型 25%
-
-**補一句：**
-你目前偏向「**焦慮型依附**」
-""")
-
-    # 原本 AI 文本
-    st.markdown("---")
-    st.markdown(st.session_state.analysis_result)
-
-    # 【七、轉單鎖定】
-    st.markdown("---")
-    st.markdown("""
-<div class="locked-card">
-    <h3>🔒 以下關鍵分析已鎖定：</h3>
-    <p>・對方真正沒說出口的想法</p>
-    <p>・關係是否有機會（機率）</p>
-    <p>・下一步該怎麼做</p>
-    <p>・錯誤行動後果</p>
-    <br>
-    <p><strong>👉 解鎖完整分析 (299 / 699)</strong></p>
+# --- 一、頂部主視覺 ---
+st.markdown(f"""
+<div class="hero-card">
+    <div class="hero-title">💗 兩性情感心理諮詢</div>
+    <div class="hero-subtitle">Relationship Psychological Analysis System</div>
+    <div class="hero-text">
+        <strong>八字命盤 × 關係互動 × 心理狀態</strong><br>
+        用數據看清關係，用策略找回主導權<br><br>
+        很多時候，讓人痛苦的不是分開，而是「不確定」。<br>
+        他到底怎麼想？這段關係還有沒有機會？我要主動？還是該退？<br><br>
+        這裡不是單純聊天，而是透過命盤結構、互動狀態與心理模型，幫你建立一份感情決策分析報告。
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
-    # 【八、LINE引流】
+col_hero_btn1, col_hero_btn2, col_hero_btn3 = st.columns([1, 2, 1])
+with col_hero_btn2:
+    st.link_button("👉 加 LINE 免費諮詢", "https://line.me/ti/p/@323ohobf", use_container_width=True)
+
+# --- 二、分析模型說明區 ---
+st.markdown("### 🛡️ 分析模型說明")
+col_m1, col_m2, col_m3 = st.columns(3)
+with col_m1:
+    st.info("**命盤結構**\n長期關係模式、感情慣性、吸引與衝突點")
+with col_m2:
+    st.info("**互動行為**\n訊息反應、冷熱變化、關係主導權")
+with col_m3:
+    st.info("**心理狀態**\n依附類型、防禦模式、真實投入程度")
+
+st.markdown("---")
+
+# --- 三、表單區 ---
+st.header("� 描述目前感情狀況")
+with st.container():
+    col_f1, col_f2 = st.columns(2)
+    with col_f1:
+        event = st.text_area("1. 目前發生什麼事？", placeholder="請簡述目前的狀況...", height=150)
+        key_events = st.text_area("2. 關鍵事件補充", placeholder="是否有什麼特別的轉折點或事件？", height=100)
+    with col_f2:
+        wish = st.selectbox("3. 你最想知道的是？", [
+            "對方在想什麼", "這段關係還有沒有機會", "我現在該怎麼做", "要不要繼續這段關係"
+        ])
+        attitude = st.selectbox("4. 對方目前態度？", [
+            "熱情", "冷淡", "忽冷忽熱", "逃避", "曖昧不明"
+        ])
+    
+    user_question = st.text_area(
+        "5. 請輸入你想進一步追問的感情問題",
+        placeholder="例如：他為什麼突然不讀不回？我該主動傳訊息給他嗎？",
+        height=150
+    )
+
+    if st.button("✨ 產生感情心理分析報告", use_container_width=True):
+        if not user_question.strip():
+            st.warning("⚠️ 請先輸入想分析的感情問題")
+        else:
+            with st.spinner("正在生成深度心理分析報告..."):
+                # 模擬 AI 文字分析
+                context_prompt = f"狀況：{event}\n願望：{wish}\n態度：{attitude}\n追問：{user_question}"
+                st.session_state.analysis_result = generate_free_reply(event, wish, attitude)
+                st.session_state.show_report = True
+                st.rerun()
+
+# --- 四、分析報表區 ( st.button 執行後顯示 ) ---
+if st.session_state.show_report:
     st.markdown("---")
-    st.subheader("📩 不想只靠 AI？")
+    st.header("📊 關係核心數據儀表板")
+    
+    # 五、關係核心數據
+    col_d1, col_d2, col_d3, col_d4 = st.columns(4)
+    with col_d1:
+        st.metric("💗 關係穩定度", "65%", "較上週 +5%")
+        st.progress(0.65)
+    with col_d2:
+        st.metric("🔥 對方投入度", "40%", "-2%", delta_color="inverse")
+        st.progress(0.40)
+    with col_d3:
+        st.metric("⚖️ 互動失衡指數", "78%", "高危", delta_color="inverse")
+        st.progress(0.78)
+    with col_d4:
+        st.metric("💬 溝通順暢度", "52%", "+10%")
+        st.progress(0.52)
+
+    # 六、關係類型判定
+    st.markdown("### 🔍 關係類型判定")
+    col_t1, col_t2, col_t3 = st.columns(3)
+    with col_t1:
+        st.success("**依附關係**\n焦慮拉扯型")
+    with col_t2:
+        st.success("**關係階段**\n曖昧觀察期")
+    with col_t3:
+        st.success("**衝突風格**\n壓抑累積型")
+    st.write("> 這代表目前關係不是完全沒有情感，而是進入「不確定與防禦並存」階段。")
+
+    # 七、戀愛週期圖
+    st.markdown("### � 戀愛週期走勢")
+    chart_data = pd.DataFrame({
+        "階段": ["甜蜜期", "磨合期", "衝突期", "冷淡期", "修復期"],
+        "情感強度": [90, 70, 50, 35, 60]
+    }).set_index("階段")
+    st.line_chart(chart_data)
+    st.caption("這張圖用來判斷目前關係大概落在哪個階段，並不是絕對結果，而是輔助使用者理解互動變化。")
+
+    # 八、依附類型分析
+    st.markdown("### 🧬 依附類型分析")
+    col_a1, col_a2 = st.columns([2, 1])
+    with col_a1:
+        st.write("安全型 (30%)")
+        st.progress(0.30)
+        st.write("焦慮型 (45%)")
+        st.progress(0.45)
+        st.write("逃避型 (25%)")
+        st.progress(0.25)
+    with col_a2:
+        st.info("目前使用者較容易在不確定中放大情緒，而對方可能透過退後、觀察或冷處理來保護自己。")
+
+    # 九、行動影響對照表
+    st.markdown("### 🧭 行動策略對照表")
+    strategy_data = {
+        "你的行動": ["主動追問", "暫停聯絡", "輕鬆互動", "情緒攤牌"],
+        "可能結果": ["對方壓力上升", "對方開始觀察", "關係回溫機率提高", "容易造成防禦"],
+        "建議程度": ["🚫 不建議", "⚠️ 可觀察", "✅ 建議", "🚨 高風險"]
+    }
+    st.table(pd.DataFrame(strategy_data))
+
+    # 十、風險雷區
+    st.markdown("### ⚠️ 目前最需要避開的雷區")
+    col_r1, col_r2, col_r3 = st.columns(3)
+    with col_r1:
+        st.error("**過度追問**\n會讓對方覺得壓力變大")
+    with col_r2:
+        st.error("**情緒施壓**\n容易造成冷處理或逃避")
+    with col_r3:
+        st.error("**太快確認關係**\n會破壞目前微妙平衡")
+
+    # 十一、AI文字分析區
+    st.markdown("### 🧠 AI 初步心理判讀")
+    st.markdown(st.session_state.analysis_result)
+
+    # 十二、進階內容鎖定區
+    st.markdown(f"""
+<div class="locked-card">
+    <h3>🔒 以下關鍵分析已鎖定</h3>
+    <p>・對方真正沒有說出口的想法</p>
+    <p>・這段關係是否還有機會</p>
+    <p>・你下一步最適合的做法</p>
+    <p>・如果做錯，可能造成什麼後果</p>
+    <p>・適合主動、等待，還是收回</p>
+    <br>
+    <p>免費版會協助你看見目前狀態。如果你想知道「下一步怎麼做」，建議進一步分析。</p>
+</div>
+""", unsafe_allow_html=True)
+
+    # 十三、LINE引流區
+    st.markdown("---")
+    st.subheader("📩 不想只靠 AI 判斷？")
     st.markdown("""
-**👉 加 LINE，我直接幫你看**
-
-✔ 可補充細節  
-✔ 可問最卡問題  
-✔ 可給對話策略  
-
-**LINE：@323ohobf**
+你可以加 LINE，讓我親自幫你看完整狀況。  
+**適合：**  
+✔ 想知道對方真實想法 | ✔ 想知道該不該主動  
+✔ 想挽回但怕做錯 | ✔ 想確認這段關係還有沒有機會
 """)
-    st.link_button("👉 加 LINE 諮詢大師", "https://line.me/ti/p/@323ohobf", use_container_width=True)
+    st.link_button("👉 加 LINE 免費諮詢", "https://line.me/ti/p/@323ohobf", use_container_width=True)
 
-    # 【九、心理鉤子】
-    st.info("""
-**你現在看到的，只是第一層。**
-
-如果你還在想：
-「要不要傳訊息？」
-「他到底在想什麼？」
-
-👉 **建議不要拖太久**
-因為現在這個時間點，會影響後面走向。
-""")
-
-    # 【十、回訪機制】
+    # 十四、回訪機制
     st.warning("""
-📌 **建議 3 天後再回來看一次**
-👉 狀態會變 | 👉 判斷會更準
+**📌 建議 3 天後再回來重新分析**  
+因為感情狀態會隨著互動改變，不同時間點的判斷也會不同。
 """)
-
-    # 【十一、名單收集】
-    st.markdown("---")
-    st.subheader("📩 想保存這次分析？")
-    with st.form("email_collect"):
-        email = st.text_input("留下 Email，我寄完整報告給你", placeholder="yourname@example.com")
-        if st.form_submit_button("保存分析報告"):
-            st.success("✅ 已記錄，報告將在整理後寄出！")
-
-    # 【十二、高價入口】
-    st.markdown("---")
-    st.subheader("👤 HUGO 真人深度分析（限量）")
-    st.markdown("""
-👉 **非 AI，由我親自分析**  
-👉 **適合想挽回 / 想確認結果**
-""")
-    st.link_button("🔮 預約大師親算", "https://line.me/ti/p/@323ohobf", use_container_width=True)
 
 if st.button("⬅️ 回到首頁"):
     st.switch_page("app.py")
