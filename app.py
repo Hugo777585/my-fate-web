@@ -894,6 +894,9 @@ with col_btn_right:
                         st.write("👉 以上為您的初步命理分析報告")
                         # 基礎分析可能只顯示前段或特定內容，這裡先保留原本顯示 result_text 的邏輯
                         st.markdown(result_text, unsafe_allow_html=True)
+                except Exception as e:
+                    st.error(f"分析過程發生錯誤：{e}")
+                    result_text = "" # 確保後續變數存在
                     
                 if st.session_state.payment_status == "free":
                     st.markdown(f"""
