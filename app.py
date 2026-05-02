@@ -366,95 +366,14 @@ def calculate_bazi(y, m, d, h, minute):
 
 st.set_page_config(page_title="雨果大師｜命理 AI", page_icon="🔮", layout="wide")
 
-# --- 頂級命理視覺質感 CSS 注入 ---
+# --- 基礎 UI 隱藏樣式 ---
 st.markdown("""
 <style>
-    /* 全域字體與背景優化 */
-    @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
-    
-    html, body, [data-testid="stAppViewContainer"] {
-        font-family: 'Noto Sans TC', sans-serif;
-        background-color: #F8F9FA;
-    }
-
-    h1, h2, h3, .main-title {
-        font-family: 'Noto Serif TC', serif;
-    }
-
     /* 隱藏 Streamlit 預設元素 */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
     [data-testid="stHeader"] {display: none;}
-
-    /* 主標題設計：金箔紫感 */
-    .main-title {
-        font-size: 3.5em !important;
-        font-weight: 900 !important;
-        background: linear-gradient(135deg, #4A235A 0%, #6C3483 50%, #8E44AD 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        text-align: center;
-        margin-top: -0.5em !important;
-        margin-bottom: 0.2em !important;
-        letter-spacing: 2px;
-        filter: drop-shadow(0px 4px 10px rgba(108, 52, 131, 0.2));
-    }
-    
-    .sub-title {
-        font-size: 1.2em !important;
-        color: #5B2C6F !important;
-        text-align: center;
-        margin-bottom: 2.5em !important;
-        font-weight: 500 !important;
-        letter-spacing: 4px;
-        text-transform: uppercase;
-    }
-
-    /* 玻璃擬態卡片樣式 */
-    .stForm, .result-card, div[data-testid="stVerticalBlock"] > div[style*="background-color"] {
-        background: rgba(255, 255, 255, 0.9) !important;
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(142, 68, 173, 0.2) !important;
-        border-radius: 24px !important;
-        padding: 40px !important;
-        box-shadow: 0 10px 40px rgba(108, 52, 131, 0.08) !important;
-    }
-
-    /* 按鈕樣式：絲綢紫金質感 */
-    .stButton>button {
-        background: linear-gradient(135deg, #4A235A 0%, #6C3483 100%) !important;
-        color: #F7DC6F !important;
-        font-weight: 700 !important;
-        font-size: 1.2em !important;
-        padding: 0.8em 2.5em !important;
-        border-radius: 50px !important;
-        border: 1px solid #D4AF37 !important;
-        box-shadow: 0 8px 25px rgba(74, 35, 90, 0.3) !important;
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
-        letter-spacing: 2px !important;
-        width: 100% !important;
-    }
-
-    .stButton>button:hover {
-        transform: translateY(-4px) scale(1.02) !important;
-        box-shadow: 0 15px 35px rgba(74, 35, 90, 0.4) !important;
-        color: #FFFFFF !important;
-    }
-    
-    .trust-section {
-        background-color: #F0E6FF;
-        padding: 40px;
-        border-radius: 20px;
-    }
-    
-    .final-cta {
-        background: linear-gradient(135deg, #6C3483, #8E44AD);
-        color: white;
-        text-align: center;
-        padding: 60px 20px;
-        border-radius: 20px;
-    }
 </style>
 """, unsafe_allow_html=True)
 
