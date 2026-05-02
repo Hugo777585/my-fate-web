@@ -27,7 +27,21 @@ client = OpenAI(api_key=openai_key)
 # --- 全域高級視覺 CSS 魔法 --- 
 st.markdown(""" 
 <style> 
+    /* 整體網頁背景顏色 */ 
     .stApp { background-color: #f1f2f6; } 
+    
+    /* 側邊欄背景顏色 */ 
+    [data-testid="stSidebar"] { 
+        background-color: #ffffff; 
+        border-right: 1px solid #dfe6e9; 
+    } 
+    
+    /* 調整內容區塊的間距，讓它更美觀 */ 
+    .block-container { 
+        padding-top: 2rem; 
+        padding-bottom: 2rem; 
+    } 
+
     div[data-testid="stMarkdownContainer"], 
     div[data-testid="stTable"], 
     div.element-container { 
@@ -240,6 +254,8 @@ def init_gsheets():
 sheet, current_client_email, gs_error = init_gsheets()
 
 with st.sidebar:
+    # 在側邊欄顯示您的 logo.JPG 
+    st.sidebar.image("logo.JPG", use_column_width=True)
     st.header("📊 資料庫連線")
     if gs_error:
         st.error(gs_error)
