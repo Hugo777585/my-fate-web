@@ -649,8 +649,6 @@ with st.container():
     form_container = st.container()
     
     with form_container:
-        st.markdown('<div class="st-step-container">', unsafe_allow_html=True)
-        
         # 0. 大分類選擇 (始終顯示，滿足隨時切換需求)
         st.write("✨ **請選擇諮詢分類：**")
         col_cat1, col_cat2, col_cat3 = st.columns(3)
@@ -725,8 +723,6 @@ with st.container():
                     st.session_state.trigger_analysis = True
                     st.rerun()
         
-        st.markdown('</div>', unsafe_allow_html=True)
-
     # 整合最終提問字串
     if st.session_state.main_cat and st.session_state.sub_cat:
         # 修正：確保 question 變數能被全域抓到
@@ -734,7 +730,7 @@ with st.container():
     else:
         st.session_state.current_question = ""
 
-# 5. 大師進階分析區 (僅在密碼正確時顯示)
+# --- 4. 大師進階分析區 (僅在密碼正確時顯示) ---
 advanced_params = {}
 if is_master:
     with st.expander("🔮 大師進階分析區", expanded=True):
@@ -754,50 +750,6 @@ if is_master:
             )
         st.markdown('</div>', unsafe_allow_html=True)
 
-# 6. 雙人合盤功能 (保留原本的邏輯)
-# 任務一：動態隱藏對象
-# 當使用者狀態為「單身」或「個人工作/事業」時，完全隱藏第二位對象的輸入區塊
-is_personal = (st.session_state.sub_cat == "單身求緣") or (st.session_state.main_cat == "事業")
-is_dual_mode = (st.session_state.main_cat == "和盤")
-
-enable_dual = False
-if is_dual_mode:
-    enable_dual = True
-elif not is_personal:
-    enable_dual = st.checkbox("💞 啟用雙人合盤 (感情/合夥)")
-
-# 初始化對象變數，避免未啟用時報錯
-name2 = "無"
-b_year2, b_month2, b_day2, b_hour2, b_min2 = 1980, 1, 1, 12, 0
-relation_type = "無"
-
-if enable_dual and not is_personal:
-    st.subheader("💞 第二位對象資料")
-    col_p2_name, col_p2_gender = st.columns(2)
-    with col_p2_name:
-        name2 = st.text_input("對象姓名/暱稱", placeholder="如何稱呼對方？", key="name2")
-    with col_p2_gender:
-        gender2 = st.selectbox("對象性別", ["男", "女"], key="gender2")
-        
-    col_p2_1, col_p2_2, col_p2_3, col_p2_4, col_p2_5 = st.columns(5)
-    with col_p2_1:
-        years = list(range(1930, 2027))
-        b_year2 = st.selectbox("年", options=years, index=years.index(1980), key="b_year2")
-    with col_p2_2:
-        months = list(range(1, 13))
-        b_month2 = st.selectbox("月", options=months, index=0, key="b_month2")
-    with col_p2_3:
-        days = list(range(1, 32))
-        b_day2 = st.selectbox("日", options=days, index=0, key="b_day2")
-    with col_p2_4:
-        hours = list(range(0, 24))
-        b_hour2 = st.selectbox("時", options=hours, index=12, key="b_hour2")
-    with col_p2_5:
-        mins = list(range(0, 60))
-        b_min2 = st.selectbox("分", options=mins, index=0, key="b_min2")
-relation_type = st.selectbox("雙方關係", ["情侶/夫妻", "事業合夥", "家人/朋友"])
-
-
 # 任務一-3：新增提問區
 st.markdown("#### 🚀 核心卡關問題")
 user_detailed_question = st.text_area(
@@ -809,7 +761,8 @@ user_detailed_question = st.text_area(
 # 任務一：動態送出按鈕 (已移動至最下方)
 col_btn_left, col_btn_right, col_btn_end = st.columns([1, 2, 1])
 with col_btn_right:
-    if enable_dual and not is_personal:
+    # 修正：根據新的 enable_dual 狀態決定按鈕標籤
+    if st.session_state.get('enable_dual_v6', False):
         btn_label = "💞 進行兩人合盤解說"
     else:
         btn_label = "✨ 開始個人深度流年解析"
@@ -817,7 +770,7 @@ with col_btn_right:
     if is_master:
         btn_label = "🔮 大師深度發功"
     
-    main_btn_clicked = st.button(btn_label, use_container_width=True)
+    main_btn_clicked = st.button(btn_label, use_container_width=True, key="main_analyze_btn")
     
     # 修正：抓取 session_state 內的提問內容
     final_question = st.session_state.get('current_question', "")
@@ -912,7 +865,7 @@ with col_btn_right:
                 # 附加原始資料與盤位資訊供 AI 參考，但不強制 AI 輸出格式（由上面的架構要求決定）
                 prompt += f"\n\n【參考資料】\n命主資料：{name}, {gender}, {b_year}/{b_month}/{b_day} {b_hour}:{b_min}, 職業:{occupation}\n提問：{final_question}\n詳細卡關：{user_detailed_question}\n{pillar_info}"
                 
-                if enable_dual:
+                if st.session_state.get('enable_dual_v6', False):
                     bazi2 = calculate_bazi(b_year2, b_month2, b_day2, b_hour2, b_min2)
                     if bazi2:
                         prompt += f"\n對象資料：{name2}, {gender2}, {b_year2}/{b_month2}/{b_day2} {b_hour2}:{b_min2}, 關係:{relation_type}"
@@ -942,24 +895,24 @@ with col_btn_right:
                         # 基礎分析可能只顯示前段或特定內容，這裡先保留原本顯示 result_text 的邏輯
                         st.markdown(result_text, unsafe_allow_html=True)
                     
-                    if st.session_state.payment_status == "free":
-                        st.markdown(f"""
-                        <div class="locked-preview">
-                            <div class="locked-preview-blur">
-                                <h3>🔮 深度解析預覽：您的專屬行動建議</h3>
-                                <p>根據您的日主 {bazi['day_tg']} 與流年感應，在接下來的三個月內，您最需要注意的一個關鍵轉折點在於...</p>
-                                <p>針對您提問的「{question[:20]}...」，具體的破解步驟建議如下：第一步是調整您的... 第二步則是在關鍵時刻選擇...</p>
-                            </div>
-                            <div class="locked-overlay">
-                                <div class="locked-text">
-                                    🔓 解鎖完整深度報告與行動指引
-                                </div>
-                                <p style="margin-top:10px; color:#6C3483; font-size:0.9em; font-weight:600;">
-                                    Hugo：這份報告將為你揭示隱藏的轉機。
-                                </p>
-                            </div>
+                if st.session_state.payment_status == "free":
+                    st.markdown(f"""
+                    <div class="locked-preview">
+                        <div class="locked-preview-blur">
+                            <h3>🔮 深度解析預覽：您的專屬行動建議</h3>
+                            <p>根據您的日主 {bazi['day_tg']} 與流年感應，在接下來的三個月內，您最需要注意的一個關鍵轉折點在於...</p>
+                            <p>針對您提問的「{final_question[:20]}...」，具體的破解步驟建議如下：第一步是調整您的... 第二步則是在關鍵時刻選擇...</p>
                         </div>
-                        """, unsafe_allow_html=True)
+                        <div class="locked-overlay">
+                            <div class="locked-text">
+                                🔓 解鎖完整深度報告與行動指引
+                            </div>
+                            <p style="margin-top:10px; color:#6C3483; font-size:0.9em; font-weight:600;">
+                                Hugo：這份報告將為你揭示隱藏的轉機。
+                            </p>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
                         
                     st.markdown('</div>', unsafe_allow_html=True)
                     
