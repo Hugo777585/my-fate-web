@@ -24,19 +24,19 @@ if not openai_key:
 
 client = OpenAI(api_key=openai_key)
 
-# --- 護眼淺灰色：Hugo 大師版背景 --- 
+# --- Hugo 大師專屬：護眼溫潤沙米色樣式 --- 
 st.markdown(""" 
 <style> 
-    /* 整體底層改為溫和淺灰，降低亮度不刺眼 */ 
+    /* 整體底層換成溫潤的沙米色，極致護眼 */ 
     .stApp { 
-        background-color: #e6e9ef; 
-        color: #2d3436; 
+        background-color: #f0ede5; 
+        color: #3d3d3d; 
     } 
     
-    /* 側邊欄維持白色或極淺灰，增加層次感 */ 
+    /* 側邊欄改為沈穩的亞麻灰 */ 
     [data-testid="stSidebar"] { 
-        background-color: #f8f9fa; 
-        border-right: 1px solid #dcdde1; 
+        background-color: #e0dcd3; 
+        border-right: 1px solid #c8c2b7; 
     } 
 
     /* 調整內容區塊的間距 */ 
@@ -45,22 +45,28 @@ st.markdown("""
         padding-bottom: 2rem; 
     } 
 
-    /* 讓輸入區塊與卡片有淡淡的陰影，看起來更立體 */ 
+    /* 關鍵區域（卡片）使用淺米色，並增加圓潤感 */ 
     div[data-testid="stVerticalBlock"] > div { 
-        background-color: white; 
-        padding: 10px; 
-        border-radius: 10px; 
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
-        margin-bottom: 5px; 
+        background-color: #fdfcf9; 
+        padding: 15px; 
+        border-radius: 12px; 
+        box-shadow: 0 4px 10px rgba(0,0,0,0.03); 
+        margin-bottom: 8px; 
     } 
 
     div[data-testid="stMarkdownContainer"], 
     div[data-testid="stTable"], 
     div.element-container { 
-        background-color: #ffffff; border-radius: 16px; padding: 15px; 
+        background-color: #fdfcf9; border-radius: 16px; padding: 15px; 
         box-shadow: 0 10px 30px rgba(0,0,0,0.05); margin-bottom: 15px; 
     } 
-    h1, h2, h3 { color: #2d3436 !important; border-left: 6px solid #6c5ce7; padding-left: 15px; } 
+
+    /* 強調標題顏色，讓重點一目瞭然 */ 
+    h1, h2, h3 { 
+        color: #5d5d5d !important; 
+        border-left: 6px solid #6c5ce7; 
+        padding-left: 15px; 
+    } 
     table { border-collapse: collapse; width: 100%; } 
     th { background-color: #f0f4ff !important; color: #6c5ce7 !important; font-weight: 900 !important; font-size: 18px !important; } 
     td { font-size: 16px !important; text-align: center !important; } 
