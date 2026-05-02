@@ -584,13 +584,52 @@ with st.container():
     with col_time1:
         hours = list(range(0, 24))
         b_hour = st.selectbox("時", options=hours, index=12)
-    with col_time2:
-        mins = list(range(0, 60))
-        b_min = st.selectbox("分", options=mins, index=0)
     with col_spacer:
         pass # 佔位符，讓時分在手機版看起來更平衡
 
-    # --- 引導式多步驟表單 (Multi-step Form) ---
+    # --- 2. 兩人合盤獨立置頂 ---
+    st.info("💡 想要看兩人的宿命緣分嗎？請勾選下方按鈕啟動【兩人合盤】模式")
+    # 初始化合盤開關狀態
+    if 'enable_dual_v6' not in st.session_state:
+        st.session_state.enable_dual_v6 = False
+    
+    enable_dual = st.toggle("💞 啟動兩人合盤模式", value=st.session_state.enable_dual_v6)
+    st.session_state.enable_dual_v6 = enable_dual
+
+    # 如果啟用合盤，立刻顯示第二位對象資料
+    name2 = "無"
+    b_year2, b_month2, b_day2, b_hour2, b_min2 = 1980, 1, 1, 12, 0
+    relation_type = "無"
+
+    if enable_dual:
+        st.markdown('<div class="dual-input-card">', unsafe_allow_html=True)
+        st.subheader("💞 第二位對象資料")
+        col_p2_name, col_p2_gender = st.columns(2)
+        with col_p2_name:
+            name2 = st.text_input("對象姓名/暱稱", placeholder="如何稱呼對方？", key="name2_v6")
+        with col_p2_gender:
+            gender2 = st.selectbox("對象性別", ["男", "女"], key="gender2_v6")
+            
+        col_p2_1, col_p2_2, col_p2_3, col_p2_4, col_p2_5 = st.columns(5)
+        with col_p2_1:
+            years = list(range(1930, 2027))
+            b_year2 = st.selectbox("年", options=years, index=years.index(1980), key="b_year2_v6")
+        with col_p2_2:
+            months = list(range(1, 13))
+            b_month2 = st.selectbox("月", options=months, index=0, key="b_month2_v6")
+        with col_p2_3:
+            days = list(range(1, 32))
+            b_day2 = st.selectbox("日", options=days, index=0, key="b_day2_v6")
+        with col_p2_4:
+            hours = list(range(0, 24))
+            b_hour2 = st.selectbox("時", options=hours, index=12, key="b_hour2_v6")
+        with col_p2_5:
+            mins = list(range(0, 60))
+            b_min2 = st.selectbox("分", options=mins, index=0, key="b_min2_v6")
+        relation_type = st.selectbox("雙方關係", ["情侶/夫妻", "事業合夥", "家人/朋友"], key="rel_type_v6")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    # --- 3. 引導式多步驟表單 (Multi-step Form) ---
     st.markdown("#### 💬 告訴大師您的困惑")
     
     if 'form_step' not in st.session_state:
