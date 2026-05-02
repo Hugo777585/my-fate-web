@@ -1,5 +1,5 @@
 import streamlit as st
-import google.generativeai as genai
+from openai import OpenAI
 import datetime
 import time
 import os
@@ -12,6 +12,66 @@ from google.oauth2.service_account import Credentials
 from lunar_python import Lunar, Solar
 from tone_engine import analyze_tone_strategy
 from fpdf import FPDF
+
+load_dotenv()
+openai_key = st.secrets.get("OPENAI_API_KEY", None) or os.getenv("OPENAI_API_KEY")
+
+if not openai_key:
+    st.error("尚未設定 OPENAI_API_KEY，請先到 Streamlit Cloud Secrets 加入金鑰。")
+    st.stop()
+
+client = OpenAI(api_key=openai_key)
+
+def ai_reply(prompt):
+    response = client.responses.create(
+        model="gpt-4.1-mini",
+        input=prompt
+    )
+    return response.output[0].content[0].text
+
+def ai_love_consult_reply(context_prompt, is_master=False):
+    """
+    第二層 AI 感情心理諮詢回覆函數 (優化轉單版)
+    """
+    system_role = """你是一位結合命理分析、感情心理諮詢與關係策略的顧問。請用沉穩、理性、具同理心的方式分析，像是在理解人、有洞察力。不要鐵口直斷，不要恐嚇使用者。"""
+    
+    # 根據權限調整輸出要求
+    if is_master:
+        permission_instruction = """
+【大師模式：完整分析】
+請提供完整深度分析，不限制字數，包含：
+1. 對方目前真實心理狀態
+2. 目前關係的核心卡點
+3. 使用者內心真正不安的核心
+4. 具體建議採取的做法（實戰策略）
+5. 絕對不建議做的事
+6. 潛在風險提醒
+7. 明確的下一步行動建議
+"""
+    else:
+        permission_instruction = """
+【一般模式：初步引導】
+請嚴格遵守以下三段式結構，字數約 300～500 字：
+1. ① 對方心理：描述對方的心理狀態，要準確且有畫面感。
+2. ② 關係卡點：點出關係中讓使用者產生共鳴的阻礙。
+3. ③ 方向指引：給予一點點處理方向，但務必保留「關鍵沒說破」，創造好奇感。
+
+❌ 禁止出現「購買」、「方案」、「價格」等商業字眼。
+"""
+
+    full_prompt = f"{system_role}\n\n{context_prompt}\n{permission_instruction}"
+    
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": system_role},
+                {"role": "user", "content": full_prompt}
+            ]
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"AI 諮詢暫時無法連線：{str(e)}"
 
 # --- PDF 報告產生器 ---
 class ReportPDF(FPDF):
@@ -306,258 +366,83 @@ def calculate_bazi(y, m, d, h, minute):
 
 st.set_page_config(page_title="雨果大師｜命理 AI", page_icon="🔮", layout="wide")
 
-hide_streamlit_style = """
-            <style>
-            #MainMenu {visibility: hidden;}
-            footer {visibility: hidden;}
-            header {visibility: hidden;}
-            </style>
-            """
-st.markdown(hide_streamlit_style, unsafe_allow_html=True)
-
-# CSS 注入：美化介面並隱藏 Streamlit 預設元素
+# --- 頂級命理視覺質感 CSS 注入 ---
 st.markdown("""
 <style>
-    .main-title {
-        font-size: 2.8em;
-        font-weight: 800;
-        color: #6C3483;
-        text-align: center;
-        margin-bottom: 0.1em;
-        text-shadow: 2px 2px 4px rgba(108, 52, 131, 0.2);
-    }
-    .sub-title {
-        font-size: 1.1em;
-        color: #7D3C98;
-        text-align: center;
-        margin-bottom: 2em;
-        font-style: italic;
-    }
-    .result-card {
-        background: linear-gradient(135deg, #F9F0FF 0%, #E8DAEF 100%);
-        border: 2px solid #A569BD;
-        border-radius: 16px;
-        padding: 28px;
-        margin-top: 20px;
-        box-shadow: 0 8px 32px rgba(165, 105, 189, 0.25);
-    }
-    .result-header {
-        font-size: 1.4em;
-        color: #6C3483;
-        font-weight: 700;
-        margin-bottom: 15px;
-        border-bottom: 2px solid #D7BDE2;
-        padding-bottom: 8px;
-    }
-    .stButton>button {
-        background: linear-gradient(135deg, #8E44AD, #A569BD);
-        color: white;
-        font-weight: 700;
-        font-size: 1.1em;
-        padding: 0.6em 2em;
-        border-radius: 12px;
-        border: none;
-        box-shadow: 0 4px 15px rgba(142, 68, 173, 0.4);
-        transition: all 0.3s ease;
-        width: 100%;
-    }
-    .stButton>button:hover {
-        background: linear-gradient(135deg, #9B59B6, #BB8FCE);
-        box-shadow: 0 6px 20px rgba(142, 68, 173, 0.5);
-        transform: translateY(-2px);
-    }
-    .master-zone {
-        background-color: #f4f0ff;
-        border: 1px dashed #8e44ad;
-        padding: 20px;
-        border-radius: 10px;
-        margin: 10px 0;
-    }
-    /* 多步驟表單過場動畫 */
-    .st-step-container {
-        animation: fadeIn 0.5s ease-in-out;
-    }
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    .step-btn-active {
-        background-color: #6C3483 !important;
-        color: white !important;
-    }
-    /* 進階服務區塊 CTA 樣式 */
-    .cta-container {
-        background: linear-gradient(135deg, #FFF4E6 0%, #FFF9F0 100%);
-        border: 2px dashed #E67E22;
-        border-radius: 16px;
-        padding: 25px;
-        margin-top: 30px;
-        text-align: center;
-        box-shadow: 0 4px 15px rgba(230, 126, 34, 0.15);
-    }
-    .cta-title {
-        font-size: 1.3em;
-        font-weight: 700;
-        color: #D35400;
-        margin-bottom: 10px;
-    }
-    .cta-text {
-        font-size: 0.95em;
-        color: #A04000;
-        margin-bottom: 20px;
-    }
-    /* 新增首頁排版樣式 */
-    .hero-section {
-        text-align: center;
-        padding: 40px 20px;
-        background-color: #000000;
-        color: #D4AF37; /* 金色 */
-        border-radius: 20px;
-        margin-bottom: 40px;
-    }
-    .hero-title {
-        font-size: 3.5em;
-        font-weight: 900;
-        margin-bottom: 10px;
-        color: #D4AF37;
-    }
-    .hero-subtitle {
-        font-size: 1.5em;
-        margin-bottom: 20px;
-        color: #FFFFFF;
-    }
-    .hero-copy {
-        font-size: 1.2em;
-        margin-bottom: 30px;
-        color: #CCCCCC;
-    }
-    .section-container {
-        padding: 60px 20px;
-        margin-bottom: 40px;
-        border-radius: 20px;
-    }
-    .pain-points-section {
+    /* 全域字體與背景優化 */
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
+    
+    html, body, [data-testid="stAppViewContainer"] {
+        font-family: 'Noto Sans TC', sans-serif;
         background-color: #F8F9FA;
     }
-    .pain-point-item {
-        font-size: 1.2em;
-        margin-bottom: 15px;
-        padding-left: 20px;
-        border-left: 4px solid #6C3483;
+
+    h1, h2, h3, .main-title {
+        font-family: 'Noto Serif TC', serif;
     }
-    .plan-card {
-        background: white;
-        border: 2px solid #E0E0E0;
-        border-radius: 20px;
-        padding: 30px;
+
+    /* 隱藏 Streamlit 預設元素 */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    [data-testid="stHeader"] {display: none;}
+
+    /* 主標題設計：金箔紫感 */
+    .main-title {
+        font-size: 3.5em !important;
+        font-weight: 900 !important;
+        background: linear-gradient(135deg, #4A235A 0%, #6C3483 50%, #8E44AD 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
         text-align: center;
-        transition: all 0.3s ease;
-        height: 100%;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-    }
-    .plan-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 12px 30px rgba(108, 52, 131, 0.15);
-    }
-    .plan-card.popular {
-        border: 3px solid #A569BD;
-        background: linear-gradient(180deg, #FFFFFF 0%, #F5EEF8 100%);
-        position: relative;
-    }
-    .popular-badge {
-        position: absolute;
-        top: -15px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: #A569BD;
-        color: white;
-        padding: 4px 15px;
-        border-radius: 20px;
-        font-size: 0.8em;
-        font-weight: 700;
-        letter-spacing: 1px;
-        z-index: 10;
-    }
-    .plan-title {
-        font-size: 1.5em;
-        font-weight: 800;
-        color: #4A235A;
-        margin-bottom: 10px;
-    }
-    .plan-price {
-        font-size: 2.2em;
-        font-weight: 900;
-        color: #6C3483;
-        margin-bottom: 20px;
-    }
-    .plan-price span {
-        font-size: 0.5em;
-        color: #7B7B7B;
-        font-weight: 400;
-    }
-    .plan-features {
-        text-align: left;
-        margin-bottom: 25px;
-        list-style: none;
-        padding: 0;
-    }
-    .plan-features li {
-        margin-bottom: 12px;
-        color: #4D5656;
-        font-size: 0.95em;
-        display: flex;
-        align-items: center;
-    }
-    .plan-features li:before {
-        content: "✅";
-        margin-right: 10px;
-        font-size: 0.8em;
-    }
-    .plan-features li.locked {
-        color: #ABB2B9;
-    }
-    .plan-features li.locked:before {
-        content: "🔒";
+        margin-top: -0.5em !important;
+        margin-bottom: 0.2em !important;
+        letter-spacing: 2px;
+        filter: drop-shadow(0px 4px 10px rgba(108, 52, 131, 0.2));
     }
     
-    /* 結尾解鎖區塊樣式 */
-    .locked-preview {
-        background: #F4F6F7;
-        border-radius: 12px;
-        padding: 25px;
-        margin-top: 25px;
-        position: relative;
-        overflow: hidden;
-        border: 1px solid #D7BDE2;
+    .sub-title {
+        font-size: 1.2em !important;
+        color: #5B2C6F !important;
+        text-align: center;
+        margin-bottom: 2.5em !important;
+        font-weight: 500 !important;
+        letter-spacing: 4px;
+        text-transform: uppercase;
     }
-    .locked-preview-blur {
-        filter: blur(5px);
-        opacity: 0.5;
-        user-select: none;
+
+    /* 玻璃擬態卡片樣式 */
+    .stForm, .result-card, div[data-testid="stVerticalBlock"] > div[style*="background-color"] {
+        background: rgba(255, 255, 255, 0.9) !important;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(142, 68, 173, 0.2) !important;
+        border-radius: 24px !important;
+        padding: 40px !important;
+        box-shadow: 0 10px 40px rgba(108, 52, 131, 0.08) !important;
     }
-    .locked-overlay {
-        position: absolute;
-        top: 0; left: 0; right: 0; bottom: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        background: rgba(255, 255, 255, 0.5);
-        z-index: 10;
+
+    /* 按鈕樣式：絲綢紫金質感 */
+    .stButton>button {
+        background: linear-gradient(135deg, #4A235A 0%, #6C3483 100%) !important;
+        color: #F7DC6F !important;
+        font-weight: 700 !important;
+        font-size: 1.2em !important;
+        padding: 0.8em 2.5em !important;
+        border-radius: 50px !important;
+        border: 1px solid #D4AF37 !important;
+        box-shadow: 0 8px 25px rgba(74, 35, 90, 0.3) !important;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+        letter-spacing: 2px !important;
+        width: 100% !important;
     }
-    .locked-text {
-        background: white;
-        padding: 12px 30px;
-        border-radius: 50px;
-        box-shadow: 0 4px 20px rgba(108, 52, 131, 0.2);
-        font-weight: 800;
-        color: #6C3483;
-        border: 2px solid #6C3483;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
+
+    .stButton>button:hover {
+        transform: translateY(-4px) scale(1.02) !important;
+        box-shadow: 0 15px 35px rgba(74, 35, 90, 0.4) !important;
+        color: #FFFFFF !important;
     }
+</style>
+""", unsafe_allow_html=True)
     .trust-section {
         background-color: #F0E6FF;
         padding: 40px;
@@ -581,19 +466,25 @@ if st.session_state.get('scroll_to_analysis'):
 st.markdown('<h1 class="main-title">HUGO 天命智庫</h1>', unsafe_allow_html=True)
 st.markdown('<p class="sub-title">八字命理 × AI分析 × 感情諮詢</p>', unsafe_allow_html=True)
 
+# LINE 客服按鈕
+st.link_button("🔮 加LINE免費諮詢", "https://line.me/ti/p/@323ohobf", use_container_width=True)
+
 # 2. 管理員密碼鎖 (大師盤)
-MASTER_CODE = "HUGO888"
+MASTER_CODE = st.secrets.get("MASTER_CODE", None) or os.getenv("MASTER_CODE", "hugo888")
 is_master = False
 
 with st.sidebar:
     st.header("🔐 系統授權")
-    auth_code_input = st.text_input("大師專用授權碼", type="password", key="auth_code_input")
+    auth_code_input = st.text_input("🔒 大師專用授權碼", type="password", key="auth_code_input")
     
-    # 強制比對邏輯：去空格、轉大寫
-    if auth_code_input.strip().upper() == MASTER_CODE:
-        is_master = True
-        st.success("✅ 大師模式已開啟")
-        
+    if auth_code_input and MASTER_CODE:
+        if auth_code_input.strip().lower() == MASTER_CODE.strip().lower():
+            is_master = True
+            st.success("✅ 已啟用大師模式")
+        else:
+            st.error("❌ 授權碼錯誤")
+    
+    if is_master:
         st.markdown("---")
         st.subheader("📊 資料庫連線狀態")
         
@@ -650,24 +541,8 @@ SYSTEM_INSTRUCTION = """你是一個專業且具備心理學同理心的命理�
 1. 只能輸出 Markdown 格式，禁止任何無意義的開場白。
 """
 
-try:
-    # 優先順序：Streamlit Secrets > .env 檔案 > 環境變數
-    gemini_key = st.secrets.get("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
-    
-    if not gemini_key:
-        # 嘗試從已讀取的 service_account_info 中抓取 (如果有的話)
-        # 或者從其它檔案讀取，但通常 GEMINI_API_KEY 應該獨立於 GCP 帳號
-        st.error("API 金鑰讀取失敗：請在 Streamlit Secrets 中設定 `GEMINI_API_KEY`。")
-        st.stop()
-        
-    genai.configure(api_key=gemini_key)
-    model = genai.GenerativeModel(
-        "gemini-flash-latest", # 使用相容性最高且穩定的 Flash 最新版
-        system_instruction=SYSTEM_INSTRUCTION
-    )
-except Exception as e:
-    st.error(f"API 設定發生錯誤：{e}")
-    st.stop()
+# 3. API 設定
+# OpenAI client 已在頂部初始化
 
 # 4. 功能模式選擇
 st.markdown("### 🎯 選擇分析模式")
@@ -992,9 +867,8 @@ with col_btn_right:
                         prompt += f"\n對象資料：{name2}, {gender2}, {b_year2}/{b_month2}/{b_day2} {b_hour2}:{b_min2}, 關係:{relation_type}"
 
                 try:
-                    response = model.generate_content(prompt)
+                    result_text = ai_reply(prompt)
                     elapsed = time.time() - start_time
-                    result_text = response.text
                     result_text = result_text.replace('恩，你好！', '').replace('恩，', '').replace('哈囉，', '').replace('你好，', '').replace('您好，', '').replace('首先，', '').replace('首先呢', '').replace('恩，好', '').strip()
 
                     result_title = f"📜 八字精論｜{'大師深度解析' if is_master else '溫馨命理建議'}"
@@ -1009,7 +883,13 @@ with col_btn_right:
                     st.markdown(bazi_table_html, unsafe_allow_html=True)
                     st.markdown("<br>", unsafe_allow_html=True)
                     
-                    st.markdown(result_text, unsafe_allow_html=True)
+                    if is_master:
+                        st.write("🔥 大師完整版分析啟動")
+                        st.markdown(result_text, unsafe_allow_html=True)
+                    else:
+                        st.write("👉 以上為您的初步命理分析報告")
+                        # 基礎分析可能只顯示前段或特定內容，這裡先保留原本顯示 result_text 的邏輯
+                        st.markdown(result_text, unsafe_allow_html=True)
                     
                     if st.session_state.payment_status == "free":
                         st.markdown(f"""
@@ -1032,163 +912,51 @@ with col_btn_right:
                         
                     st.markdown('</div>', unsafe_allow_html=True)
                     
-                    # --- 付費解鎖架構 ---
+                    # LINE 完整分析按鈕
+                    st.link_button("👉 加LINE看完整分析", "https://line.me/ti/p/@323ohobf", use_container_width=True)
+                    
+                    # --- 第二層｜AI感情心理諮詢師 (高轉換引導版) ---
                     st.markdown("---")
-                    st.subheader("🚀 升級您的解析報告")
+                    st.markdown("""
+                    ### � 延伸分析｜感情心理解析 
                     
-                    col_plan1, col_plan2, col_plan3 = st.columns(3)
+                    很多時候，真正讓人放不下的， 
+                    不是發生了什麼， 
+                    而是你始終看不懂「對方現在到底在想什麼」。 
                     
-                    with col_plan1:
-                        st.markdown("""
-                        <div class="plan-card">
-                            <div class="plan-title">🥉 免費版</div>
-                            <div class="plan-price">NT$ 0</div>
-                            <ul class="plan-features">
-                                <li>基礎命理分析</li>
-                                <li class="locked">流年行動指引</li>
-                                <li class="locked">感情/事業深度建議</li>
-                                <li class="locked">PDF 完整報告</li>
-                                <li class="locked">3 次提問權限</li>
-                            </ul>
-                        </div>
-                        """, unsafe_allow_html=True)
-                        if st.session_state.payment_status == "free":
-                            st.button("目前方案", disabled=True, key="btn_free")
-                        else:
-                            if st.button("切換回免費版", key="btn_switch_free"):
-                                st.session_state.payment_status = "free"
-                                st.rerun()
-                                
-                    with col_plan2:
-                        st.markdown("""
-                        <div class="plan-card popular">
-                            <div class="popular-badge">MOST POPULAR</div>
-                            <div class="plan-title">🥈 299 深度版</div>
-                            <div class="plan-price">NT$ 299 <span>/ 案</span></div>
-                            <ul class="plan-features">
-                                <li>基礎命理分析</li>
-                                <li><b>流年行動指引</b></li>
-                                <li><b>感情/事業深度建議</b></li>
-                                <li class="locked">PDF 完整報告</li>
-                                <li class="locked">3 次提問權限</li>
-                            </ul>
-                        </div>
-                        """, unsafe_allow_html=True)
-                        if st.session_state.payment_status == "paid_299":
-                            st.button("✅ 已解鎖", disabled=True, key="btn_299_active")
-                        elif st.session_state.payment_status == "paid_699":
-                            st.info("✨ 已包含在完整版")
-                        else:
-                            if st.button("🔓 解鎖 299 深度版", key="btn_unlock_299"):
-                                st.session_state.temp_pay_plan = "paid_299"
-                                st.rerun()
-
-                    with col_plan3:
-                        st.markdown("""
-                        <div class="plan-card">
-                            <div class="plan-title">🥇 699 完整版</div>
-                            <div class="plan-price">NT$ 699 <span>/ 案</span></div>
-                            <ul class="plan-features">
-                                <li>299 版所有內容</li>
-                                <li><b>完整 PDF 深度報告</b></li>
-                                <li><b>3 次追問權限 (Hugo 親回)</b></li>
-                                <li>專屬開運建議</li>
-                            </ul>
-                        </div>
-                        """, unsafe_allow_html=True)
-                        if st.session_state.payment_status == "paid_699":
-                            st.button("✅ 已解鎖", disabled=True, key="btn_699_active")
-                        else:
-                            if st.button("🔓 解鎖 699 完整版", key="btn_unlock_699"):
-                                st.session_state.temp_pay_plan = "paid_699"
-                                st.rerun()
-
-                    if 'temp_pay_plan' in st.session_state:
-                        selected_plan_val = 299 if st.session_state.temp_pay_plan == "paid_299" else 699
-                        st.subheader(f"📝 建立訂單（{selected_plan_val} 方案）")
-                        o_name = st.text_input("姓名", value=name)
-                        o_contact = st.text_input("LINE ID 或 Email")
-                        o_phone = st.text_input("手機 (選填)")
-                        
-                        try:
-                            default_date = datetime.date(int(b_year), int(b_month), int(b_day))
-                        except:
-                            default_date = datetime.date.today()
-                            
-                        o_birth_date = st.date_input("出生年月日", value=default_date)
-                        o_birth_time = st.text_input("出生時間（例：08:20）", value=f"{b_hour}:{b_min}")
-                        o_gender = st.selectbox("性別", options=["男", "女"], index=0 if gender == "男" else 1)
-                        o_question = st.text_area("想諮詢的問題", value=question)
-                        
-                        if st.button("建立訂單"):
-                            if not o_name or not o_contact:
-                                st.error("請填寫姓名與聯絡資訊")
-                            else:
-                                order_id = f"HUGO_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}"
-                                order_info = {
-                                    'order_id': order_id,
-                                    'created_at': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                                    'name': o_name,
-                                    'contact': o_contact,
-                                    'phone': o_phone,
-                                    'birth_date': str(o_birth_date),
-                                    'birth_time': o_birth_time,
-                                    'gender': o_gender,
-                                    'question': o_question,
-                                    'plan': selected_plan_val,
-                                    'payment_status': 'unpaid'
-                                }
-                                st.session_state.order_data = order_info
-                                save_order_to_csv(order_info)
-                                st.success("訂單已建立！請加入LINE完成付款與分析")
-                                st.json(st.session_state.order_data)
-
-                        if st.session_state.order_data:
-                            st.info("💳 **目前為測試模式**")
-                            col_pay1, col_pay2 = st.columns(2)
-                            with col_pay1:
-                                if st.button("✅ 確認付款完成並解鎖", type="primary"):
-                                    st.session_state.order_data['payment_status'] = 'test_paid'
-                                    save_order_to_csv(st.session_state.order_data)
-                                    st.session_state.payment_status = st.session_state.temp_pay_plan
-                                    del st.session_state.temp_pay_plan
-                                    st.success(f"🎉 付款成功！訂單編號 {st.session_state.order_data['order_id']} 已解鎖。")
-                                    st.rerun()
-                            with col_pay2:
-                                if st.button("❌ 取消"):
-                                    del st.session_state.temp_pay_plan
-                                    st.session_state.order_data = None
-                                    st.rerun()
-
-                    if st.session_state.payment_status in ["paid_299", "paid_699"]:
+                    你可能會開始反覆想： 
+                    👉 他現在對我是認認真真的，還是只是剛好有人陪？ 
+                    👉 這段關係，還有沒有機會走下去？ 
+                    👉 我現在該主動，還是該慢慢退？ 
+                    
+                    有些答案，其實你心裡已經隱約知道， 
+                    只是還沒有被看清楚。 
+                    
+                    **HUGO 天命智庫會透過：**
+                    **八字命盤 × 關係互動 × 心理狀態** 
+                    
+                    幫你把「現在這段關係的真實狀態」拆開來看。 
+                    
+                    不是告訴你一個結果， 
+                    而是讓你知道： 
+                    
+                    👉 **對方現在的情緒位置** 
+                    👉 **你們之間的關係落差** 
+                    👉 **以及你下一步做什麼，結果會開始改變** 
+                    
+                    💗 **如果你準備好看清楚這段關係** 
+                    
+                    👉 **請點擊下方，進入 AI 感情心理解析** 
+                    """)
+                    
+                    if st.button("🚀 進入 AI 感情心理解析", use_container_width=True, type="primary"):
+                        st.switch_page("pages/02_love_analysis.py")
+                    
+                    # 移除舊有的付費解鎖架構 (已隱藏)
+                    if is_master:
                         st.markdown("---")
-                        st.markdown("## 🌟 進階解鎖內容")
-                        if st.session_state.order_data:
-                            st.caption(f"📄 訂單編號：{st.session_state.order_data['order_id']}")
-                        
-                        st.markdown("### 📍 流年行動指引 & 建議")
-                        st.success(f"【{st.session_state.main_cat if 'main_cat' in st.session_state else '整體'}建議】根據您的命盤，今年應以『穩』為主，適合學習與內省，不宜大動作投資。")
-                        
-                        if st.session_state.payment_status == "paid_699":
-                            st.markdown("### 📘 完整深度報告")
-                            st.write("這裡顯示更完整的深度分析內容，包含大運流年的細部拆解與五行補運建議。")
-                            try:
-                                pdf_bytes = create_pdf(name, result_text)
-                                st.download_button(
-                                    label="📥 下載完整命理報告 (PDF)",
-                                    data=pdf_bytes,
-                                    file_name=f"雨果大師_{name}_命理報告.pdf",
-                                    mime="application/pdf",
-                                    use_container_width=True
-                                )
-                            except Exception as pdf_err:
-                                st.error(f"PDF 產生失敗：{pdf_err}")
-                        else:
-                            if st.button("升級至 699 完整版"):
-                                st.session_state.temp_pay_plan = "paid_699"
-                                st.rerun()
-                    else:
-                        st.info("🔒 付費解鎖後即可查看進階行動指引與下載 PDF 報告")
+                        st.subheader("� 大師後台管理")
+                        # 這裡可以保留一些大師才看的到的數據或功能
 
                     st.caption(f"⏱️ 分析耗時：{elapsed:.1f} 秒")
 

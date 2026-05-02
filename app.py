@@ -366,258 +366,83 @@ def calculate_bazi(y, m, d, h, minute):
 
 st.set_page_config(page_title="雨果大師｜命理 AI", page_icon="🔮", layout="wide")
 
-hide_streamlit_style = """
-            <style>
-            #MainMenu {visibility: hidden;}
-            footer {visibility: hidden;}
-            header {visibility: hidden;}
-            </style>
-            """
-st.markdown(hide_streamlit_style, unsafe_allow_html=True)
-
-# CSS 注入：美化介面並隱藏 Streamlit 預設元素
+# --- 頂級命理視覺質感 CSS 注入 ---
 st.markdown("""
 <style>
-    .main-title {
-        font-size: 2.8em;
-        font-weight: 800;
-        color: #6C3483;
-        text-align: center;
-        margin-bottom: 0.1em;
-        text-shadow: 2px 2px 4px rgba(108, 52, 131, 0.2);
-    }
-    .sub-title {
-        font-size: 1.1em;
-        color: #7D3C98;
-        text-align: center;
-        margin-bottom: 2em;
-        font-style: italic;
-    }
-    .result-card {
-        background: linear-gradient(135deg, #F9F0FF 0%, #E8DAEF 100%);
-        border: 2px solid #A569BD;
-        border-radius: 16px;
-        padding: 28px;
-        margin-top: 20px;
-        box-shadow: 0 8px 32px rgba(165, 105, 189, 0.25);
-    }
-    .result-header {
-        font-size: 1.4em;
-        color: #6C3483;
-        font-weight: 700;
-        margin-bottom: 15px;
-        border-bottom: 2px solid #D7BDE2;
-        padding-bottom: 8px;
-    }
-    .stButton>button {
-        background: linear-gradient(135deg, #8E44AD, #A569BD);
-        color: white;
-        font-weight: 700;
-        font-size: 1.1em;
-        padding: 0.6em 2em;
-        border-radius: 12px;
-        border: none;
-        box-shadow: 0 4px 15px rgba(142, 68, 173, 0.4);
-        transition: all 0.3s ease;
-        width: 100%;
-    }
-    .stButton>button:hover {
-        background: linear-gradient(135deg, #9B59B6, #BB8FCE);
-        box-shadow: 0 6px 20px rgba(142, 68, 173, 0.5);
-        transform: translateY(-2px);
-    }
-    .master-zone {
-        background-color: #f4f0ff;
-        border: 1px dashed #8e44ad;
-        padding: 20px;
-        border-radius: 10px;
-        margin: 10px 0;
-    }
-    /* 多步驟表單過場動畫 */
-    .st-step-container {
-        animation: fadeIn 0.5s ease-in-out;
-    }
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    .step-btn-active {
-        background-color: #6C3483 !important;
-        color: white !important;
-    }
-    /* 進階服務區塊 CTA 樣式 */
-    .cta-container {
-        background: linear-gradient(135deg, #FFF4E6 0%, #FFF9F0 100%);
-        border: 2px dashed #E67E22;
-        border-radius: 16px;
-        padding: 25px;
-        margin-top: 30px;
-        text-align: center;
-        box-shadow: 0 4px 15px rgba(230, 126, 34, 0.15);
-    }
-    .cta-title {
-        font-size: 1.3em;
-        font-weight: 700;
-        color: #D35400;
-        margin-bottom: 10px;
-    }
-    .cta-text {
-        font-size: 0.95em;
-        color: #A04000;
-        margin-bottom: 20px;
-    }
-    /* 新增首頁排版樣式 */
-    .hero-section {
-        text-align: center;
-        padding: 40px 20px;
-        background-color: #000000;
-        color: #D4AF37; /* 金色 */
-        border-radius: 20px;
-        margin-bottom: 40px;
-    }
-    .hero-title {
-        font-size: 3.5em;
-        font-weight: 900;
-        margin-bottom: 10px;
-        color: #D4AF37;
-    }
-    .hero-subtitle {
-        font-size: 1.5em;
-        margin-bottom: 20px;
-        color: #FFFFFF;
-    }
-    .hero-copy {
-        font-size: 1.2em;
-        margin-bottom: 30px;
-        color: #CCCCCC;
-    }
-    .section-container {
-        padding: 60px 20px;
-        margin-bottom: 40px;
-        border-radius: 20px;
-    }
-    .pain-points-section {
+    /* 全域字體與背景優化 */
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
+    
+    html, body, [data-testid="stAppViewContainer"] {
+        font-family: 'Noto Sans TC', sans-serif;
         background-color: #F8F9FA;
     }
-    .pain-point-item {
-        font-size: 1.2em;
-        margin-bottom: 15px;
-        padding-left: 20px;
-        border-left: 4px solid #6C3483;
+
+    h1, h2, h3, .main-title {
+        font-family: 'Noto Serif TC', serif;
     }
-    .plan-card {
-        background: white;
-        border: 2px solid #E0E0E0;
-        border-radius: 20px;
-        padding: 30px;
+
+    /* 隱藏 Streamlit 預設元素 */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    [data-testid="stHeader"] {display: none;}
+
+    /* 主標題設計：金箔紫感 */
+    .main-title {
+        font-size: 3.5em !important;
+        font-weight: 900 !important;
+        background: linear-gradient(135deg, #4A235A 0%, #6C3483 50%, #8E44AD 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
         text-align: center;
-        transition: all 0.3s ease;
-        height: 100%;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-    }
-    .plan-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 12px 30px rgba(108, 52, 131, 0.15);
-    }
-    .plan-card.popular {
-        border: 3px solid #A569BD;
-        background: linear-gradient(180deg, #FFFFFF 0%, #F5EEF8 100%);
-        position: relative;
-    }
-    .popular-badge {
-        position: absolute;
-        top: -15px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: #A569BD;
-        color: white;
-        padding: 4px 15px;
-        border-radius: 20px;
-        font-size: 0.8em;
-        font-weight: 700;
-        letter-spacing: 1px;
-        z-index: 10;
-    }
-    .plan-title {
-        font-size: 1.5em;
-        font-weight: 800;
-        color: #4A235A;
-        margin-bottom: 10px;
-    }
-    .plan-price {
-        font-size: 2.2em;
-        font-weight: 900;
-        color: #6C3483;
-        margin-bottom: 20px;
-    }
-    .plan-price span {
-        font-size: 0.5em;
-        color: #7B7B7B;
-        font-weight: 400;
-    }
-    .plan-features {
-        text-align: left;
-        margin-bottom: 25px;
-        list-style: none;
-        padding: 0;
-    }
-    .plan-features li {
-        margin-bottom: 12px;
-        color: #4D5656;
-        font-size: 0.95em;
-        display: flex;
-        align-items: center;
-    }
-    .plan-features li:before {
-        content: "✅";
-        margin-right: 10px;
-        font-size: 0.8em;
-    }
-    .plan-features li.locked {
-        color: #ABB2B9;
-    }
-    .plan-features li.locked:before {
-        content: "🔒";
+        margin-top: -0.5em !important;
+        margin-bottom: 0.2em !important;
+        letter-spacing: 2px;
+        filter: drop-shadow(0px 4px 10px rgba(108, 52, 131, 0.2));
     }
     
-    /* 結尾解鎖區塊樣式 */
-    .locked-preview {
-        background: #F4F6F7;
-        border-radius: 12px;
-        padding: 25px;
-        margin-top: 25px;
-        position: relative;
-        overflow: hidden;
-        border: 1px solid #D7BDE2;
+    .sub-title {
+        font-size: 1.2em !important;
+        color: #5B2C6F !important;
+        text-align: center;
+        margin-bottom: 2.5em !important;
+        font-weight: 500 !important;
+        letter-spacing: 4px;
+        text-transform: uppercase;
     }
-    .locked-preview-blur {
-        filter: blur(5px);
-        opacity: 0.5;
-        user-select: none;
+
+    /* 玻璃擬態卡片樣式 */
+    .stForm, .result-card, div[data-testid="stVerticalBlock"] > div[style*="background-color"] {
+        background: rgba(255, 255, 255, 0.9) !important;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(142, 68, 173, 0.2) !important;
+        border-radius: 24px !important;
+        padding: 40px !important;
+        box-shadow: 0 10px 40px rgba(108, 52, 131, 0.08) !important;
     }
-    .locked-overlay {
-        position: absolute;
-        top: 0; left: 0; right: 0; bottom: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        background: rgba(255, 255, 255, 0.5);
-        z-index: 10;
+
+    /* 按鈕樣式：絲綢紫金質感 */
+    .stButton>button {
+        background: linear-gradient(135deg, #4A235A 0%, #6C3483 100%) !important;
+        color: #F7DC6F !important;
+        font-weight: 700 !important;
+        font-size: 1.2em !important;
+        padding: 0.8em 2.5em !important;
+        border-radius: 50px !important;
+        border: 1px solid #D4AF37 !important;
+        box-shadow: 0 8px 25px rgba(74, 35, 90, 0.3) !important;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+        letter-spacing: 2px !important;
+        width: 100% !important;
     }
-    .locked-text {
-        background: white;
-        padding: 12px 30px;
-        border-radius: 50px;
-        box-shadow: 0 4px 20px rgba(108, 52, 131, 0.2);
-        font-weight: 800;
-        color: #6C3483;
-        border: 2px solid #6C3483;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
+
+    .stButton>button:hover {
+        transform: translateY(-4px) scale(1.02) !important;
+        box-shadow: 0 15px 35px rgba(74, 35, 90, 0.4) !important;
+        color: #FFFFFF !important;
     }
+</style>
+""", unsafe_allow_html=True)
     .trust-section {
         background-color: #F0E6FF;
         padding: 40px;
