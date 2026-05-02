@@ -261,17 +261,17 @@ st.header("💞 描述您的感情狀況")
 with st.container():
     col_input1, col_input2 = st.columns(2)
     with col_input1:
-        event_happening = st.text_area("1. 目前發生什麼事？", placeholder="請簡述目前的狀況...", height=150)
+        event = st.text_area("1. 目前發生什麼事？", placeholder="請簡述目前的狀況...", height=150)
         key_events = st.text_area("2. 關鍵事件補充", placeholder="是否有什麼特別的轉折點或事件？", height=100)
     
     with col_input2:
-        wish_to_know = st.selectbox("3. 你最想知道的是？", [
+        wish = st.selectbox("3. 你最想知道的是？", [
             "對方在想什麼", 
             "這段關係還有沒有機會", 
             "我現在該怎麼做", 
             "要不要繼續這段關係"
         ])
-        partner_attitude = st.selectbox("4. 對方目前態度？", [
+        attitude = st.selectbox("4. 對方目前態度？", [
             "熱情", 
             "冷淡", 
             "忽冷忽熱", 
@@ -282,70 +282,51 @@ with st.container():
 # --- 分析執行邏輯 ---
 st.markdown("<br>", unsafe_allow_html=True)
 
-love_question = st.text_area(
+user_question = st.text_area(
     "請輸入你想進一步追問的感情問題",
     placeholder="例如：他為什麼突然不讀不回？我該主動傳訊息給他嗎？",
-    key="love_question"
+    key="user_question"
 )
 
 if st.button("✨ 開始 AI 感情心理分析", use_container_width=True):
-    if not love_question.strip():
+
+    if not user_question.strip():
         st.warning("請先輸入想分析的感情問題")
-    elif not event_happening:
-        st.warning("⚠️ 請先填寫「目前發生什麼事」，大師才能為您分析喔！")
+
     else:
-        with st.spinner("正在進行感情心理分析..."):
+        with st.spinner("AI 正在分析中..."):
+
             try:
-                # 建立 AI 分析用的 Prompt
-                context_prompt = f"""
-【使用者描述的現況】
-1. 目前發生什麼事：{event_happening}
-2. 關鍵事件補充：{key_events}
-3. 使用者最想知道的是：{wish_to_know}
-4. 對方目前的態度：{partner_attitude}
-5. 針對此狀況的具體追問：{love_question}
-"""
-                # 目前統一使用一般模式，或根據需求調整
-                is_master = False 
+                # 呼叫回覆生成函數
+                result = generate_free_reply(event, wish, attitude)
                 
-                # 呼叫 AI 函數
-                result = ai_love_consult_reply(context_prompt, is_master)
-                
-                # 儲存結果到 session_state 以便持久顯示
+                # 將結果儲存到 session_state，確保在 Streamlit 重新整理後依然存在
                 st.session_state.analysis_result = result
+                
+                # 執行一次 rerun 確保 UI 更新並顯示結果
                 st.rerun()
 
             except Exception as e:
-                st.error(f"AI 分析失敗：{e}")
+                st.error(f"分析錯誤：{e}")
 
-# --- 顯示分析結果 (持久化) ---
+# --- 顯示分析結果 (持久化顯示區) ---
 if st.session_state.analysis_result:
     st.markdown("---")
     st.markdown(st.session_state.analysis_result)
 
-    # --- 加入自然引導文案 ---
     st.markdown("""
-### 🔮 延伸分析｜感情心理解析 
+---
+🔮 延伸分析｜感情心理解析
 
-很多時候，真正讓人放不下的， 
-不是發生了什麼， 
-而是你始終看不懂「對方現在到底在想什麼」。 
+很多時候，真正讓人放不下的，
+不是發生了什麼，
+而是你始終看不懂「對方現在到底在想什麼」。
 
-你可能會開始反覆想： 
-
-👉 他現在對我是認真的，還是只是剛好有人陪？ 
-👉 這段關係，還有沒有機會走下去？ 
-👉 我現在該主動，還是該慢慢退？ 
-
-HUGO 天命智庫會透過： 
-
-**八字命盤 × 關係互動 × 心理狀態** 
-
-幫你把「現在這段關係的真實狀態」拆開來看。 
-
-👉 如果你想進一步看清這段關係，可以加 LINE 做完整分析。 
+👉 想更深入解析這段關係  
+👉 加 LINE 進一步諮詢
 """)
-    st.link_button("👉 加 LINE 進一步諮詢", "https://line.me/ti/p/@323ohobf", use_container_width=True)
+
+    st.link_button("👉 加 LINE 諮詢", "https://line.me/ti/p/@323ohobf", use_container_width=True)
 
 if st.button("⬅️ 回到首頁"):
     st.switch_page("app.py")

@@ -276,7 +276,6 @@ with st.sidebar:
         st.success(f"✅ 已連線：{sheet.spreadsheet.title}")
         st.info(f"📧 服務帳號：`{current_client_email}`")
 
-    st.markdown("---")
     if st.button("🧠 AI感情心理分析"):
         st.switch_page("pages/02_love_analysis.py")
 
@@ -413,6 +412,11 @@ def calculate_bazi(y, m, d, h, minute):
 
 st.set_page_config(page_title="雨果大師｜命理 AI", page_icon="🔮", layout="wide")
 
+# --- 網頁最頂端 Logo ---
+col_logo_1, col_logo_2, col_logo_3 = st.columns([1, 2, 1])
+with col_logo_2:
+    st.image("logo.JPG", use_column_width=True)
+
 # --- 基礎 UI 隱藏樣式 ---
 st.markdown("""
 <style>
@@ -541,7 +545,6 @@ analysis_mode = st.radio(
     horizontal=True,
     label_visibility="collapsed"
 )
-st.markdown("---")
 
 # 5. 基礎輸入介面 (大眾版與大師盤通用)
 with st.container():
@@ -579,7 +582,7 @@ with st.container():
         mins = list(range(0, 60))
         b_min = st.selectbox("分", options=mins, index=0)
     with col_spacer:
-        st.write("") # 佔位符，讓時分在手機版看起來更平衡
+        pass # 佔位符，讓時分在手機版看起來更平衡
 
     # --- 引導式多步驟表單 (Multi-step Form) ---
     st.markdown("#### 💬 告訴大師您的困惑")
@@ -615,7 +618,6 @@ with st.container():
                 st.session_state.form_step = 2
                 st.rerun()
         
-        st.markdown("---")
 
         # 步驟一：引導（如果尚未選擇）
         if st.session_state.form_step == 1:
@@ -734,9 +736,8 @@ if enable_dual and not is_personal:
     with col_p2_5:
         mins = list(range(0, 60))
         b_min2 = st.selectbox("分", options=mins, index=0, key="b_min2")
-    relation_type = st.selectbox("雙方關係", ["情侶/夫妻", "事業合夥", "家人/朋友"])
+relation_type = st.selectbox("雙方關係", ["情侶/夫妻", "事業合夥", "家人/朋友"])
 
-st.markdown("---")
 
 # 任務一-3：新增提問區
 st.markdown("#### 🚀 核心卡關問題")
@@ -747,7 +748,6 @@ user_detailed_question = st.text_area(
 )
 
 # 任務一：動態送出按鈕 (已移動至最下方)
-st.markdown("---")
 col_btn_left, col_btn_right, col_btn_end = st.columns([1, 2, 1])
 with col_btn_right:
     if enable_dual and not is_personal:
@@ -905,7 +905,6 @@ with col_btn_right:
                     st.link_button("👉 加LINE看完整分析", "https://line.me/ti/p/@323ohobf", use_container_width=True)
                     
                     # --- 第二層｜AI感情心理諮詢師 (高轉換引導版) ---
-                    st.markdown("---")
                     st.markdown("""
                     ### � 延伸分析｜感情心理解析 
                     
@@ -943,7 +942,6 @@ with col_btn_right:
                     
                     # 移除舊有的付費解鎖架構 (已隱藏)
                     if is_master:
-                        st.markdown("---")
                         st.subheader("� 大師後台管理")
                         # 這裡可以保留一些大師才看的到的數據或功能
 
