@@ -441,13 +441,13 @@ st.markdown("""
         box-shadow: 0 15px 35px rgba(74, 35, 90, 0.4) !important;
         color: #FFFFFF !important;
     }
-</style>
-""", unsafe_allow_html=True)
+    
     .trust-section {
         background-color: #F0E6FF;
         padding: 40px;
         border-radius: 20px;
     }
+    
     .final-cta {
         background: linear-gradient(135deg, #6C3483, #8E44AD);
         color: white;
