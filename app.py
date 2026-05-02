@@ -605,15 +605,20 @@ with st.container():
         
         # 0. 大分類選擇 (始終顯示，滿足隨時切換需求)
         st.write("✨ **請選擇諮詢分類：**")
-        col_cat1, col_cat2 = st.columns(2)
+        col_cat1, col_cat2, col_cat3 = st.columns(3)
         with col_cat1:
             # 增加 key 確保狀態穩定，並在點擊時強制重置相關狀態
-            if st.button("💘 感情婚姻", use_container_width=True, key="main_cat_love"):
+            if st.button("� 感情婚姻", use_container_width=True, key="main_cat_love"):
                 st.session_state.main_cat = "感情"
                 st.session_state.form_step = 2  # 切換後進入該分類的第二步
                 st.rerun()
         with col_cat2:
-            if st.button("💼 事業財運", use_container_width=True, key="main_cat_job"):
+            if st.button("� 兩人和盤", use_container_width=True, key="main_cat_dual"):
+                st.session_state.main_cat = "和盤"
+                st.session_state.form_step = 2
+                st.rerun()
+        with col_cat3:
+            if st.button("💰 事業財運", use_container_width=True, key="main_cat_job"):
                 st.session_state.main_cat = "事業"
                 st.session_state.form_step = 2
                 st.rerun()
@@ -629,6 +634,8 @@ with st.container():
             
             if st.session_state.main_cat == "感情":
                 options = ["曖昧中", "面臨分手", "懷疑欺瞞", "單身求緣", "婚姻危機", "其他"]
+            elif st.session_state.main_cat == "和盤":
+                options = ["情侶合盤", "夫妻合盤", "事業合夥", "家人朋友", "競爭對手", "其他"]
             else:
                 options = ["想換工作", "創業諮詢", "財運不佳", "職場人際", "升遷機會", "其他"]
             
@@ -674,9 +681,10 @@ with st.container():
 
     # 整合最終提問字串
     if st.session_state.main_cat and st.session_state.sub_cat:
-        question = f"【諮詢類別：{st.session_state.main_cat} - {st.session_state.sub_cat}】\n{st.session_state.detail_text}"
+        # 修正：確保 question 變數能被全域抓到
+        st.session_state.current_question = f"【諮詢類別：{st.session_state.main_cat} - {st.session_state.sub_cat}】\n{st.session_state.detail_text}"
     else:
-        question = ""
+        st.session_state.current_question = ""
 
 # 5. 大師進階分析區 (僅在密碼正確時顯示)
 advanced_params = {}
@@ -702,9 +710,12 @@ if is_master:
 # 任務一：動態隱藏對象
 # 當使用者狀態為「單身」或「個人工作/事業」時，完全隱藏第二位對象的輸入區塊
 is_personal = (st.session_state.sub_cat == "單身求緣") or (st.session_state.main_cat == "事業")
+is_dual_mode = (st.session_state.main_cat == "和盤")
 
 enable_dual = False
-if not is_personal:
+if is_dual_mode:
+    enable_dual = True
+elif not is_personal:
     enable_dual = st.checkbox("💞 啟用雙人合盤 (感情/合夥)")
 
 # 初始化對象變數，避免未啟用時報錯
@@ -760,10 +771,13 @@ with col_btn_right:
     
     main_btn_clicked = st.button(btn_label, use_container_width=True)
     
+    # 修正：抓取 session_state 內的提問內容
+    final_question = st.session_state.get('current_question', "")
+
     if main_btn_clicked or st.session_state.trigger_analysis:
         st.session_state.trigger_analysis = False
         
-        if not question:
+        if not final_question:
             st.warning("請簡單填寫一下您想問的問題，大師才能為您指點迷津喔！")
         else:
             start_time = time.time()
@@ -773,7 +787,7 @@ with col_btn_right:
                 if bazi:
                     bazi_shishen = [bazi['year_ss'], bazi['month_ss'], bazi['hour_ss']]
                 
-                tone_strategy = analyze_tone_strategy(question, bazi_shishen)
+                tone_strategy = analyze_tone_strategy(final_question, bazi_shishen)
                 tone_instruction = f"\n\n【當前對話語氣指引】：\n{tone_strategy['system_prompt']}\n請確保在回覆中完美融入此語氣。"
 
                 if bazi:
@@ -787,7 +801,7 @@ with col_btn_right:
                 else:
                     pillar_info = "（命盤計算失敗，請檢查輸入日期）"
 
-                base_info = f"姓名：{name}，性別：{gender}，生日：{b_year}/{b_month}/{b_day} {b_hour}:{b_min}，職業：{occupation}，提問：{question}，具體卡關：{user_detailed_question}"
+                base_info = f"姓名：{name}，性別：{gender}，生日：{b_year}/{b_month}/{b_day} {b_hour}:{b_min}，職業：{occupation}，提問：{final_question}，具體卡關：{user_detailed_question}"
 
                 current_year = datetime.datetime.now().year
                 next_year = current_year + 1
@@ -798,7 +812,7 @@ with col_btn_right:
                     # 使用【大師無限制版 Prompt】
                     prompt = f"""
 現在是 {current_year} 年。系統已進入「大師無限制解鎖模式」。
-請運用你所有的八字命理與心理學知識，針對使用者的命盤與問題：{question}，給出最完整、最深度的解析。
+請運用你所有的八字命理與心理學知識，針對使用者的命盤與問題：{final_question}，給出最完整、最深度的解析。
 1. 【四柱八字排盤】：完整列出命主(與對象)的天干地支。
 2. 【深度命盤與流年解析】：毫無保留地解析流年大運、五行喜忌與現狀成因。
 3. 【具體化解與行動策略】：請直接給出最高級別的心理學建議、對話策略與具體化解行動。
@@ -826,7 +840,7 @@ with col_btn_right:
 這不是單純運氣不好，而是「命盤本身的結構被引動」。但關鍵在於——不是每個月都一樣嚴重。有些月份只是壓力，但有幾個特定月份是「真正會出事的點」。
 
 ### 🥈 現況解析與深層原因
-(結合客戶提問：{question} 進行共鳴)
+(結合客戶提問：{final_question} 進行共鳴)
 這也對應到你目前的狀況：
 👉 （點出現狀痛點 1）
 👉 （點出現狀痛點 2）
@@ -848,7 +862,7 @@ with col_btn_right:
 """
                 
                 # 附加原始資料與盤位資訊供 AI 參考，但不強制 AI 輸出格式（由上面的架構要求決定）
-                prompt += f"\n\n【參考資料】\n命主資料：{name}, {gender}, {b_year}/{b_month}/{b_day} {b_hour}:{b_min}, 職業:{occupation}\n提問：{question}\n詳細卡關：{user_detailed_question}\n{pillar_info}"
+                prompt += f"\n\n【參考資料】\n命主資料：{name}, {gender}, {b_year}/{b_month}/{b_day} {b_hour}:{b_min}, 職業:{occupation}\n提問：{final_question}\n詳細卡關：{user_detailed_question}\n{pillar_info}"
                 
                 if enable_dual:
                     bazi2 = calculate_bazi(b_year2, b_month2, b_day2, b_hour2, b_min2)
