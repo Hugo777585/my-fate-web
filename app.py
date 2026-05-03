@@ -239,9 +239,6 @@ if 'session_id' not in st.session_state:
 if 'visited_pages' not in st.session_state:
     st.session_state.visited_pages = set()
 
-# 初始化試算表物件 (供舊邏輯使用，若有需要)
-sheet = ensure_worksheet("user_submissions", []) 
-
 st.set_page_config(page_title="HUGO 天命智庫", page_icon="🔮", layout="wide")
 
 # --- 1. 頂部 Hero 區 (包含 Logo 與 標題) ---
@@ -397,11 +394,7 @@ if 'analysis_mode' in st.session_state:
                     prompt = f"你是一位專業命理大師。請針對以下八字命盤進行深度分析：\n姓名：{name}\n性別：{gender}\n出生時間：{b_year}/{b_month}/{b_day} {b_hour}:{b_min}\n職業：{occupation}\n問題：{question}\n命盤數據：{bazi['full']}\n\n請分析性格、事業、財運與感情建議。"
                     result = ai_reply(prompt)
                     st.markdown(f'<div class="main-card">{result}</div>', unsafe_allow_html=True)
-                    
-                    # 紀錄到 Google Sheets
-                    if sheet: 
-                        sheet.append_row([str(datetime.datetime.now()), name, f"{b_year}-{b_month}-{b_day}", question, f"【八字模式】{result[:5000]}"])
-
+                
                 elif mode == "八字 × 紫微交叉分析":
                     # 顯示八字盤作為參考之一
                     st.markdown("### 📜 八字命盤基礎")
@@ -412,10 +405,7 @@ if 'analysis_mode' in st.session_state:
                     prompt = f"你是一位精通八字與紫微斗數的大師。請針對以下命盤進行「交叉比對分析」：\n姓名：{name}\n問題：{question}\n八字數據：{bazi['full']}\n\n請結合兩套系統，提供更高維度的判斷建議。"
                     result = ai_reply(prompt)
                     st.markdown(f'<div class="main-card">{result}</div>', unsafe_allow_html=True)
-                    
-                    if sheet: 
-                        sheet.append_row([str(datetime.datetime.now()), name, f"{b_year}-{b_month}-{b_day}", question, f"【交叉模式】{result[:5000]}"])
-
+                
                 elif mode == "兩人合盤分析":
                     if not enable_dual:
                         st.error("請先在上方開啟「💑 啟用雙人合盤」並填寫對象資料。")
@@ -427,6 +417,4 @@ if 'analysis_mode' in st.session_state:
                         prompt = f"你是一位專業合盤大師。請分析 {name} 與其對象 {name2} 的關係。\n關係類型：{relation_type}\n主諮詢者八字：{bazi['full']}\n問題：{question}\n\n請分析雙方吸引力、衝突點與相處建議。"
                         result = ai_reply(prompt)
                         st.markdown(f'<div class="main-card">{result}</div>', unsafe_allow_html=True)
-                        
-                        if sheet: 
-                            sheet.append_row([str(datetime.datetime.now()), name, f"{b_year}-{b_month}-{b_day}", question, f"【合盤模式】對象:{name2}, 結果:{result[:5000]}"])
+
