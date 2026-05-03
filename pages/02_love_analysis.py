@@ -5,8 +5,18 @@ import os
 import json
 import pandas as pd
 from dotenv import load_dotenv
+import uuid
+from data_logger import log_site_visit
 
 load_dotenv()
+# --- 初始化 Session State (如果直接從此頁進入) ---
+if 'session_id' not in st.session_state:
+    st.session_state.session_id = str(uuid.uuid4())
+if 'visited_pages' not in st.session_state:
+    st.session_state.visited_pages = set()
+
+# 紀錄瀏覽
+log_site_visit("psychology")
 openai_key = st.secrets.get("OPENAI_API_KEY", None) or os.getenv("OPENAI_API_KEY")
 
 if not openai_key:

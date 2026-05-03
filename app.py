@@ -9,11 +9,14 @@ import re
 import json
 import csv
 import base64
+import hashlib
+import uuid
 from dotenv import load_dotenv
 from google.oauth2.service_account import Credentials
 from lunar_python import Lunar, Solar
 from tone_engine import analyze_tone_strategy
 from fpdf import FPDF
+from data_logger import log_site_visit, append_user_submission, ensure_worksheet
 
 load_dotenv()
 openai_key = st.secrets.get("OPENAI_API_KEY", None) or os.getenv("OPENAI_API_KEY")
@@ -230,21 +233,14 @@ def calculate_bazi(y, m, d, h, minute):
     except Exception as e:
         return None
 
-# --- Google Sheets 連線 (簡化版) ---
-def init_gsheets():
-    try:
-        scopes = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
-        if "gcp_service_account" in st.secrets:
-            creds = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scopes)
-        elif os.path.exists("hugo-key.json"):
-            creds = Credentials.from_service_account_file("hugo-key.json", scopes=scopes)
-        else: return None
-        client = gspread.authorize(creds)
-        sheet = client.open_by_url(st.secrets["gsheets_url"]).sheet1 if "gsheets_url" in st.secrets else client.open("雨果天命智庫客戶紀錄").sheet1
-        return sheet
-    except: return None
+# --- 初始化 Session State ---
+if 'session_id' not in st.session_state:
+    st.session_state.session_id = str(uuid.uuid4())
+if 'visited_pages' not in st.session_state:
+    st.session_state.visited_pages = set()
 
-sheet = init_gsheets()
+# 初始化試算表物件 (供舊邏輯使用，若有需要)
+sheet = ensure_worksheet("user_submissions", []) 
 
 st.set_page_config(page_title="HUGO 天命智庫", page_icon="🔮", layout="wide")
 
@@ -258,6 +254,7 @@ else:
     logo_html = '<div class="logo-box"><h1 style="color:#9A7A38; margin:0;">HUGO 天命智庫</h1></div>'
 
 if 'analysis_mode' not in st.session_state:
+    log_site_visit("home")
     st.markdown(f"""
     <div class="main-card" style="margin-top: 0; padding-top: 20px; padding-bottom: 25px;">
         {logo_html}
@@ -283,14 +280,14 @@ if 'analysis_mode' not in st.session_state:
     col_f1, col_f2 = st.columns(2)
     with col_f1:
         st.markdown('<div class="feature-card"><div><div class="feature-icon">📜</div><div class="feature-title">八字命理分析</div><div class="feature-desc">解析你的先天性格、事業走向、財運基礎與感情模式。</div></div></div>', unsafe_allow_html=True)
-        if st.button("開始八字分析", key="nav_bazi"): st.session_state.analysis_mode = "八字"; st.rerun()
+        if st.button("開始八字分析", key="nav_bazi"): st.session_state.analysis_mode = "八字命理分析"; st.rerun()
         st.markdown('<div class="feature-card"><div><div class="feature-icon">♾️</div><div class="feature-title">八字 × 紫微交叉分析</div><div class="feature-desc">將兩套命理系統交叉比對，提升判斷深度與準確度。</div></div></div>', unsafe_allow_html=True)
-        if st.button("啟動交叉分析", key="nav_cross"): st.session_state.analysis_mode = "交叉"; st.rerun()
+        if st.button("啟動交叉分析", key="nav_cross"): st.session_state.analysis_mode = "八字 × 紫微交叉分析"; st.rerun()
     with col_f2:
         st.markdown('<div class="feature-card"><div><div class="feature-icon">✨</div><div class="feature-title">紫微斗數分析</div><div class="feature-desc">從命宮、夫妻宮、財帛宮與事業宮，看見人生不同面向的細節。</div></div></div>', unsafe_allow_html=True)
-        if st.button("開始紫微分析", key="nav_ziwei"): st.session_state.analysis_mode = "紫微"; st.rerun()
+        if st.button("開始紫微分析", key="nav_ziwei"): st.session_state.analysis_mode = "紫微斗數分析"; st.rerun()
         st.markdown('<div class="feature-card"><div><div class="feature-icon">👩‍❤️‍👨</div><div class="feature-title">兩人合盤分析</div><div class="feature-desc">分析你與對象、伴侶或配偶的吸引力、衝突點與相處方式。</div></div></div>', unsafe_allow_html=True)
-        if st.button("開始合盤分析", key="nav_dual"): st.session_state.analysis_mode = "合盤"; st.session_state.enable_dual = True; st.rerun()
+        if st.button("開始合盤分析", key="nav_dual"): st.session_state.analysis_mode = "兩人合盤分析"; st.session_state.enable_dual = True; st.rerun()
 
     # --- 3. 三大命理經典 ---
     st.markdown('<div class="section-bar">系統推算依據｜三大命理核心經典</div>', unsafe_allow_html=True)
@@ -320,7 +317,13 @@ if 'analysis_mode' not in st.session_state:
 
 # --- 後端邏輯區 (當選擇模式後) ---
 if 'analysis_mode' in st.session_state:
-    st.markdown(f"### 📋 填寫資料 - {st.session_state.analysis_mode}模式")
+    mode = st.session_state.analysis_mode
+    if mode == "八字命理分析": log_site_visit("bazi")
+    elif mode == "紫微斗數分析": log_site_visit("ziwei")
+    elif mode == "八字 × 紫微交叉分析": log_site_visit("cross")
+    elif mode == "兩人合盤分析": log_site_visit("couple")
+    
+    st.markdown(f"### 📋 填寫資料 - {mode}模式")
     if st.button("⬅️ 返回首頁"): del st.session_state.analysis_mode; st.rerun()
     
     col1, col2, col3 = st.columns(3)
@@ -336,6 +339,9 @@ if 'analysis_mode' in st.session_state:
     b_hour = c4.selectbox("時", range(0, 24), index=12)
     b_min = c5.selectbox("分", range(0, 60))
     
+    # --- 兩人合盤邏輯 ---
+    name2 = ""
+    relation_type = ""
     enable_dual = st.toggle("💑 啟用雙人合盤", value=st.session_state.get('enable_dual', False))
     if enable_dual:
         st.subheader("💞 對象資料")
@@ -346,12 +352,81 @@ if 'analysis_mode' in st.session_state:
     question = st.text_area("您的問題", placeholder="例如：這段感情還有救嗎？")
     
     if st.button("🚀 開始 AI 命理分析"):
+        # 收集資料準備紀錄
+        submission_data = {
+            "user_name": name,
+            "gender": gender,
+            "job_status": occupation,
+            "birth_year": b_year,
+            "birth_month": b_month,
+            "birth_day": b_day,
+            "birth_hour": b_hour,
+            "birth_minute": b_min,
+            "analysis_mode": mode,
+            "question": question,
+            "is_couple_mode": enable_dual,
+            "partner_name": name2 if enable_dual else "",
+            "partner_gender": "未知", # 原本簡化輸入沒這欄位，補上
+            "partner_birth_year": "1980", 
+            "partner_birth_month": "1",
+            "partner_birth_day": "1",
+            "partner_birth_hour": "12",
+            "partner_birth_minute": "0"
+        }
+        append_user_submission(submission_data)
+
         with st.spinner("大師發功中..."):
+            mode = st.session_state.analysis_mode
+            
+            # 1. 基礎資料準備
             bazi = calculate_bazi(b_year, b_month, b_day, b_hour, b_min)
-            if bazi:
-                prompt = f"你是一位命理大師。命主：{name}, {gender}, {b_year}/{b_month}/{b_day}. 問題：{question}. 命盤：{bazi['full']}"
-                result = ai_reply(prompt)
-                st.markdown(render_bazi_table(bazi), unsafe_allow_html=True)
-                st.markdown(result)
-                if sheet: sheet.append_row([str(datetime.datetime.now()), name, f"{b_year}-{b_month}-{b_day}", question, result[:5000]])
-            else: st.error("排盤失敗")
+            
+            if not bazi:
+                st.error("排盤失敗，請檢查輸入的出生時間。")
+            else:
+                # 2. 根據模式執行不同的渲染與分析
+                if mode == "紫微斗數分析":
+                    st.warning("🔮 紫微斗數分析模組建置中，請改用八字 × 紫微交叉分析或八字命理分析。")
+                    # 這裡不顯示八字盤
+                
+                elif mode == "八字命理分析":
+                    # 顯示八字盤
+                    st.markdown(render_bazi_table(bazi), unsafe_allow_html=True)
+                    
+                    # 呼叫 AI 分析
+                    prompt = f"你是一位專業命理大師。請針對以下八字命盤進行深度分析：\n姓名：{name}\n性別：{gender}\n出生時間：{b_year}/{b_month}/{b_day} {b_hour}:{b_min}\n職業：{occupation}\n問題：{question}\n命盤數據：{bazi['full']}\n\n請分析性格、事業、財運與感情建議。"
+                    result = ai_reply(prompt)
+                    st.markdown(f'<div class="main-card">{result}</div>', unsafe_allow_html=True)
+                    
+                    # 紀錄到 Google Sheets
+                    if sheet: 
+                        sheet.append_row([str(datetime.datetime.now()), name, f"{b_year}-{b_month}-{b_day}", question, f"【八字模式】{result[:5000]}"])
+
+                elif mode == "八字 × 紫微交叉分析":
+                    # 顯示八字盤作為參考之一
+                    st.markdown("### 📜 八字命盤基礎")
+                    st.markdown(render_bazi_table(bazi), unsafe_allow_html=True)
+                    
+                    st.info("💡 紫微斗數詳細星盤模組建置中，目前以「八字為主，紫微邏輯為輔」進行交叉分析。")
+                    
+                    prompt = f"你是一位精通八字與紫微斗數的大師。請針對以下命盤進行「交叉比對分析」：\n姓名：{name}\n問題：{question}\n八字數據：{bazi['full']}\n\n請結合兩套系統，提供更高維度的判斷建議。"
+                    result = ai_reply(prompt)
+                    st.markdown(f'<div class="main-card">{result}</div>', unsafe_allow_html=True)
+                    
+                    if sheet: 
+                        sheet.append_row([str(datetime.datetime.now()), name, f"{b_year}-{b_month}-{b_day}", question, f"【交叉模式】{result[:5000]}"])
+
+                elif mode == "兩人合盤分析":
+                    if not enable_dual:
+                        st.error("請先在上方開啟「💑 啟用雙人合盤」並填寫對象資料。")
+                    else:
+                        # 顯示第一人八字
+                        st.markdown(f"### 📜 {name} 的命盤")
+                        st.markdown(render_bazi_table(bazi), unsafe_allow_html=True)
+                        
+                        prompt = f"你是一位專業合盤大師。請分析 {name} 與其對象 {name2} 的關係。\n關係類型：{relation_type}\n主諮詢者八字：{bazi['full']}\n問題：{question}\n\n請分析雙方吸引力、衝突點與相處建議。"
+                        result = ai_reply(prompt)
+                        st.markdown(f'<div class="main-card">{result}</div>', unsafe_allow_html=True)
+                        
+                        if sheet: 
+                            sheet.append_row([str(datetime.datetime.now()), name, f"{b_year}-{b_month}-{b_day}", question, f"【合盤模式】對象:{name2}, 結果:{result[:5000]}"])
