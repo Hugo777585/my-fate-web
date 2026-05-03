@@ -60,13 +60,20 @@ def ensure_worksheet(sheet_name, headers):
 def get_anonymous_id():
     """取得匿名化的 IP Hash 與 User Agent"""
     try:
-        # 嘗試從 Streamlit headers 取得資訊 (需要 1.34.0+)
-        headers = st.context.headers
-        ip = headers.get("X-Forwarded-For", "unknown").split(",")[0]
-        ua = headers.get("User-Agent", "unknown")
+        # 嘗試從 Streamlit 1.34.0+ 的 st.context 取得資訊
+        if hasattr(st, "context") and hasattr(st.context, "headers"):
+            headers = st.context.headers
+            ip = headers.get("X-Forwarded-For", "unknown").split(",")[0]
+            ua = headers.get("User-Agent", "unknown")
+        else:
+            # 舊版 Streamlit 或是本地運行 fallback
+            ip = "127.0.0.1"
+            ua = "local-browser"
+            
         ip_hash = hashlib.sha256(ip.encode()).hexdigest()[:16]
         return ip_hash, ua
-    except:
+    except Exception as e:
+        print(f"取得匿名 ID 失敗: {e}")
         return "unknown_hash", "unknown_ua"
 
 def append_user_submission(data):

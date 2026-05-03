@@ -6,7 +6,7 @@ import json
 import pandas as pd
 from dotenv import load_dotenv
 import uuid
-from data_logger import log_site_visit
+from data_logger import log_site_visit, append_user_submission
 
 load_dotenv()
 # --- 初始化 Session State (如果直接從此頁進入) ---
@@ -267,12 +267,43 @@ st.header("📋 描述目前的感情困局")
 with st.container():
     col_in1, col_nav_in2 = st.columns(2)
     with col_in1:
-        st.text_area("目前的互動狀況 (例如：訊息變少、冷戰中...)", height=150)
+        current_status = st.text_area("目前的互動狀況 (例如：訊息變少、冷戰中...)", height=150)
     with col_nav_in2:
-        st.selectbox("你對這段關係的期待", ["修復關係", "看清真相", "瀟灑轉身", "其他"])
-        st.selectbox("對方的目前態度", ["逃避", "忽冷忽熱", "冷淡", "熱情", "未知"])
+        expectation = st.selectbox("你對這段關係的期待", ["修復關係", "看清真相", "瀟灑轉身", "其他"])
+        partner_attitude = st.selectbox("對方的目前態度", ["逃避", "忽冷忽熱", "冷淡", "熱情", "未知"])
 
-st.button("✨ 啟動 AI 心理深度解析")
+if st.button("✨ 啟動 AI 心理深度解析"):
+    if not current_status:
+        st.warning("請先輸入目前的互動狀況。")
+    else:
+        # 收集資料準備紀錄
+        submission_data = {
+            "user_name": "匿名用戶",
+            "gender": "未知",
+            "job_status": "心理分析模式",
+            "birth_year": 0,
+            "birth_month": 0,
+            "birth_day": 0,
+            "birth_hour": 0,
+            "birth_minute": 0,
+            "analysis_mode": "感情心理分析",
+            "question": f"互動狀況：{current_status}\n期待：{expectation}\n對方態度：{partner_attitude}",
+            "is_couple_mode": True,
+            "partner_name": "對象",
+            "partner_gender": "未知",
+            "partner_birth_year": 0,
+            "partner_birth_month": 0,
+            "partner_birth_day": 0,
+            "partner_birth_hour": 0,
+            "partner_birth_minute": 0
+        }
+        append_user_submission(submission_data)
+        
+        with st.spinner("AI 心理分析顧問正在為您判讀局勢..."):
+            # 這裡可以加入實際的 AI 呼叫邏輯，目前先以模擬回覆或整合原有的 ai_love_consult_reply
+            # 但由於 ai_love_consult_reply 在 app.py 定義，這裡需要另外處理或搬移
+            st.success("分析完成！(目前為功能展示，紀錄已寫入)")
+            st.info(f"您的問題已記錄：{current_status[:50]}...")
 
 # --- 六、頁尾引流 ---
 st.markdown("<br><br>", unsafe_allow_html=True)
