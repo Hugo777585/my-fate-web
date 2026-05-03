@@ -783,29 +783,30 @@ with col_btn_right:
         else:
             start_time = time.time()
             with st.spinner("大師正在排盤與分析中，請稍候..."):
-                bazi = calculate_bazi(b_year, b_month, b_day, b_hour, b_min)
-                bazi_shishen = []
-                if bazi:
-                    bazi_shishen = [bazi['year_ss'], bazi['month_ss'], bazi['hour_ss']]
-                
-                tone_strategy = analyze_tone_strategy(final_question, bazi_shishen)
-                tone_instruction = f"\n\n【當前對話語氣指引】：\n{tone_strategy['system_prompt']}\n請確保在回覆中完美融入此語氣。"
+                try:
+                    bazi = calculate_bazi(b_year, b_month, b_day, b_hour, b_min)
+                    bazi_shishen = []
+                    if bazi:
+                        bazi_shishen = [bazi['year_ss'], bazi['month_ss'], bazi['hour_ss']]
+                    
+                    tone_strategy = analyze_tone_strategy(final_question, bazi_shishen)
+                    tone_instruction = f"\n\n【當前對話語氣指引】：\n{tone_strategy['system_prompt']}\n請確保在回覆中完美融入此語氣。"
 
-                if bazi:
-                    pillar_info = f"""
+                    if bazi:
+                        pillar_info = f"""
 【萬年曆精算命盤】：
 年柱：{bazi['full']['year']}
 月柱：{bazi['full']['month']}
 日柱：{bazi['full']['day']} (日主：{bazi['day_tg']})
 時柱：{bazi['full']['hour']}
 """
-                else:
-                    pillar_info = "（命盤計算失敗，請檢查輸入日期）"
+                    else:
+                        pillar_info = "（命盤計算失敗，請檢查輸入日期）"
 
-                base_info = f"姓名：{name}，性別：{gender}，生日：{b_year}/{b_month}/{b_day} {b_hour}:{b_min}，職業：{occupation}，提問：{final_question}，具體卡關：{user_detailed_question}"
+                    base_info = f"姓名：{name}，性別：{gender}，生日：{b_year}/{b_month}/{b_day} {b_hour}:{b_min}，職業：{occupation}，提問：{final_question}，具體卡關：{user_detailed_question}"
 
-                current_year = datetime.datetime.now().year
-                next_year = current_year + 1
+                    current_year = datetime.datetime.now().year
+                    next_year = current_year + 1
                 
                 # 任務二：Finn 大腦升級 (Prompt)
                 if is_master:
@@ -870,34 +871,30 @@ with col_btn_right:
                     if bazi2:
                         prompt += f"\n對象資料：{name2}, {gender2}, {b_year2}/{b_month2}/{b_day2} {b_hour2}:{b_min2}, 關係:{relation_type}"
 
-                try:
-                    result_text = ai_reply(prompt)
-                    elapsed = time.time() - start_time
-                    result_text = result_text.replace('恩，你好！', '').replace('恩，', '').replace('哈囉，', '').replace('你好，', '').replace('您好，', '').replace('首先，', '').replace('首先呢', '').replace('恩，好', '').strip()
+                result_text = ai_reply(prompt)
+                elapsed = time.time() - start_time
+                result_text = result_text.replace('恩，你好！', '').replace('恩，', '').replace('哈囉，', '').replace('你好，', '').replace('您好，', '').replace('首先，', '').replace('首先呢', '').replace('恩，好', '').strip()
 
-                    result_title = f"📜 八字精論｜{'大師深度解析' if is_master else '溫馨命理建議'}"
+                result_title = f"📜 八字精論｜{'大師深度解析' if is_master else '溫馨命理建議'}"
 
-                    st.markdown('<div class="result-card">', unsafe_allow_html=True)
-                    st.markdown(f'<p class="result-header">{result_title}</p>', unsafe_allow_html=True)
-                    
-                    if tone_strategy['mode'] != "Neutral":
-                        st.info(f"🔮 **大師私房建議 ({tone_strategy['mode']})**：\n\n{tone_strategy['action_advice']}")
+                st.markdown('<div class="result-card">', unsafe_allow_html=True)
+                st.markdown(f'<p class="result-header">{result_title}</p>', unsafe_allow_html=True)
+                
+                if tone_strategy['mode'] != "Neutral":
+                    st.info(f"🔮 **大師私房建議 ({tone_strategy['mode']})**：\n\n{tone_strategy['action_advice']}")
 
-                    bazi_table_html = render_bazi_table(bazi)
-                    st.markdown(bazi_table_html, unsafe_allow_html=True)
-                    st.markdown("<br>", unsafe_allow_html=True)
-                    
-                    if is_master:
-                        st.write("🔥 大師完整版分析啟動")
-                        st.markdown(result_text, unsafe_allow_html=True)
-                    else:
-                        st.write("👉 以上為您的初步命理分析報告")
-                        # 基礎分析可能只顯示前段或特定內容，這裡先保留原本顯示 result_text 的邏輯
-                        st.markdown(result_text, unsafe_allow_html=True)
-                except Exception as e:
-                    st.error(f"分析過程發生錯誤：{e}")
-                    result_text = "" # 確保後續變數存在
-                    
+                bazi_table_html = render_bazi_table(bazi)
+                st.markdown(bazi_table_html, unsafe_allow_html=True)
+                st.markdown("<br>", unsafe_allow_html=True)
+                
+                if is_master:
+                    st.write("🔥 大師完整版分析啟動")
+                    st.markdown(result_text, unsafe_allow_html=True)
+                else:
+                    st.write("👉 以上為您的初步命理分析報告")
+                    # 基礎分析可能只顯示前段 or 特定內容，這裡先保留原本顯示 result_text 的邏輯
+                    st.markdown(result_text, unsafe_allow_html=True)
+                
                 if st.session_state.payment_status == "free":
                     st.markdown(f"""
                     <div class="locked-preview">
@@ -916,71 +913,70 @@ with col_btn_right:
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
+                    
+                st.markdown('</div>', unsafe_allow_html=True)
+                
+                # LINE 完整分析按鈕
+                st.link_button("👉 加LINE看完整分析", "https://line.me/ti/p/@323ohobf", use_container_width=True)
+                
+                # --- 第二層｜AI感情心理諮詢師 (高轉換引導版) ---
+                st.markdown("""
+                ### � 延伸分析｜感情心理解析 
+                
+                很多時候，真正讓人放不下的， 
+                不是發生了什麼， 
+                而是你始終看不懂「對方現在到底在想什麼」。 
+                
+                你可能會開始反覆想： 
+                👉 他現在對我是認認真真地，還是只是剛好有人陪？ 
+                👉 這段關係，還有沒有機會走下去？ 
+                👉 我現在該主動，還是該慢慢退？ 
+                
+                有些答案，其實你心裡已經隱約知道， 
+                只是還沒有被看清楚。 
+                
+                **HUGO 天命智庫會透過：**
+                **八字命盤 × 關係互動 × 心理狀態** 
+                
+                幫你把「現在這段關係的真實狀態」拆開來看。 
+                
+                學理上不是告訴你一個結果， 
+                而是讓你知道： 
+                
+                👉 **對方現在的情緒位置** 
+                👉 **你們之間的關係落差** 
+                👉 **以及你下一步做什麼，結果會開始改變** 
+                
+                💗 **如果你準備好看清楚這段關係** 
+                
+                👉 **請點擊下方，進入 AI 感情心理解析** 
+                """)
+                
+                if st.button("🚀 進入 AI 感情心理解析", use_container_width=True, type="primary"):
+                    st.switch_page("pages/02_love_analysis.py")
+                
+                # 移除舊有的付費解鎖架構 (已隱藏)
+                if is_master:
+                    st.subheader("� 大師後台管理")
+                    # 這裡可以保留一些大師才看的到的數據或功能
+
+                st.caption(f"⏱️ 分析耗時：{elapsed:.1f} 秒")
+
+                if sheet is not None:
+                    try:
+                        now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        birth_datetime_str = f"{b_year}-{b_month:02d}-{b_day:02d} {b_hour:02d}:{b_min:02d}"
+                        if st.session_state.get('enable_dual_v6', False):
+                            occ_info = f"{occupation} (對象: {name2}/{relation_type})"
+                            partner_dob_str = f"{b_year2}-{b_month2:02d}-{b_day2:02d}"
+                        else:
+                            occ_info = occupation
+                            partner_dob_str = "無"
                         
-                    st.markdown('</div>', unsafe_allow_html=True)
-                    
-                    # LINE 完整分析按鈕
-                    st.link_button("👉 加LINE看完整分析", "https://line.me/ti/p/@323ohobf", use_container_width=True)
-                    
-                    # --- 第二層｜AI感情心理諮詢師 (高轉換引導版) ---
-                    st.markdown("""
-                    ### � 延伸分析｜感情心理解析 
-                    
-                    很多時候，真正讓人放不下的， 
-                    不是發生了什麼， 
-                    而是你始終看不懂「對方現在到底在想什麼」。 
-                    
-                    你可能會開始反覆想： 
-                    👉 他現在對我是認認真真的，還是只是剛好有人陪？ 
-                    👉 這段關係，還有沒有機會走下去？ 
-                    👉 我現在該主動，還是該慢慢退？ 
-                    
-                    有些答案，其實你心裡已經隱約知道， 
-                    只是還沒有被看清楚。 
-                    
-                    **HUGO 天命智庫會透過：**
-                    **八字命盤 × 關係互動 × 心理狀態** 
-                    
-                    幫你把「現在這段關係的真實狀態」拆開來看。 
-                    
-                    學理上不是告訴你一個結果， 
-                    而是讓你知道： 
-                    
-                    👉 **對方現在的情緒位置** 
-                    👉 **你們之間的關係落差** 
-                    👉 **以及你下一步做什麼，結果會開始改變** 
-                    
-                    💗 **如果你準備好看清楚這段關係** 
-                    
-                    👉 **請點擊下方，進入 AI 感情心理解析** 
-                    """)
-                    
-                    if st.button("🚀 進入 AI 感情心理解析", use_container_width=True, type="primary"):
-                        st.switch_page("pages/02_love_analysis.py")
-                    
-                    # 移除舊有的付費解鎖架構 (已隱藏)
-                    if is_master:
-                        st.subheader("� 大師後台管理")
-                        # 這裡可以保留一些大師才看的到的數據或功能
-
-                    st.caption(f"⏱️ 分析耗時：{elapsed:.1f} 秒")
-
-                    if sheet is not None:
-                        try:
-                            now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                            birth_datetime_str = f"{b_year}-{b_month:02d}-{b_day:02d} {b_hour:02d}:{b_min:02d}"
-                            if enable_dual:
-                                occ_info = f"{occupation} (對象: {name2}/{relation_type})"
-                                partner_dob_str = f"{b_year2}-{b_month2:02d}-{b_day2:02d}"
-                            else:
-                                occ_info = occupation
-                                partner_dob_str = "無"
-                            
-                            safe_result_text = result_text[:30000] if result_text else ""
-                            row_data = [now_str, name, birth_datetime_str, occ_info, partner_dob_str, gender, safe_result_text]
-                            sheet.append_row(row_data)
-                        except Exception as gs_err:
-                            st.sidebar.warning(f"⚠️ 紀錄存檔失敗：{gs_err}")
-
+                        safe_result_text = result_text[:30000] if result_text else ""
+                        row_data = [now_str, name, birth_datetime_str, occ_info, partner_dob_str, gender, safe_result_text]
+                        sheet.append_row(row_data)
+                    except Exception as gs_err:
+                        st.sidebar.warning(f"⚠️ 紀錄存檔失敗：{gs_err}")
                 except Exception as e:
-                    st.error(f"發生錯誤：{e}")
+                    st.error(f"分析過程發生錯誤：{e}")
