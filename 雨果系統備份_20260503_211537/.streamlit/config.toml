@@ -1,0 +1,15 @@
+[theme]
+# 主色調 (按鈕等強調色)：深炭灰
+primaryColor = "#55504D"
+# 全局背景色：暖米白 (宣紙感)
+backgroundColor = "#F8F6F0"
+# 次要背景色 (輸入框背景、側邊欄)：純白
+secondaryBackgroundColor = "#FFFFFF"
+# 文字顏色：深褐色 (水墨感)
+textColor = "#3E3A39"
+# 字體：使用帶有底蘊的襯線體
+font = "serif"
+
+[server]
+# 開啟靜態檔案讀取功能，允許讀取 static 資料夾下的檔案
+enableStaticServing = true

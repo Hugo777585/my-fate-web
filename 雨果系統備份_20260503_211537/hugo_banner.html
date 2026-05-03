@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>HUGO天命智庫 - 兩性關係心理諮商與八字深度解析</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #6c5ce7;
+            --accent-color: #74b9ff;
+            --text-color: #2d3436;
+            --light-gray: #dfe6e9;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #B3AAAA;
+            /* 統一首頁背景色 */
+            color: #2D2D2D;
+            margin: 0;
+            padding: 0;
+            font-family: 'Noto Sans TC', sans-serif;
+            overflow-x: hidden;
+        }
+
+        #hugo-app {
+            width: 100%;
+            height: 450px;
+            position: relative;
+            background-color: #C9C9C2;
+            /* 橫幅容器底色 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        #presentation-canvas {
+            width: 1280px;
+            height: 720px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform-origin: center center;
+            background-color: transparent;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 40px 60px;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.8s ease-in-out;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            background-color: #C9C9C2;
+            /* 簡報底色改為中間內容色 */
+        }
+
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+            z-index: 5;
+        }
+
+        .cover-slide {
+            background: linear-gradient(-45deg, #B3AAAA, #C9C9C2, #E2E2CC, #B3AAAA);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+        }
+
+        @keyframes gradientBG {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .slide-title {
+            font-size: 38px;
+            font-weight: 900;
+            margin-bottom: 25px;
+            border-left: 8px solid var(--primary-color);
+            padding-left: 20px;
+            color: var(--text-color);
+            letter-spacing: 2px;
+        }
+
+        .content-area {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            align-items: center;
+        }
+
+        .bazi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .bazi-col {
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid var(--light-gray);
+            background: #fff;
+        }
+
+        .bazi-col.highlight {
+            background-color: #f0f4ff;
+            border: 3px solid var(--primary-color);
+            position: relative;
+            box-shadow: 0 10px 20px rgba(108, 92, 231, 0.1);
+        }
+
+        .bazi-col.year {
+            background-color: #ffeae6;
+        }
+
+        .bazi-col.month {
+            background-color: #fff8d6;
+        }
+
+        .bazi-col.hour {
+            background-color: #e0f7fa;
+        }
+
+        .bazi-tag {
+            font-size: 14px;
+            color: #636e72;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .bazi-main {
+            font-size: 48px;
+            font-weight: 900;
+            margin: 10px 0;
+            letter-spacing: 6px;
+            color: #2d3436;
+        }
+
+        .bazi-sub {
+            font-size: 16px;
+            color: #636e72;
+            font-weight: 400;
+        }
+
+        .day-master-label {
+            position: absolute;
+            top: -14px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--primary-color);
+            color: #fff;
+            padding: 4px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 900;
+            letter-spacing: 2px;
+        }
+
+        .dayun-bar {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .dayun-box {
+            flex: 1;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid var(--light-gray);
+            font-size: 16px;
+            color: #636e72;
+            transition: all 0.3s;
+        }
+
+        .dayun-box.active {
+            border: 2px solid var(--primary-color);
+            font-weight: 900;
+            color: #fff;
+            background: var(--primary-color);
+            transform: scale(1.05);
+        }
+
+        .tile-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+        }
+
+        .tile {
+            background: #fff;
+            padding: 30px 20px;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            border: 1px solid #f1f2f6;
+        }
+
+        .tile i {
+            font-size: 40px;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+
+        .tile h3 {
+            font-size: 22px;
+            margin-bottom: 10px;
+            color: var(--text-color);
+            font-weight: 700;
+        }
+
+        .tile p {
+            font-size: 15px;
+            color: #636e72;
+            line-height: 1.6;
+        }
+
+        .image-wrapper {
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            height: 350px;
+        }
+
+        .image-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .chart-bar-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .bar {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .bar-label {
+            width: 120px;
+            text-align: right;
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .bar-track {
+            flex-grow: 1;
+            height: 25px;
+            background: #eee;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 15px;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .timeline {
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            padding: 40px 0;
+            margin-top: 20px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: #dfe6e9;
+            z-index: 0;
+            transform: translateY(-50%);
+        }
+
+        .timeline-step {
+            position: relative;
+            background: #fff;
+            border: 4px solid var(--primary-color);
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            z-index: 1;
+            margin-top: -10px;
+        }
+
+        .step-content {
+            position: absolute;
+            width: 180px;
+            text-align: center;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .step-top {
+            bottom: 30px;
+        }
+
+        .step-bottom {
+            top: 30px;
+        }
+
+        .step-content h3 {
+            color: var(--primary-color);
+            margin-bottom: 5px;
+        }
+
+        .section-break {
+            background-color: var(--primary-color);
+            color: #fff;
+            justify-content: center;
+            text-align: center;
+        }
+
+        #banner-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.02);
+            z-index: 20;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+
+        #banner-overlay:hover {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .play-hint {
+            background: rgba(255, 255, 255, 0.95);
+            color: var(--primary-color);
+            padding: 15px 40px;
+            border-radius: 40px;
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            transform: translateY(20px);
+            opacity: 0;
+            transition: all 0.4s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        #hugo-app:hover .play-hint {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        #presentation-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            z-index: 30;
+        }
+
+        .nav-btn {
+            background: var(--primary-color);
+            color: #fff;
+            border: none;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            font-size: 18px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(108, 92, 231, 0.3);
+            transition: transform 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .nav-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .nav-btn:disabled {
+            background: #b2bec3;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .dots-container {
+            display: flex;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px 20px;
+            border-radius: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            background: #dfe6e9;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .dot.active {
+            background: var(--primary-color);
+            transform: scale(1.4);
+        }
+
+        .side-controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 30;
+        }
+
+        .side-btn {
+            background: rgba(255, 255, 255, 0.9);
+            color: var(--primary-color);
+            border: none;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            font-size: 18px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s;
+        }
+
+        .side-btn:hover {
+            transform: scale(1.1);
+            background: var(--primary-color);
+            color: #fff;
+        }
+
+        .emp-text {
+            color: var(--primary-color);
+            font-weight: 700;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- MP3路徑 (這裡的檔名要跟您資料夾裡的 mp3 一模一樣) -->
+    <audio id="bg-music" loop preload="none">
+        <source src="温暖而有力量的人.mp3.mp3" type="audio/mpeg">
+    </audio>
+
+    <div id="hugo-app">
+        <div id="presentation-canvas">
+            <div class="slide cover-slide active">
+                <div class="content-area" style="text-align: center; align-items: center;">
+                    <h1 style="font-size: 42px; margin: 0; color: #2d3436; letter-spacing: 4px; font-weight: 400;">
+                        看見命運的軌跡，在愛與理解的交織中</h1>
+                    <h1
+                        style="font-size: 60px; margin: 20px 0 30px 0; color: var(--primary-color); letter-spacing: 5px; font-weight: 900;">
+                        找回溫暖而強大的自己</h1>
+                    <p style="font-size: 22px; color: #636e72; letter-spacing: 4px; font-weight: 400;">現代數據分析與心理共鳴的深度結合
+                    </p>
+                    <div
+                        style="width: 100%; max-width: 500px; height: 1px; background: linear-gradient(90deg, transparent, #6c5ce7, transparent); margin-top: 40px;">
+                    </div>
+                </div>
+            </div>
+            <div class="slide section-break">
+                <div class="content-area">
+                    <h2 style="font-size: 36px; margin-bottom: 20px; font-weight: 300; letter-spacing: 8px;">第一部分</h2>
+                    <div style="width: 60px; height: 2px; background: #fff; margin: 0 auto 30px auto;"></div>
+                    <p style="font-size: 50px; font-weight: 700; letter-spacing: 4px;">命運架構：現代化八字命盤</p>
+                </div>
+            </div>
+            <div class="slide">
+                <h2 class="slide-title">核心命盤數據分析</h2>
+                <div class="content-area">
+                    <div class="bazi-grid">
+                        <div class="bazi-col year">
+                            <div class="bazi-tag">年柱 / 祖輩</div>
+                            <div class="bazi-sub">劫財</div>
+                            <div class="bazi-main">丁卯</div>
+                            <div class="bazi-sub" style="color:#a4b0be; font-size:14px;">乙 (偏印)</div>
+                        </div>
+                        <div class="bazi-col month">
+                            <div class="bazi-tag">月柱 / 社會</div>
+                            <div class="bazi-sub">正官</div>
+                            <div class="bazi-main">癸丑</div>
+                            <div class="bazi-sub" style="color:#a4b0be; font-size:14px;">己辛癸 (食才官)</div>
+                        </div>
+                        <div class="bazi-col highlight">
+                            <div class="day-master-label">【真實的我】</div>
+                            <div class="bazi-tag" style="color: var(--primary-color);">日柱 / 自我</div>
+                            <div class="bazi-sub" style="color:var(--primary-color);">日元</div>
+                            <div class="bazi-main">丙子</div>
+                            <div class="bazi-sub" style="color:#a4b0be; font-size:14px;">癸 (正官)</div>
+                        </div>
+                        <div class="bazi-col hour">
+                            <div class="bazi-tag">時柱 / 未來</div>
+                            <div class="bazi-sub">七殺</div>
+                            <div class="bazi-main">壬辰</div>
+                            <div class="bazi-sub" style="color:#a4b0be; font-size:14px;">戊乙癸 (食印官)</div>
+                        </div>
+                    </div>
+                    <div class="dayun-bar">
+                        <div class="dayun-box">3 | 壬子</div>
+                        <div class="dayun-box">13 | 辛亥</div>
+                        <div class="dayun-box">23 | 庚戌</div>
+                        <div class="dayun-box">33 | 己酉</div>
+                        <div class="dayun-box active">43 | 戊申</div>
+                        <div class="dayun-box">53 | 丁未</div>
+                        <div class="dayun-box">63 | 丙午</div>
+                    </div>
+                    <p
+                        style="text-align: center; margin-top: 25px; font-weight: 700; font-size: 18px; color: var(--primary-color);">
+                        當前大運：戊申 —— 這是你沉澱自我、迎向蛻變的重要十年</p>
+                </div>
+            </div>
+            <div class="slide">
+                <h2 class="slide-title">五行能量與情緒的深層共振</h2>
+                <div class="content-area">
+                    <div class="two-column">
+                        <div>
+                            <p style="line-height: 1.8; font-size: 18px; color: #636e72; margin-bottom: 25px;">
+                                每一個情緒的起伏，都是內在渴望被理解的聲音。<span class="emp-text">接納自身的特質，將化為支撐你的溫柔力量。</span></p>
+                            <ul style="line-height: 2; font-size: 18px; padding-left: 25px; color: #2d3436;">
+                                <li style="margin-bottom: 10px;"><span class="emp-text">水木相生：</span> 具備高度同理心，擁有療癒潛能。
+                                </li>
+                                <li style="margin-bottom: 10px;"><span class="emp-text">火金相剋：</span> 易帶來拉扯與焦慮，也是驅使成長的動力。
+                                </li>
+                                <li><span class="emp-text">日主丙火：</span> 渴望被看見，你的溫暖是照亮關係的光芒。</li>
+                            </ul>
+                        </div>
+                        <div class="image-wrapper"><img
+                                src="https://images.unsplash.com/photo-1528319725582-ddc096101511?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80"
+                                alt="禪意空間"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="slide section-break" style="background-color: #fab1a0;">
+                <div class="content-area">
+                    <h2 style="font-size: 36px; margin-bottom: 20px; font-weight: 300; letter-spacing: 8px;">第二部分</h2>
+                    <div style="width: 60px; height: 2px; background: #fff; margin: 0 auto 30px auto;"></div>
+                    <p style="font-size: 50px; font-weight: 700; letter-spacing: 4px;">兩性關係心理諮商：共振與修復</p>
+                </div>
+            </div>
+            <div class="slide">
+                <h2 class="slide-title">破局與重生：兩性關係深度療癒</h2>
+                <div class="content-area">
+                    <div class="tile-grid">
+                        <div class="tile"><i class="fa-solid fa-hands-holding-circle" style="color: #6c5ce7;"></i>
+                            <h3>依附關係修復</h3>
+                            <p>探索原生家庭影響，重新建立穩定的安全感。</p>
+                        </div>
+                        <div class="tile"><i class="fa-solid fa-comments" style="color: #74b9ff;"></i>
+                            <h3>非暴力溝通</h3>
+                            <p>轉化傷官、七殺的溝通阻礙，溫和堅定地表達真實心聲。</p>
+                        </div>
+                        <div class="tile"><i class="fa-solid fa-seedling" style="color: #00cec9;"></i>
+                            <h3>伴侶共同成長</h3>
+                            <p>探索命盤化學反應，尋找互相理解、彼此成就的最佳平衡點。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="slide">
+                <h2 class="slide-title">衝突潛勢分析與依附類型分布</h2>
+                <div class="content-area">
+                    <div class="two-column">
+                        <div>
+                            <h3 style="font-size: 20px; margin-bottom: 15px; color:var(--primary-color);">個人衝突潛勢數據</h3>
+                            <div class="chart-bar-container">
+                                <div class="bar">
+                                    <div class="bar-label">情緒穩定性</div>
+                                    <div class="bar-track">
+                                        <div class="bar-fill" style="width: 45%; background: var(--primary-color);">45%
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="bar">
+                                    <div class="bar-label">親密需求感</div>
+                                    <div class="bar-track">
+                                        <div class="bar-fill" style="width: 85%; background: #fd79a8;">85%</div>
+                                    </div>
+                                </div>
+                                <div class="bar">
+                                    <div class="bar-label">自我邊界感</div>
+                                    <div class="bar-track">
+                                        <div class="bar-fill" style="width: 60%; background: #fab1a0;">60%</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 20px; border-radius: 16px;">
+                            <h3
+                                style="font-size: 20px; margin-bottom: 15px; color:var(--primary-color); text-align: center;">
+                                兩性依附類型</h3>
+                            <div style="display: flex; justify-content: center; margin-bottom: 15px;">
+                                <div
+                                    style="width: 150px; height: 150px; border-radius: 50%; background: conic-gradient(#6c5ce7 0% 50%, #fab1a0 50% 75%, #fd79a8 75% 90%, #dfe6e9 90% 100%);">
+                                </div>
+                            </div>
+                            <ul
+                                style="list-style: none; padding: 0; font-size: 14px; line-height: 1.8; text-align: center;">
+                                <li><span style="color:#6c5ce7; font-weight:700;">■ 安全型(50%)</span> - 能夠健康給予愛</li>
+                                <li><span style="color:#fab1a0; font-weight:700;">■ 焦慮型(25%)</span> - 容易過度擔心承諾</li>
+                                <li><span style="color:#fd79a8; font-weight:700;">■ 逃避型(15%)</span> - 壓力大時習慣封閉</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="slide">
+                <h2 class="slide-title">諮商歷程與未來能量趨勢</h2>
+                <div class="content-area">
+                    <div style="margin-bottom: 40px;">
+                        <div class="timeline">
+                            <div class="timeline-step">
+                                <div class="step-content step-bottom">
+                                    <h3>初步評估</h3>
+                                    <p style="font-size: 14px; color: #636e72;">命盤解析與初探</p>
+                                </div>
+                            </div>
+                            <div class="timeline-step">
+                                <div class="step-content step-top">
+                                    <h3>核心諮商</h3>
+                                    <p style="font-size: 14px; color: #636e72;">深挖內在創傷</p>
+                                </div>
+                            </div>
+                            <div class="timeline-step">
+                                <div class="step-content step-bottom">
+                                    <h3>行為重塑</h3>
+                                    <p style="font-size: 14px; color: #636e72;">建立正向溝通</p>
+                                </div>
+                            </div>
+                            <div class="timeline-step">
+                                <div class="step-content step-top">
+                                    <h3>長期維護</h3>
+                                    <p style="font-size: 14px; color: #636e72;">運勢策略調整</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div
+                        style="height: 200px; width: 100%; border-bottom: 2px solid #ccc; border-left: 2px solid #ccc; position: relative;">
+                        <svg width="100%" height="100%" viewBox="0 0 1000 200" preserveAspectRatio="none">
+                            <path
+                                d="M0,200 L100,120 L200,150 L300,80 L400,30 L500,100 L600,50 L700,20 L800,80 L900,40 L1000,0 L1000,200 Z"
+                                fill="rgba(108, 92, 231, 0.15)" stroke="#6c5ce7" stroke-width="3"></path>
+                            <circle cx="400" cy="30" r="8" fill="#6c5ce7"></circle>
+                        </svg>
+                        <div
+                            style="position: absolute; top: 10px; left: 35%; color: var(--primary-color); font-weight: 700;">
+                            2024：關鍵轉折高峰</div>
+                    </div>
+                    <p style="text-align: center; margin-top: 10px; color: #636e72; font-size: 12px;">2024 - 2034
+                        心理能量與親密感滿意度趨勢</p>
+                </div>
+            </div>
+            <div class="slide">
+                <div class="content-area" style="text-align: center; align-items: center; justify-content: center;">
+                    <h1
+                        style="font-size: 52px; color: var(--primary-color); margin-bottom: 20px; letter-spacing: 4px; font-weight: 700;">
+                        成為溫暖而有力量的人</h1>
+                    <p style="font-size: 24px; color: #636e72; font-weight: 400; line-height: 1.8;">
+                        所有的相遇，都是為了更好的修行。<br>我們在這裡，陪你走過這段向內探索的旅程。</p>
+                    <div
+                        style="margin-top: 40px; background: #fff; padding: 40px 60px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: 1px solid #dfe6e9; display: inline-block; text-align: left;">
+                        <div style="font-size: 22px; margin-bottom: 15px; color: #2d3436; font-weight: 700;"><i
+                                class="fa-solid fa-envelope" style="color:var(--primary-color); width: 35px;"></i>
+                            en520220@gmail.com</div>
+                        <div style="font-size: 22px; color: #2d3436; font-weight: 700;"><i class="fa-brands fa-line"
+                                style="color:#00c300; width: 35px; font-size: 26px;"></i> <strong>@323ohobf</strong>
+                            <span style="font-size: 16px; color:#636e72; font-weight:400;">(HUGO天命智庫)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="banner-overlay">
+            <div class="play-hint"><i class="fa-solid fa-book-open"></i> 點擊放大閱讀完整簡報</div>
+        </div>
+        <div class="side-controls" id="side-controls">
+            <button class="side-btn" id="sound-btn" title="音樂開關"><i class="fa-solid fa-volume-high"></i></button>
+            <button class="side-btn" id="reset-btn" title="回首頁"><i class="fa-solid fa-rotate-left"></i></button>
+        </div>
+        <div id="presentation-controls">
+            <button class="nav-btn" id="prev-btn"><i class="fa-solid fa-chevron-left"></i></button>
+            <div class="dots-container" id="dots-container"></div>
+            <button class="nav-btn" id="next-btn"><i class="fa-solid fa-chevron-right"></i></button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const app = document.getElementById('hugo-app');
+            const canvas = document.getElementById('presentation-canvas');
+            const overlay = document.getElementById('banner-overlay');
+            const controls = document.getElementById('presentation-controls');
+            const sideControls = document.getElementById('side-controls');
+            const soundBtn = document.getElementById('sound-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const audioPlayer = document.getElementById('bg-music');
+            const slides = document.querySelectorAll('.slide');
+            const prevBtn = document.getElementById('prev-btn');
+            const nextBtn = document.getElementById('next-btn');
+            const dotsContainer = document.getElementById('dots-container');
+
+            let currentSlide = 0; const totalSlides = slides.length; let isVideoMode = true; let autoPlayTimer; let isPlayingMusic = false;
+
+            function resizeCanvas() {
+                const scaleX = window.innerWidth / 1280; const scaleY = window.innerHeight / 720;
+                const scale = Math.min(scaleX, scaleY) * 0.98; canvas.style.transform = `translate(-50%, -50%) scale(${scale})`;
+            }
+            window.addEventListener('resize', resizeCanvas); resizeCanvas();
+
+            for (let i = 0; i < totalSlides; i++) {
+                const dot = document.createElement('div'); dot.classList.add('dot');
+                dot.addEventListener('click', (e) => { e.stopPropagation(); if (!isVideoMode) goToSlide(i); });
+                dotsContainer.appendChild(dot);
+            }
+            const dots = document.querySelectorAll('.dot');
+
+            function updateSlides() {
+                slides.forEach((slide, index) => { slide.classList.toggle('active', index === currentSlide); });
+                dots.forEach((dot, index) => { dot.classList.toggle('active', index === currentSlide); });
+                prevBtn.disabled = currentSlide === 0; nextBtn.disabled = currentSlide === totalSlides - 1;
+            }
+
+            function goToSlide(index) { currentSlide = index; updateSlides(); if (isVideoMode) startAutoPlay(); }
+            function nextSlide() { currentSlide = (currentSlide + 1) % totalSlides; updateSlides(); if (isVideoMode) startAutoPlay(); }
+            function prevSlide() { if (currentSlide > 0) { currentSlide = currentSlide - 1; updateSlides(); } }
+
+            function startAutoPlay() { clearInterval(autoPlayTimer); if (isVideoMode) { autoPlayTimer = setInterval(nextSlide, 3500); } }
+            function stopAutoPlay() { clearInterval(autoPlayTimer); }
+
+            function enterPresentationMode() {
+                isVideoMode = false; stopAutoPlay(); currentSlide = 0; updateSlides();
+                overlay.style.display = 'none'; controls.style.display = 'flex'; sideControls.style.display = 'flex';
+                audioPlayer.currentTime = 0;
+                audioPlayer.play().then(() => { isPlayingMusic = true; soundBtn.innerHTML = '<i class="fa-solid fa-volume-high"></i>'; }).catch((err) => { isPlayingMusic = false; soundBtn.innerHTML = '<i class="fa-solid fa-volume-xmark"></i>'; });
+                setTimeout(resizeCanvas, 100);
+            }
+
+            function exitPresentationMode() {
+                isVideoMode = true; overlay.style.display = 'flex'; controls.style.display = 'none'; sideControls.style.display = 'none';
+                audioPlayer.pause(); isPlayingMusic = false; startAutoPlay(); setTimeout(resizeCanvas, 100);
+            }
+
+            soundBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (isPlayingMusic) { audioPlayer.pause(); isPlayingMusic = false; soundBtn.innerHTML = '<i class="fa-solid fa-volume-xmark"></i>'; }
+                else { audioPlayer.play(); isPlayingMusic = true; soundBtn.innerHTML = '<i class="fa-solid fa-volume-high"></i>'; }
+            });
+
+            overlay.addEventListener('click', enterPresentationMode);
+            resetBtn.addEventListener('click', exitPresentationMode);
+            prevBtn.addEventListener('click', (e) => { e.stopPropagation(); prevSlide(); });
+            nextBtn.addEventListener('click', (e) => { e.stopPropagation(); if (currentSlide < totalSlides - 1) { nextSlide(); } });
+
+            updateSlides(); startAutoPlay();
+        });
+    </script>
+</body>
+
+</html>
