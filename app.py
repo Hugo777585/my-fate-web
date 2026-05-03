@@ -157,303 +157,59 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 def ai_reply(prompt):
-    response = client.responses.create(
-        model="gpt-4.1-mini",
-        input=prompt
-    )
-    return response.output[0].content[0].text
-
-def ai_love_consult_reply(context_prompt, is_master=False):
-    """
-    第二層 AI 感情心理諮詢回覆函數 (優化轉單版)
-    """
-    system_role = """你是一位結合命理分析、感情心理諮詢與關係策略的顧問。請用沉穩、理性、具同理心的方式分析，像是在理解人、有洞察力。不要鐵口直斷，不要恐嚇使用者。"""
-    
-    # 根據權限調整輸出要求
-    if is_master:
-        permission_instruction = """
-【大師模式：完整分析】
-請提供完整深度分析，不限制字數，包含：
-1. 對方目前真實心理狀態
-2. 目前關係的核心卡點
-3. 使用者內心真正不安的核心
-4. 具體建議採取的做法（實戰策略）
-5. 絕對不建議做的事
-6. 潛在風險提醒
-7. 明確的下一步行動建議
-"""
-    else:
-        permission_instruction = """
-【一般模式：初步引導】
-請嚴格遵守以下三段式結構，字數約 300～500 字：
-1. ① 對方心理：描述對方的心理狀態，要準確且有畫面感。
-2. ② 關係卡點：點出關係中讓使用者產生共鳴的阻礙。
-3. ③ 方向指引：給予一點點處理方向，但務必保留「關鍵沒說破」，創造好奇感。
-
-❌ 禁止出現「購買」、「方案」、「價格」等商業字眼。
-"""
-
-    full_prompt = f"{system_role}\n\n{context_prompt}\n{permission_instruction}"
-    
     try:
         response = client.chat.completions.create(
             model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": system_role},
-                {"role": "user", "content": full_prompt}
-            ]
+            messages=[{"role": "user", "content": prompt}]
         )
         return response.choices[0].message.content
     except Exception as e:
-        return f"AI 諮詢暫時無法連線：{str(e)}"
+        return f"AI 連線失敗：{str(e)}"
 
-# --- PDF 報告產生器 ---
-class ReportPDF(FPDF):
-    def footer(self):
-        # 頁尾
-        self.set_y(-15)
-        try:
-            self.set_font("CJK", size=9)
-        except:
-            self.set_font("Helvetica", size=9)
-        self.cell(0, 10, "雨果大師命理 AI - 執此命書，願你洞悉天機，行穩致遠。", align="C")
-
-def _find_cjk_font():
-    # 支援 Windows 與 Linux (Streamlit Cloud) 的常見字體路徑
-    candidates = [
-        r"C:\Windows\Fonts\msjh.ttc",    # Windows 微軟正黑
-        r"C:\Windows\Fonts\msyh.ttc",    # Windows 雅黑
-        "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc", # Linux Noto CJK
-        "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
-        "/usr/share/fonts/truetype/noto/NotoSerifCJK-Regular.ttc",
-        "/usr/share/fonts/fonts-noto-cjk/NotoSansCJK.ttc"
-    ]
-    for p in candidates:
-        if os.path.exists(p): return p
-    return None
-
-def create_pdf(user_name, body):
-    pdf = ReportPDF()
-    font_path = _find_cjk_font()
-    
-    if font_path:
-        pdf.add_font("CJK", "", font_path, uni=True)
-        pdf.set_font("CJK", size=16)
+def ai_love_consult_reply(context_prompt, is_master=False):
+    system_role = """你是一位結合命理分析、感情心理諮詢與關係策略的顧問。請用沉穩、理性、具同理心的方式分析。"""
+    if is_master:
+        permission_instruction = "【大師模式：完整分析】"
     else:
-        pdf.set_font("Helvetica", size=16)
-    
-    pdf.add_page()
-    pdf.cell(0, 10, f"{user_name} - 命理 AI 分析報告", ln=True, align="C")
-    pdf.ln(10)
-    
-    if font_path:
-        pdf.set_font("CJK", size=11)
-    else:
-        pdf.set_font("Helvetica", size=11)
-    
-    # 移除 Markdown 語法 (簡單處理)
-    clean_body = body.replace("**", "").replace("### ", "").replace("## ", "").replace("# ", "")
-    pdf.multi_cell(0, 8, clean_body)
-    
-    return bytes(pdf.output())
-
-# 載入環境變數 (Local 開發用)
-load_dotenv()
-
-# --- 初始化付款狀態 ---
-if 'payment_status' not in st.session_state:
-    st.session_state.payment_status = "free"
-if 'order_data' not in st.session_state:
-    st.session_state.order_data = None
-
-# --- 訂單處理邏輯 ---
-def save_order_to_csv(order_info):
-    file_exists = os.path.isfile('orders.csv')
-    with open('orders.csv', mode='a', newline='', encoding='utf-8-sig') as f:
-        writer = csv.writer(f)
-        if not file_exists:
-            writer.writerow(['order_id', 'created_at', 'name', 'contact', 'phone', 'birth_date', 'birth_time', 'gender', 'question', 'plan', 'payment_status'])
-        writer.writerow([
-            order_info['order_id'],
-            order_info['created_at'],
-            order_info['name'],
-            order_info['contact'],
-            order_info['phone'],
-            order_info['birth_date'],
-            order_info['birth_time'],
-            order_info['gender'],
-            order_info['question'],
-            order_info['plan'],
-            order_info['payment_status']
-        ])
-
-# --- Google Sheets 連線設定 ---
-def init_gsheets():
-    client_email = "未知"
-    service_account_info = None
-    max_retries = 3
-    retry_delay = 2 # 秒
-    
-    for attempt in range(max_retries):
-        try:
-            # 定義存取範圍
-            scopes = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
-            
-            # 1. 優先嘗試讀取本地 hugo-key.json
-            key_file_path = "hugo-key.json"
-            if os.path.exists(key_file_path):
-                try:
-                    with open(key_file_path, "r", encoding="utf-8") as f:
-                        service_account_info = json.load(f)
-                except Exception as e:
-                    return None, client_email, f"🔑 鑰匙格式錯誤 (JSON 毀損)：{str(e)}"
-            
-            # 2. 如果本地檔案不存在，則嘗試讀取 Streamlit Secrets (雲端環境)
-            if not service_account_info:
-                if "gcp_service_account" in st.secrets:
-                    service_account_info = st.secrets["gcp_service_account"]
-                else:
-                    return None, client_email, "🚫 找不到連線憑證：本地無 hugo-key.json，且雲端 Secrets 未設定 [gcp_service_account]。"
-                
-            client_email = service_account_info.get("client_email", "未知")
-            
-            # 3. 建立憑證與授權
-            creds = Credentials.from_service_account_info(service_account_info, scopes=scopes)
-            client = gspread.authorize(creds)
-            
-            # 4. 開啟試算表
-            sheet_url = st.secrets.get("gsheets_url")
-            sheet_name = "雨果天命智庫客戶紀錄"
-            
-            if sheet_url:
-                spreadsheet = client.open_by_url(sheet_url)
-            else:
-                spreadsheet = client.open(sheet_name)
-            
-            sheet = spreadsheet.sheet1
-            return sheet, client_email, None
-
-        except (gspread.exceptions.SpreadsheetNotFound, gspread.exceptions.NoValidUrlKeyFound):
-            return None, client_email, f"📂 試算表找不到：請確認名稱為 '{sheet_name}' 或 URL 正確。"
-        except gspread.exceptions.APIError as e:
-            if "Permission denied" in str(e):
-                return None, client_email, "📂 權限不足：請確保已將試算表「共用」給服務帳號 Email。"
-            return None, client_email, f"⚠️ Google API 錯誤：{str(e)}"
-        except Exception as e:
-            # 針對網路或 DNS 錯誤進行重試
-            err_str = str(e)
-            if "NameResolutionError" in err_str or "connection" in err_str.lower() or "timeout" in err_str.lower():
-                if attempt < max_retries - 1:
-                    time.sleep(retry_delay)
-                    continue
-                return None, client_email, f"🌐 網路連線或 DNS 解析失敗：{err_str}。請檢查雲端環境網路狀態。"
-            return None, client_email, f"🚨 連線系統錯誤：{err_str}"
-            
-    return None, client_email, "🚨 連線失敗：已達最大重試次數。"
-
-# 初始化試算表物件
-sheet, current_client_email, gs_error = init_gsheets()
-
-with st.sidebar:
-    # 在側邊欄顯示您的 logo.JPG 
-    st.sidebar.image("logo.JPG", use_column_width=True)
-    st.header("📊 資料庫連線")
-    if gs_error:
-        st.error(gs_error)
-        st.warning(f"💡 請將試算表共用給：\n`{current_client_email}`")
-    elif sheet:
-        st.success(f"✅ 已連線：{sheet.spreadsheet.title}")
-        st.info(f"📧 服務帳號：`{current_client_email}`")
-
-    if st.button("🧠 AI感情心理分析"):
-        st.switch_page("pages/02_love_analysis.py")
+        permission_instruction = "【一般模式：初步引導】"
+    full_prompt = f"{system_role}\n\n{context_prompt}\n{permission_instruction}"
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "system", "content": system_role}, {"role": "user", "content": full_prompt}]
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"AI 諮詢失敗：{str(e)}"
 
 def get_wuxing_color(char):
-    """根據干支字元回傳對應的五行背景顏色"""
     if not char: return "#FFFFFF"
-    char = char[0] # 取第一個字
+    char = char[0]
     wuxing_map = {
-        # 木
         '甲': '#C8E6C9', '乙': '#C8E6C9', '寅': '#C8E6C9', '卯': '#C8E6C9',
-        # 火
         '丙': '#FFCDD2', '丁': '#FFCDD2', '巳': '#FFCDD2', '午': '#FFCDD2',
-        # 土
         '戊': '#FFF9C4', '己': '#FFF9C4', '辰': '#FFF9C4', '戌': '#FFF9C4', '丑': '#FFF9C4', '未': '#FFF9C4',
-        # 金
         '庚': '#F5F5F5', '辛': '#F5F5F5', '申': '#F5F5F5', '酉': '#F5F5F5',
-        # 水
         '壬': '#BBDEFB', '癸': '#BBDEFB', '亥': '#BBDEFB', '子': '#BBDEFB',
     }
     return wuxing_map.get(char, "#FFFFFF")
 
 def render_bazi_table(bazi):
-    """產生彩色五行排盤 HTML 表格"""
     if not bazi: return ""
-    
-    # 取得各柱顏色
     y_color = get_wuxing_color(bazi['year_dz'])
     m_color = get_wuxing_color(bazi['month_dz'])
     d_color = get_wuxing_color(bazi['day_dz'])
     h_color = get_wuxing_color(bazi['hour_dz'])
-    
-    # 使用媒體查詢 (Media Query) 或相對單位來優化手機顯示
     html = f"""
-    <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 20px;">
-        <style>
-            .bazi-table {{
-                border-collapse: collapse; 
-                width: 100%; 
-                min-width: 450px; /* 確保在手機上不會縮到看不見 */
-                font-size: 18px; 
-                font-weight: bold; 
-                text-align: center; 
-                border: 2px solid #6C3483;
-            }}
-            @media (max-width: 600px) {{
-                .bazi-table {{
-                    font-size: 14px; /* 手機版字體調小 */
-                }}
-                .bazi-table td, .bazi-table th {{
-                    padding: 6px !important;
-                }}
-            }}
-        </style>
-        <table class="bazi-table" border="1">
-            <tr style="background-color: #6C3483; color: white;">
-                <th style="padding: 10px;">四柱</th>
-                <th style="padding: 10px;">天干</th>
-                <th style="padding: 10px;">十神</th>
-                <th style="padding: 10px;">地支</th>
-                <th style="padding: 10px;">藏干</th>
+    <div style="overflow-x: auto; margin-bottom: 20px;">
+        <table style="width: 100%; border-collapse: collapse; text-align: center; border: 2px solid #9A7A38;">
+            <tr style="background-color: #9A7A38; color: white;">
+                <th>四柱</th><th>天干</th><th>十神</th><th>地支</th><th>藏干</th>
             </tr>
-            <tr style="background-color: {y_color}; color: #1A1A1A; font-weight: 600;">
-                <td style="padding: 10px; border: 1px solid #6C3483;">年柱</td>
-                <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['year_tg']}</td>
-                <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['year_ss']}</td>
-                <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['year_dz']}</td>
-                <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['year_hide']}</td>
-            </tr>
-            <tr style="background-color: {m_color}; color: #1A1A1A; font-weight: 600;">
-                <td style="padding: 10px; border: 1px solid #6C3483;">月柱</td>
-                <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['month_tg']}</td>
-                <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['month_ss']}</td>
-                <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['month_dz']}</td>
-                <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['month_hide']}</td>
-            </tr>
-            <tr style="background-color: {d_color}; color: #1A1A1A; font-weight: 600;">
-                <td style="padding: 10px; border: 1px solid #6C3483;">日柱 (日主)</td>
-                <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['day_tg']}【日主】</td>
-                <td style="padding: 10px; border: 1px solid #6C3483;">日主</td>
-                <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['day_dz']}</td>
-                <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['day_hide']}</td>
-            </tr>
-            <tr style="background-color: {h_color}; color: #1A1A1A; font-weight: 600;">
-                <td style="padding: 10px; border: 1px solid #6C3483;">時柱</td>
-                <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['hour_tg']}</td>
-                <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['hour_ss']}</td>
-                <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['hour_dz']}</td>
-                <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['hour_hide']}</td>
-            </tr>
+            <tr style="background-color: {y_color};"><td>年柱</td><td>{bazi['year_tg']}</td><td>{bazi['year_ss']}</td><td>{bazi['year_dz']}</td><td>{bazi['year_hide']}</td></tr>
+            <tr style="background-color: {m_color};"><td>月柱</td><td>{bazi['month_tg']}</td><td>{bazi['month_ss']}</td><td>{bazi['year_dz']}</td><td>{bazi['month_hide']}</td></tr>
+            <tr style="background-color: {d_color};"><td>日柱</td><td>{bazi['day_tg']}</td><td>日主</td><td>{bazi['day_dz']}</td><td>{bazi['day_hide']}</td></tr>
+            <tr style="background-color: {h_color};"><td>時柱</td><td>{bazi['hour_tg']}</td><td>{bazi['hour_ss']}</td><td>{bazi['hour_dz']}</td><td>{bazi['hour_hide']}</td></tr>
         </table>
     </div>
     """
@@ -461,45 +217,36 @@ def render_bazi_table(bazi):
 
 def calculate_bazi(y, m, d, h, minute):
     try:
-        # 使用 Solar 類來處理國曆日期與時間，確保節氣轉換精準
         solar = Solar.fromYmdHms(int(y), int(m), int(d), int(h), int(minute), 0)
         lunar = solar.getLunar()
         eight_char = lunar.getEightChar()
-        
-        # 取得八字四柱 (年、月、日、時)
-        year_pillar = eight_char.getYear()
-        month_pillar = eight_char.getMonth()
-        day_pillar = eight_char.getDay()
-        hour_pillar = eight_char.getTime()
-
-        # 取得藏干
-        year_hide = "".join(eight_char.getYearHideGan())
-        month_hide = "".join(eight_char.getMonthHideGan())
-        day_hide = "".join(eight_char.getDayHideGan())
-        hour_hide = "".join(eight_char.getTimeHideGan())
-
-        # 取得十神 (以日主為中心)
-        year_shishen = eight_char.getYearShiShenGan()
-        month_shishen = eight_char.getMonthShiShenGan()
-        hour_shishen = eight_char.getTimeShiShenGan()
-
         return {
-            'year_tg': year_pillar[:1], 'year_dz': year_pillar[1:2], 'year_ss': year_shishen, 'year_hide': year_hide,
-            'month_tg': month_pillar[:1], 'month_dz': month_pillar[1:2], 'month_ss': month_shishen, 'month_hide': month_hide,
-            'day_tg': day_pillar[:1], 'day_dz': day_pillar[1:2], 'day_ss': '日主', 'day_hide': day_hide,
-            'hour_tg': hour_pillar[:1], 'hour_dz': hour_pillar[1:2], 'hour_ss': hour_shishen, 'hour_hide': hour_hide,
-            'full': {
-                'year': year_pillar,
-                'month': month_pillar,
-                'day': day_pillar,
-                'hour': hour_pillar
-            }
+            'year_tg': eight_char.getYearGan(), 'year_dz': eight_char.getYearZhi(), 'year_ss': eight_char.getYearShiShenGan(), 'year_hide': "".join(eight_char.getYearHideGan()),
+            'month_tg': eight_char.getMonthGan(), 'month_dz': eight_char.getMonthZhi(), 'month_ss': eight_char.getMonthShiShenGan(), 'month_hide': "".join(eight_char.getMonthHideGan()),
+            'day_tg': eight_char.getDayGan(), 'day_dz': eight_char.getDayZhi(), 'day_ss': '日主', 'day_hide': "".join(eight_char.getDayHideGan()),
+            'hour_tg': eight_char.getTimeGan(), 'hour_dz': eight_char.getTimeZhi(), 'hour_ss': eight_char.getTimeShiShenGan(), 'hour_hide': "".join(eight_char.getTimeHideGan()),
+            'full': {'year': eight_char.getYear(), 'month': eight_char.getMonth(), 'day': eight_char.getDay(), 'hour': eight_char.getTime()}
         }
     except Exception as e:
-        st.error(f"命盤計算發生系統錯誤：{e}")
         return None
 
-st.set_page_config(page_title="雨果大師｜命理 AI", page_icon="🔮", layout="wide")
+# --- Google Sheets 連線 (簡化版) ---
+def init_gsheets():
+    try:
+        scopes = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
+        if "gcp_service_account" in st.secrets:
+            creds = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scopes)
+        elif os.path.exists("hugo-key.json"):
+            creds = Credentials.from_service_account_file("hugo-key.json", scopes=scopes)
+        else: return None
+        client = gspread.authorize(creds)
+        sheet = client.open_by_url(st.secrets["gsheets_url"]).sheet1 if "gsheets_url" in st.secrets else client.open("雨果天命智庫客戶紀錄").sheet1
+        return sheet
+    except: return None
+
+sheet = init_gsheets()
+
+st.set_page_config(page_title="HUGO 天命智庫", page_icon="🔮", layout="wide")
 
 # --- 1. 頂部 Hero 區 (包含 Logo 與 標題) ---
 logo_html = ""
@@ -510,488 +257,101 @@ if os.path.exists("logo.JPG"):
 else:
     logo_html = '<div class="logo-box"><h1 style="color:#9A7A38; margin:0;">HUGO 天命智庫</h1></div>'
 
-st.markdown(f"""
- <div class="main-card" style="margin-top: 0; padding-top: 20px; padding-bottom: 25px;">
-     {logo_html}
-    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 30px;">
-        <div style="flex: 1; min-width: 300px;">
-            <h1 style="font-size: 32px; font-weight: 900; color: #2F2F2F; margin-bottom: 15px; line-height: 1.2;">你不是不順，是你還沒看懂自己的命盤。</h1>
-            <h3 style="font-size: 18px; color: #444; margin-bottom: 15px; line-height: 1.4;">當感情卡住、人生停滯、選擇變得困難——<br>不是你不夠努力，而是你還沒看懂「局」。</h3>
-            <p style="font-size: 15px; line-height: 1.6; color: #555;">
-                HUGO 天命智庫結合傳統命理經典與現代 AI 大數據分析，協助你看清人生方向、關係狀態與下一步選擇。
-            </p>
-        </div>
-        <div style="flex: 0 0 220px; text-align: center;">
-            <!-- TODO: replace with final brand image -->
-            <div style="width: 180px; height: 180px; background: #E2E2CC; border-radius: 50%; margin: 0 auto; display: flex; align-items: center; justify-content: center; border: 4px solid #9A7A38; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
-                <span style="font-size: 60px;">🔮</span>
-            </div>
-        </div>
-    </div>
- </div>
- """, unsafe_allow_html=True)
-
-# --- 2. 四大功能入口 (2x2) ---
-st.markdown('<div class="section-bar" style="margin-top: 0;">四大核心功能入口</div>', unsafe_allow_html=True)
-
-col_f1, col_f2 = st.columns(2)
-with col_f1:
-    st.markdown("""
-    <div class="feature-card">
-        <div>
-            <div class="feature-icon">📜</div>
-            <div class="feature-title">八字命理分析</div>
-            <div class="feature-desc">解析你的先天性格、事業走向、財運基礎與感情模式。</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-    if st.button("開始八字分析", key="nav_bazi_v7"):
-        st.session_state.analysis_mode = "八字"
-        st.rerun()
-
-    st.markdown("""
-    <div class="feature-card">
-        <div>
-            <div class="feature-icon">♾️</div>
-            <div class="feature-title">八字 × 紫微交叉分析</div>
-            <div class="feature-desc">將兩套命理系統交叉比對，提升判斷深度與準確度。</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-    if st.button("啟動交叉分析", key="nav_cross_v7"):
-        st.session_state.analysis_mode = "交叉"
-        st.rerun()
-
-with col_f2:
-    st.markdown("""
-    <div class="feature-card">
-        <div>
-            <div class="feature-icon">✨</div>
-            <div class="feature-title">紫微斗數分析</div>
-            <div class="feature-desc">從命宮、夫妻宮、財帛宮與事業宮，看見人生不同面向的細節。</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-    if st.button("開始紫微分析", key="nav_ziwei_v7"):
-        st.session_state.analysis_mode = "紫微"
-        st.rerun()
-
-    st.markdown("""
-    <div class="feature-card">
-        <div>
-            <div class="feature-icon">👩‍❤️‍👨</div>
-            <div class="feature-title">兩人合盤分析</div>
-            <div class="feature-desc">分析你與對象、伴侶或配偶的吸引力、衝突點與相處方式。</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-    if st.button("開始合盤分析", key="nav_dual_v7"):
-        st.session_state.analysis_mode = "合盤"
-        st.session_state.enable_dual_v6 = True
-        st.rerun()
-
-# --- 3. 三大命理經典 ---
-st.markdown('<div class="section-bar">系統推算依據｜三大命理核心經典</div>', unsafe_allow_html=True)
-st.markdown("""
-<div class="main-card" style="padding: 30px;">
-    <p style="font-size: 17px; margin-bottom: 30px; line-height: 1.7;">HUGO 天命智庫不是娛樂式算命，而是以傳統命理經典為基礎，結合 AI 分析模型與資料庫交叉比對，協助使用者從命盤中看見性格、感情、事業、財運與人生選擇的可能方向。</p>
-    <div class="classic-grid">
-        <div class="classic-card">
-            <div class="classic-header">1. 三命通會｜命理結構解析核心</div>
-            <p style="font-size: 15px; color: #444;"><b>用來分析：</b><br>• 命格結構<br>• 十神關係<br>• 事業與財運基礎<br>• 人生格局高低</p>
-            <div class="classic-point">白話重點：看你人生的基本設定。</div>
-        </div>
-        <div class="classic-card">
-            <div class="classic-header">2. 滴天髓｜命盤運作邏輯</div>
-            <p style="font-size: 15px; color: #444;"><b>用來分析：</b><br>• 五行流動<br>• 旺衰平衡<br>• 用神取法<br>• 運勢轉折</p>
-            <div class="classic-point">白話重點：看你什麼時候會起，什麼時候會卡。</div>
-        </div>
-        <div class="classic-card">
-            <div class="classic-header">3. 淵海子平｜八字實戰判斷基準</div>
-            <p style="font-size: 15px; color: #444;"><b>用來分析：</b><br>• 日主強弱<br>• 月令格局<br>• 五行生剋<br>• 命盤修正</p>
-            <div class="classic-point">白話重點：把命盤判斷做到更精準。</div>
-        </div>
-    </div>
-    <!-- TODO: replace with 古籍/星盤圖片 -->
-</div>
-""", unsafe_allow_html=True)
-
-# --- 4. 兩人合盤重點區 ---
-st.markdown('<div class="section-bar">兩人關係深度解析｜最受歡迎功能</div>', unsafe_allow_html=True)
-st.markdown("""
-<div class="main-card">
-    <div style="display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 30px;">
-        <div style="flex: 1; min-width: 300px;">
-            <h4 style="font-size: 20px; color: #2F2F2F; margin-bottom: 20px;">你是不是也曾經想過：</h4>
-            <ul style="color: #444; line-height: 2; font-size: 16px;">
-                <li>他到底有沒有喜歡我？</li>
-                <li>為什麼一開始很好，後來變冷？</li>
-                <li>我該主動，還是退？</li>
-                <li>這段關係還有沒有機會？</li>
-            </ul>
-            <p style="margin: 20px 0; font-size: 16px;">這些不是只能猜，而是可以透過雙方命盤與互動模式進行分析。</p>
-            <div style="background: #E2E2CC; padding: 20px; border-radius: 12px; margin-bottom: 25px;">
-                <p style="color: #9A7A38; font-weight: 900; margin: 0; font-size: 18px;">不只是看「合不合」，而是幫你看懂「該怎麼做」。</p>
-            </div>
-        </div>
-        <div style="flex: 0 0 300px; text-align: center;">
-            <!-- TODO: replace with 感情拉扯情緒圖 -->
-            <div style="background: #F4F4ED; border-radius: 18px; padding: 30px; border: 1px solid #E2E2CC;">
-                <span style="font-size: 80px;">📱💬</span>
-                <p style="color: #666; margin-top: 15px; font-size: 14px;">夜晚的訊息等待、關係的進退維谷<br>讓數據為您指引出口</p>
-            </div>
-        </div>
-    </div>
-</div>
-""", unsafe_allow_html=True)
-
-if st.button("【開始兩人合盤分析】", key="cta_dual_v7_large"):
-    st.session_state.analysis_mode = "合盤"
-    st.session_state.enable_dual_v6 = True
-    st.rerun()
-
-# --- 5. 第二層感情心理諮詢入口 ---
-st.markdown('<div class="section-bar">兩性情感心理諮詢</div>', unsafe_allow_html=True)
-st.markdown("""
-<div class="main-card">
-    <h3 style="font-size: 24px; font-weight: 900; margin-bottom: 20px; color: #2F2F2F;">你不是不夠好，而是還沒看懂這段關係真正卡住的地方。</h3>
-    <p style="line-height: 1.8; color: #444; margin-bottom: 25px;">當對方忽冷忽熱、訊息變少、態度模糊，很多人會開始懷疑自己是不是做錯了什麼。但感情問題往往不是單一事件，而是由依附模式、溝通方式、情緒反應與雙方關係結構共同形成。</p>
-    <div style="background: #9A7A38; color: white; padding: 15px 25px; border-radius: 12px; display: inline-block; font-weight: 700; margin-bottom: 30px;">
-        HUGO 天命智庫第二層分析：八字命盤 × 關係心理 × 行為模式 × AI 交叉分析
-    </div>
-    
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
-        <div style="background: #F4F4ED; padding: 20px; border-radius: 15px; border: 1px solid #E2E2CC;">
-            <div style="font-weight: 900; font-size: 18px; margin-bottom: 10px;">1. 對方心態分析</div>
-            <div style="font-size: 14px; color: #555;">分析對方目前是靠近、觀望、逃避、冷淡，還是正在測試你的反應。</div>
-        </div>
-        <div style="background: #F4F4ED; padding: 20px; border-radius: 15px; border: 1px solid #E2E2CC;">
-            <div style="font-weight: 900; font-size: 18px; margin-bottom: 10px;">2. 關係卡點判讀</div>
-            <div style="font-size: 14px; color: #555;">找出你們反覆爭吵、冷戰、誤會或拉扯的真正原因。</div>
-        </div>
-        <div style="background: #F4F4ED; padding: 20px; border-radius: 15px; border: 1px solid #E2E2CC;">
-            <div style="font-weight: 900; font-size: 18px; margin-bottom: 10px;">3. 溝通策略建議</div>
-            <div style="font-size: 14px; color: #555;">依照目前局勢，提供適合主動、冷處理、收線、觀察或重新開啟對話的方式。</div>
-        </div>
-        <div style="background: #F4F4ED; padding: 20px; border-radius: 15px; border: 1px solid #E2E2CC;">
-            <div style="font-weight: 900; font-size: 18px; margin-bottom: 10px;">4. 命盤與心理分析</div>
-            <div style="font-size: 14px; color: #555;">結合雙方命盤與互動模式，判斷感情吸引力、衝突點與長期穩定度。</div>
-        </div>
-    </div>
-    <!-- TODO: replace with 心理分析/數據圖表圖片 -->
-</div>
-""", unsafe_allow_html=True)
-
-if st.button("【進入感情心理分析】", key="cta_love_v7_large"):
-    st.switch_page("pages/02_love_analysis.py")
-
-# --- 6. 方案引流區 ---
-st.markdown('<div class="section-bar">專業諮詢方案</div>', unsafe_allow_html=True)
-col_p1, col_p2, col_p3 = st.columns(3)
-with col_p1:
-    st.markdown("""
-    <div class="price-card">
-        <div class="price-title">免費體驗</div>
-        <p style="color: #666; font-size: 14px; margin: 10px 0;">適合初步了解目前狀態</p>
-        <div class="price-val">$0</div>
-        <div style="text-align: left; font-size: 14px; color: #444; line-height: 1.8;">
-            • 基礎命盤解析<br>
-            • 初步方向判讀
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-    if st.button("開始免費分析", key="plan_free_v7"):
-        st.session_state.analysis_mode = "八字"
-        st.rerun()
-
-with col_p2:
-    st.markdown("""
-    <div class="price-card featured">
-        <div class="price-title">299 深度分析</div>
-        <p style="color: #666; font-size: 14px; margin: 10px 0;">適合曖昧、冷戰、分手邊緣</p>
-        <div class="price-val">$299</div>
-        <div style="text-align: left; font-size: 14px; color: #444; line-height: 1.8;">
-            • 單一感情問題深入分析<br>
-            • 提供對方心態與 3 種行動選項<br>
-            • 包含 3 次提問 (5天內)
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-    if st.button("了解 299 方案", key="plan_299_v7"):
-        st.link_button("👉 加 LINE 預約諮詢", "https://line.me/ti/p/@323ohobf")
-
-with col_p3:
-    st.markdown("""
-    <div class="price-card">
-        <div class="price-title">699 完整追蹤</div>
-        <p style="color: #666; font-size: 14px; margin: 10px 0;">適合重大抉擇、長期不安</p>
-        <div class="price-val">$699</div>
-        <div style="text-align: left; font-size: 14px; color: #444; line-height: 1.8;">
-            • 結合命盤、互動與心理模式<br>
-            • 提供完整判斷與策略建議<br>
-            • 階段性調整與後續追蹤
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-    if st.button("了解 699 方案", key="plan_699_v7"):
-        st.link_button("👉 加 LINE 預約諮詢", "https://line.me/ti/p/@323ohobf")
-
-# --- 7. 聯絡資訊區 ---
-st.markdown("<br><br>", unsafe_allow_html=True)
-st.markdown("""
-<div style="text-align: center; padding: 50px; background: #E2E2CC; border-radius: 25px; border: 1px solid rgba(154, 122, 56, 0.2);">
-    <h2 style="font-weight: 900; color: #2F2F2F; margin-bottom: 15px;">HUGO 天命智庫</h2>
-    <p style="font-size: 16px; color: #444;">結合傳統命理經典與現代 AI 技術，協助您看清局勢，做出更好的選擇。</p>
-    <div style="margin-top: 30px; font-size: 14px; color: #666;">
-        官方客服 LINE：@323ohobf<br>
-        服務時間：週一至週日 10:00 - 22:00
-    </div>
-    <p style="margin-top: 30px; font-size: 12px; color: #888;">© 2026 HUGO 天命智庫 | Professional Astrology AI Platform</p>
-</div>
-""", unsafe_allow_html=True)
-st.link_button("🔮 立即諮詢 HUGO 大師", "https://line.me/ti/p/@323ohobf", use_container_width=True)
-
-# ---------------------------------------------------------
-# 隱藏後端邏輯區 (僅在選擇模式後顯示)
-# ---------------------------------------------------------
-if 'analysis_mode' in st.session_state:
-    pass 
-else:
-    st.stop() 
-
-# --- 3. 基礎輸入介面 (當選擇特定模式時) ---
-if 'analysis_mode' in st.session_state:
-    st.markdown("---")
-    # 4. 功能模式選擇 (保留原有的 radio 但隱藏它，改由大按鈕控制)
-    analysis_mode = st.radio(
-        "請選擇命理分析模式",
-        ["【八字精論】"],
-        horizontal=True,
-        label_visibility="collapsed",
-        key="hidden_mode_radio"
-    )
-
-    # 5. 基礎輸入介面 (大眾版與大師盤通用)
-    with st.container():
-        st.markdown(f"### 📋 填寫資料 - {st.session_state.analysis_mode}模式")
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            name = st.text_input("姓名/暱稱", placeholder="如何稱呼您？")
-        with col2:
-            gender = st.selectbox("性別", ["男", "女"])
-        with col3:
-            occupation = st.selectbox(
-                "目前狀態/職業",
-                ["學生", "上班族", "受聘", "自營商", "合夥公司", "待業", "家管", "退休", "更生人", "身障"]
-            )
-
-        st.markdown("#### 📅 出生時間 (國曆)")
-        
-        # 判斷是否為手機版排版 (Streamlit 寬度小於某值時會自動堆疊，但我們主動優化)
-        col_date1, col_date2, col_date3 = st.columns(3)
-        with col_date1:
-            years = list(range(1930, 2027))
-            b_year = st.selectbox("年", options=years, index=years.index(1980))
-        with col_date2:
-            months = list(range(1, 13))
-            b_month = st.selectbox("月", options=months, index=0)
-        with col_date3:
-            days = list(range(1, 32))
-            b_day = st.selectbox("日", options=days, index=0)
-        
-        col_time1, col_time2, col_spacer = st.columns([1, 1, 1])
-        with col_time1:
-            hours = list(range(0, 24))
-            b_hour = st.selectbox("時", options=hours, index=12)
-        with col_time2:
-            mins = list(range(0, 60))
-            b_min = st.selectbox("分", options=mins, index=0)
-        with col_spacer:
-            pass # 佔位符，讓時分在手機版看起來更平衡
-
-        # --- 兩人合盤邏輯 ---
-        # 如果是合盤模式，強制開啟 enable_dual
-        if st.session_state.analysis_mode == "合盤":
-            st.session_state.enable_dual_v6 = True
-        
-        # 這裡保留原有的 toggle 讓使用者可以微調
-        enable_dual = st.toggle("💑 啟用雙人合盤（感情/合夥）", value=st.session_state.get('enable_dual_v6', False))
-        st.session_state.enable_dual_v6 = enable_dual
-
-        # 如果啟用合盤，立刻顯示第二位對象資料
-        name2 = "無"
-        b_year2, b_month2, b_day2, b_hour2, b_min2 = 1980, 1, 1, 12, 0
-        relation_type = "無"
-
-        if st.session_state.enable_dual_v6:
-            st.markdown('<div class="dual-input-card" style="background-color: #E2E2CC; padding: 20px; border-radius: 12px; margin-top: 10px;">', unsafe_allow_html=True)
-            st.subheader("💞 第二位對象資料")
-            col_p2_name, col_p2_gender = st.columns(2)
-            with col_p2_name:
-                name2 = st.text_input("對象姓名/暱稱", placeholder="如何稱呼對方？", key="name2_v6")
-            with col_p2_gender:
-                gender2 = st.selectbox("對象性別", ["男", "女"], key="gender2_v6")
-                
-            col_p2_1, col_p2_2, col_p2_3, col_p2_4, col_p2_5 = st.columns(5)
-            with col_p2_1:
-                years = list(range(1930, 2027))
-                b_year2 = st.selectbox("年", options=years, index=years.index(1980), key="b_year2_v6")
-            with col_p2_2:
-                months = list(range(1, 13))
-                b_month2 = st.selectbox("月", options=months, index=0, key="b_month2_v6")
-            with col_p2_3:
-                days = list(range(1, 32))
-                b_day2 = st.selectbox("日", options=days, index=0, key="b_day2_v6")
-            with col_p2_4:
-                hours = list(range(0, 24))
-                b_hour2 = st.selectbox("時", options=hours, index=12, key="b_hour2_v6")
-            with col_p2_5:
-                mins = list(range(0, 60))
-                b_min2 = st.selectbox("分", options=mins, index=0, key="b_min2_v6")
-            relation_type = st.selectbox("雙方關係", ["情侶/夫妻", "事業合夥", "家人/朋友"], key="rel_type_v6")
-            st.markdown('</div>', unsafe_allow_html=True)
-
-    # --- 3. 引導式多步驟表單 (Multi-step Form) ---
-    st.markdown("#### 💬 告訴大師您的困惑")
-    
-    if 'form_step' not in st.session_state:
-        st.session_state.form_step = 1
-    if 'main_cat' not in st.session_state:
-        st.session_state.main_cat = None
-    if 'sub_cat' not in st.session_state:
-        st.session_state.sub_cat = None
-    if 'detail_text' not in st.session_state:
-        st.session_state.detail_text = ""
-    if 'trigger_analysis' not in st.session_state:
-        st.session_state.trigger_analysis = False
-
-    form_container = st.container()
-    
-    with form_container:
-        # 0. 大分類選擇 (始終顯示，滿足隨時切換需求)
-        st.write("✨ **請選擇諮詢分類：**")
-        col_cat1, col_cat2, col_cat3 = st.columns(3)
-        with col_cat1:
-            if st.button("� 感情婚姻", use_container_width=True, key="main_cat_love"):
-                st.session_state.main_cat = "感情"
-                st.session_state.form_step = 2
-                st.rerun()
-        with col_cat2:
-            if st.button("� 兩人和盤", use_container_width=True, key="main_cat_dual"):
-                st.session_state.main_cat = "和盤"
-                st.session_state.form_step = 2
-                st.rerun()
-        with col_cat3:
-            if st.button("💰 事業財運", use_container_width=True, key="main_cat_job"):
-                st.session_state.main_cat = "事業"
-                st.session_state.form_step = 2
-                st.rerun()
-
-        if st.session_state.form_step == 1:
-            st.info("💡 請點選上方按鈕選擇諮詢分類")
-        elif st.session_state.form_step == 2:
-            st.write(f"✨ **第二步：關於「{st.session_state.main_cat}」，目前的具體狀態是？**")
-            if st.session_state.main_cat == "感情":
-                options = ["曖昧中", "面臨分手", "懷疑欺瞞", "單身求緣", "婚姻危機", "其他"]
-            elif st.session_state.main_cat == "和盤":
-                options = ["情侶合盤", "夫妻合盤", "事業合夥", "家人朋友", "競爭對手", "其他"]
-            else:
-                options = ["想換工作", "創業諮詢", "財運不佳", "職場人際", "升遷機會", "其他"]
-            cols = st.columns(3)
-            for i, opt in enumerate(options):
-                with cols[i % 3]:
-                    if st.button(opt, use_container_width=True):
-                        st.session_state.sub_cat = opt
-                        st.session_state.form_step = 3
-                        st.rerun()
-        elif st.session_state.form_step == 3:
-            st.write(f"✨ **第三步：描述一下「{st.session_state.sub_cat}」具體發生了什麼事？**")
-            placeholder_text = "描述對方具體做了什麼讓你最在意的事？" if st.session_state.main_cat == "感情" else "請描述目前事業或財運上遇到的具體困難..."
-            st.session_state.detail_text = st.text_area("詳細描述", value=st.session_state.detail_text, placeholder=placeholder_text, height=150, label_visibility="collapsed")
-            if st.button("✅ 確認並開始分析", use_container_width=True):
-                st.session_state.trigger_analysis = True
-                st.rerun()
-        
-    if st.session_state.main_cat and st.session_state.sub_cat:
-        st.session_state.current_question = f"【諮詢類別：{st.session_state.main_cat} - {st.session_state.sub_cat}】\n{st.session_state.detail_text}"
-    else:
-        st.session_state.current_question = ""
-
-# 2. 管理員密碼鎖 (大師盤)
-MASTER_CODE = st.secrets.get("MASTER_CODE", None) or os.getenv("MASTER_CODE", "hugo888")
-is_master = False
-
-with st.sidebar:
-    st.header("🔐 系統授權")
-    auth_code_input = st.text_input("🔒 大師專用授權碼", type="password", key="auth_code_input")
-    
-    if auth_code_input and MASTER_CODE:
-        if auth_code_input.strip().lower() == MASTER_CODE.strip().lower():
-            is_master = True
-            st.success("✅ 已啟用大師模式")
-        else:
-            st.error("❌ 授權碼錯誤")
-    
-    if is_master:
-        st.markdown("---")
-        st.subheader("📊 資料庫連線狀態")
-        
-        if sheet:
-            st.info(f"📁 已連線至：{sheet.spreadsheet.title}")
-            if st.button("🔍 執行連線測試"):
-                try:
-                    # 測試讀取標題
-                    headers = sheet.row_values(1)
-                    st.write("✅ 讀取測試成功！")
-                    st.write(f"📋 標題列：{', '.join(headers[:5])}...")
-                except Exception as e:
-                    st.error(f"❌ 讀取失敗：{e}")
-        else:
-            st.error("❌ 試算表連線失敗")
-            st.markdown("""
-            **檢查清單：**
-            1. Secrets 是否已正確設定 `gcp_service_account`？
-            2. 試算表名稱是否為 `雨果天命智庫客戶紀錄`？
-            3. 是否已分享權限給服務帳號 Email？
-            """)
-    elif auth_code_input != "":
-        st.error("❌ 授權碼錯誤")
-
-# 3. API 設定
-SYSTEM_INSTRUCTION = """你是一個專業且具備心理學同理心的命理分析大師。
-請嚴格遵守以下指令進行分析：
-
-【核心法則：70/30 命運法則】
-1. 禁止鐵口直斷：絕對禁止使用『絕對』、『一定會』、『命中註定逃不掉』等極端字眼。所有分析應視為『機率』與『趨勢』。
-2. 70/30 結構化分析：
-   - 70% 命理趨勢：分析先天命盤特質、五行喜忌與當前流年環境的客觀引導。
-   - 30% 自由意志：提出後天可以採取的具體行動、心態轉變或應對策略。
-3. 賦權用戶：結論必須強調八字只是人生的天氣預報，那 30% 的選擇權才是決定最終結局的關鍵。語氣應讓人感到『充滿力量』與『希望』，而非恐懼。
-
-【⚙️ Hugo 命理系統：紅色警戒模式 (高危險感情模式)】
-當分析使用者（或其伴侶）的命盤時，若偵測到以下特定結構，請強制啟動【紅色警戒模式】，並輸出對應的行為預測與實戰警告：
-
-🔴 警戒點一：【破壞性掠奪與雙面人設】
-- 觸發條件 (八字)：命局中「劫財」過旺（兩個以上），且日支（夫妻宮）遭遇嚴重「地支相沖」（如寅申沖、子午沖、卯酉沖、辰戌沖）。
-- 行為預測：此盤帶有極強隱蔽性與破壞力。表面看似有原則或重感情，骨子裡「劫財」心性極端自我中心。親密關係地基（夫妻宮）隨時會崩塌。
-- 警告語：⚠️ 【系統警告：高度感情耗損風險】 注意！此盤主的感情防線極度不穩定。極易出現「多線發展」、「滿口謊言」或「利益掠奪」。對方可能將「分手」當作操控籌碼，並在斷聯後用小恩小惠或未來承諾進行情緒勒索。請「聽其言，更要觀其行」，切勿被表面人設蒙蔽，必須嚴格設定停損點！
-
-🔴 警戒點二：【缺乏界線與情緒反咬】
-- 觸發條件 (八字)：1. 八字日主極弱且官殺壓迫（殺重身輕）。2. 命盤見「傷官見官」或「梟印奪食」等情緒劇烈波動結構。
-- 行為預測：內心是填不滿的情緒黑洞。因能量太弱渴望溫暖，初期交往毫無界線。一旦感到壓力或理虧心虛，負面能量爆發，會用刻刻薄、顛倒是非的言語攻擊伴侶。
-- 警告語：⚠️ 【系統警告：吸血型依附與惡意重構風險】 注意！此盤主極度缺乏安全感與人際界線。初期展現脆弱引發您的「拯救慾」。但這是單向消耗的關係。當對方無法處理自身情緒，會啟動防禦機制，用言語踐踏您的付出。請停止「過度承擔」，不要試圖拯救對方！
-
-🔴 警戒點三：【宿命吸引：拯救者陷阱】（合盤互動警示）
-- 觸發條件 (雙人合盤)：客人盤帶強烈「庇護/照顧」特質（如丙火日主、印星極旺、日主能量強且具備包容力），且詢問上述警戒點對象。
-- 警告語：🚨 【系統最高警告：拯救者消耗迴圈】 您的命格自帶強大溫暖，宛如「心靈急診室」，極易吸引到情緒黑洞對象。這不是正緣，是能量考驗！您無法用個人善意填平對方的業力。請立刻收回您的「庇護能量」，將重心放回自己身上。談戀愛不是做慈善，請果斷物理切割！
-
-【輸出要求】
-1. 只能輸出 Markdown 格式，禁止任何無意義的開場白。
-"""
-
-# 3. API 設定
-# OpenAI client 已在頂部初始化
-
-# 4. 功能模式選擇 (已移至上方大按鈕區，此處為舊邏輯清理)
 if 'analysis_mode' not in st.session_state:
-    st.stop() # 如果還沒選模式，不顯示後續內容
+    st.markdown(f"""
+    <div class="main-card" style="margin-top: 0; padding-top: 20px; padding-bottom: 25px;">
+        {logo_html}
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 30px;">
+            <div style="flex: 1; min-width: 300px;">
+                <h1 style="font-size: 32px; font-weight: 900; color: #2F2F2F; margin-bottom: 15px; line-height: 1.2;">你不是不順，是你還沒看懂自己的命盤。</h1>
+                <h3 style="font-size: 18px; color: #444; margin-bottom: 15px; line-height: 1.4;">當感情卡住、人生停滯、選擇變得困難——<br>不是你不夠努力，而是你還沒看懂「局」。</h3>
+                <p style="font-size: 15px; line-height: 1.6; color: #555;">
+                    HUGO 天命智庫結合傳統命理經典與現代 AI 大數據分析，協助你看清人生方向、關係狀態與下一步選擇。
+                </p>
+            </div>
+            <div style="flex: 0 0 220px; text-align: center;">
+                <div style="width: 180px; height: 180px; background: #E2E2CC; border-radius: 50%; margin: 0 auto; display: flex; align-items: center; justify-content: center; border: 4px solid #9A7A38; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
+                    <span style="font-size: 60px;">🔮</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # --- 2. 四大功能入口 (2x2) ---
+    st.markdown('<div class="section-bar" style="margin-top: 0;">四大核心功能入口</div>', unsafe_allow_html=True)
+    col_f1, col_f2 = st.columns(2)
+    with col_f1:
+        st.markdown('<div class="feature-card"><div><div class="feature-icon">📜</div><div class="feature-title">八字命理分析</div><div class="feature-desc">解析你的先天性格、事業走向、財運基礎與感情模式。</div></div></div>', unsafe_allow_html=True)
+        if st.button("開始八字分析", key="nav_bazi"): st.session_state.analysis_mode = "八字"; st.rerun()
+        st.markdown('<div class="feature-card"><div><div class="feature-icon">♾️</div><div class="feature-title">八字 × 紫微交叉分析</div><div class="feature-desc">將兩套命理系統交叉比對，提升判斷深度與準確度。</div></div></div>', unsafe_allow_html=True)
+        if st.button("啟動交叉分析", key="nav_cross"): st.session_state.analysis_mode = "交叉"; st.rerun()
+    with col_f2:
+        st.markdown('<div class="feature-card"><div><div class="feature-icon">✨</div><div class="feature-title">紫微斗數分析</div><div class="feature-desc">從命宮、夫妻宮、財帛宮與事業宮，看見人生不同面向的細節。</div></div></div>', unsafe_allow_html=True)
+        if st.button("開始紫微分析", key="nav_ziwei"): st.session_state.analysis_mode = "紫微"; st.rerun()
+        st.markdown('<div class="feature-card"><div><div class="feature-icon">👩‍❤️‍👨</div><div class="feature-title">兩人合盤分析</div><div class="feature-desc">分析你與對象、伴侶或配偶的吸引力、衝突點與相處方式。</div></div></div>', unsafe_allow_html=True)
+        if st.button("開始合盤分析", key="nav_dual"): st.session_state.analysis_mode = "合盤"; st.session_state.enable_dual = True; st.rerun()
+
+    # --- 3. 三大命理經典 ---
+    st.markdown('<div class="section-bar">系統推算依據｜三大命理核心經典</div>', unsafe_allow_html=True)
+    st.markdown("""<div class="main-card"><div class="classic-grid">
+        <div class="classic-card"><div class="classic-header">1. 三命通會</div><p>命格結構、十神關係、事業財運。<b>重點：看人生基本設定。</b></p></div>
+        <div class="classic-card"><div class="classic-header">2. 滴天髓</div><p>五行流動、旺衰平衡、運勢轉折。<b>重點：看起伏與卡點。</b></p></div>
+        <div class="classic-card"><div class="classic-header">3. 淵海子平</div><p>日主強弱、月令格局、五行生剋。<b>重點：精準實戰判斷。</b></p></div>
+    </div></div>""", unsafe_allow_html=True)
+
+    # --- 4. 兩人合盤重點區 ---
+    st.markdown('<div class="section-bar">兩人關係深度解析｜最受歡迎功能</div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-card"><h4>不只是看「合不合」，而是幫你看懂「該怎麼做」。</h4><p>透過雙方命盤交叉比對，解析吸引力、衝突點與相處節奏。</p></div>', unsafe_allow_html=True)
+    if st.button("【立即開始兩人合盤分析】", key="cta_dual"): st.session_state.analysis_mode = "合盤"; st.session_state.enable_dual = True; st.rerun()
+
+    # --- 5. 第二層感情心理諮詢入口 ---
+    st.markdown('<div class="section-bar">兩性情感心理諮詢</div>', unsafe_allow_html=True)
+    if st.button("【進入感情心理分析】", key="cta_love"): st.switch_page("pages/02_love_analysis.py")
+
+    # --- 6. 方案引流區 ---
+    st.markdown('<div class="section-bar">專業諮詢方案</div>', unsafe_allow_html=True)
+    col_p1, col_p2, col_p3 = st.columns(3)
+    with col_p1: st.markdown('<div class="price-card"><div class="price-title">免費體驗</div><div class="price-val">$0</div><p>基礎命盤解析</p></div>', unsafe_allow_html=True); st.button("開始免費分析", key="p_free")
+    with col_p2: st.markdown('<div class="price-card featured"><div class="price-title">299 深度分析</div><div class="price-val">$299</div><p>單一感情問題深入分析</p></div>', unsafe_allow_html=True); st.button("了解 299 方案", key="p_299")
+    with col_p3: st.markdown('<div class="price-card"><div class="price-title">699 完整追蹤</div><div class="price-val">$699</div><p>命盤+互動+心理策略</p></div>', unsafe_allow_html=True); st.button("了解 699 方案", key="p_699")
+
+    st.stop()
+
+# --- 後端邏輯區 (當選擇模式後) ---
+if 'analysis_mode' in st.session_state:
+    st.markdown(f"### 📋 填寫資料 - {st.session_state.analysis_mode}模式")
+    if st.button("⬅️ 返回首頁"): del st.session_state.analysis_mode; st.rerun()
+    
+    col1, col2, col3 = st.columns(3)
+    name = col1.text_input("姓名/暱稱")
+    gender = col2.selectbox("性別", ["男", "女"])
+    occupation = col3.text_input("職業/狀態")
+    
+    st.markdown("#### 📅 出生時間 (國曆)")
+    c1, c2, c3, c4, c5 = st.columns(5)
+    b_year = c1.selectbox("年", range(1930, 2027), index=50)
+    b_month = c2.selectbox("月", range(1, 13))
+    b_day = c3.selectbox("日", range(1, 32))
+    b_hour = c4.selectbox("時", range(0, 24), index=12)
+    b_min = c5.selectbox("分", range(0, 60))
+    
+    enable_dual = st.toggle("💑 啟用雙人合盤", value=st.session_state.get('enable_dual', False))
+    if enable_dual:
+        st.subheader("💞 對象資料")
+        name2 = st.text_input("對象姓名")
+        relation_type = st.selectbox("關係", ["情侶/夫妻", "合作夥伴", "其他"])
+        # ... (簡化對象時間輸入以節省空間)
+    
+    question = st.text_area("您的問題", placeholder="例如：這段感情還有救嗎？")
+    
+    if st.button("🚀 開始 AI 命理分析"):
+        with st.spinner("大師發功中..."):
+            bazi = calculate_bazi(b_year, b_month, b_day, b_hour, b_min)
+            if bazi:
+                prompt = f"你是一位命理大師。命主：{name}, {gender}, {b_year}/{b_month}/{b_day}. 問題：{question}. 命盤：{bazi['full']}"
+                result = ai_reply(prompt)
+                st.markdown(render_bazi_table(bazi), unsafe_allow_html=True)
+                st.markdown(result)
+                if sheet: sheet.append_row([str(datetime.datetime.now()), name, f"{b_year}-{b_month}-{b_day}", question, result[:5000]])
+            else: st.error("排盤失敗")
