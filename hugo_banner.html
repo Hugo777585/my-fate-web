@@ -21,20 +21,24 @@
         }
 
         body {
+            background-color: #B3AAAA;
+            /* 統一首頁背景色 */
+            color: #2D2D2D;
             margin: 0;
             padding: 0;
-            width: 100vw;
-            height: 100vh;
-            background-color: transparent;
             font-family: 'Noto Sans TC', sans-serif;
-            overflow: hidden;
+            overflow-x: hidden;
         }
 
         #hugo-app {
             width: 100%;
-            height: 100%;
+            height: 450px;
             position: relative;
-            background-color: #f1f2f6;
+            background-color: #C9C9C2;
+            /* 橫幅容器底色 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
             overflow: hidden;
         }
 
@@ -61,7 +65,8 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
-            background-color: #ffffff;
+            background-color: #C9C9C2;
+            /* 簡報底色改為中間內容色 */
         }
 
         .slide.active {
@@ -71,7 +76,7 @@
         }
 
         .cover-slide {
-            background: linear-gradient(-45deg, #fdfbfb, #ebedee, #e0c3fc, #fdfbfb);
+            background: linear-gradient(-45deg, #B3AAAA, #C9C9C2, #E2E2CC, #B3AAAA);
             background-size: 400% 400%;
             animation: gradientBG 15s ease infinite;
         }
@@ -723,7 +728,8 @@
                             en520220@gmail.com</div>
                         <div style="font-size: 22px; color: #2d3436; font-weight: 700;"><i class="fa-brands fa-line"
                                 style="color:#00c300; width: 35px; font-size: 26px;"></i> <strong>@323ohobf</strong>
-                            <span style="font-size: 16px; color:#636e72; font-weight:400;">(HUGO天命智庫)</span></div>
+                            <span style="font-size: 16px; color:#636e72; font-weight:400;">(HUGO天命智庫)</span>
+                        </div>
                     </div>
                 </div>
             </div>
