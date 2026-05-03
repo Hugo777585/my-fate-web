@@ -63,10 +63,29 @@ if 'show_report' not in st.session_state:
     st.session_state.show_report = False
 
 # CSS 注入 (優化手機版與高級感)
-st.markdown("""
-<style>
-    .stApp { background-color: #e6e9ef; color: #2d3436; }
+st.markdown(""" 
+<style> 
+    /* 1. 底層換成溫潤沙米色，極致護眼 */ 
+    .stApp { 
+        background-color: #f0ede5; 
+        color: #3d3d3d; 
+    } 
     
+    /* 2. 側邊欄改為亞麻灰，層次分明 */ 
+    [data-testid="stSidebar"] { 
+        background-color: #e0dcd3; 
+        border-right: 1px solid #c8c2b7; 
+    } 
+
+    /* 3. 卡片區域採用淺米色，減少反光 */ 
+    div[data-testid="stVerticalBlock"] > div { 
+        background-color: #fdfcf9; 
+        padding: 20px; 
+        border-radius: 15px; 
+        box-shadow: 0 4px 12px rgba(0,0,0,0.04); 
+        margin-bottom: 15px; 
+    } 
+
     /* 頂部主視覺卡片 */
     .hero-card {
         background: linear-gradient(135deg, #fce4ec 0%, #f3e5f5 100%);
@@ -79,12 +98,6 @@ st.markdown("""
     .hero-title { color: #4a235a; font-size: 2.2em; font-weight: 800; margin-bottom: 10px; }
     .hero-subtitle { color: #6c5ce7; font-size: 1.2em; font-weight: 600; margin-bottom: 20px; }
     .hero-text { color: #2d3436; font-size: 1.1em; line-height: 1.6; max-width: 800px; margin: 0 auto; }
-
-    /* 通用卡片樣式 */
-    div[data-testid="stVerticalBlock"] > div {
-        background-color: white; padding: 20px; border-radius: 16px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px;
-    }
     
     /* 標題樣式 */
     h1, h2, h3 { color: #2d3436 !important; border-left: 6px solid #6c5ce7; padding-left: 15px; }
@@ -113,7 +126,7 @@ st.markdown("""
     
     /* 表格滑動優化 */
     .stTable { overflow-x: auto; display: block; }
-</style>
+</style> 
 """, unsafe_allow_html=True)
 
 # --- 一、頂部動態導引 (Slides) ---

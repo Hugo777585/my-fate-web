@@ -596,7 +596,7 @@ with st.container():
     if 'enable_dual_v6' not in st.session_state:
         st.session_state.enable_dual_v6 = False
     
-    enable_dual = st.toggle("💞 啟動兩人合盤模式", value=st.session_state.enable_dual_v6)
+    enable_dual = st.toggle("💑 啟用雙人合盤（感情/合夥）", value=st.session_state.enable_dual_v6)
     st.session_state.enable_dual_v6 = enable_dual
 
     # 如果啟用合盤，立刻顯示第二位對象資料
@@ -885,7 +885,6 @@ with col_btn_right:
 
                     bazi_table_html = render_bazi_table(bazi)
                     st.markdown(bazi_table_html, unsafe_allow_html=True)
-                    st.markdown("<br>", unsafe_allow_html=True)
                     
                     if is_master:
                         st.write("🔥 大師完整版分析啟動")
