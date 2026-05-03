@@ -165,7 +165,8 @@ st.markdown("""
         }
     }
 </style> 
-""",old_str:
+""", unsafe_allow_html=True)
+
 def ai_reply(prompt):
     response = client.responses.create(
         model="gpt-4.1-mini",
@@ -1102,4 +1103,3 @@ with col_btn_right:
                             st.sidebar.warning(f"⚠️ 紀錄存檔失敗：{gs_err}")
                 except Exception as e:
                     st.error(f"分析過程發生錯誤：{e}")
-ㄕㄨㄣˉㄕㄨㄣˉ
