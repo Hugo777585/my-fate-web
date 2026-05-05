@@ -319,6 +319,21 @@ if 'analysis_mode' not in st.session_state:
     </div>
     """, unsafe_allow_html=True)
 
+    with st.expander("📖 關於 HUGO 天命智庫：核心優勢與學理準則"):
+        st.markdown(""" 
+        ### 🌟 我們的優勢 
+        結合頂尖 AI 運算模型與深厚的傳統命理底蘊，剔除人為情緒干擾，提供**精準、客觀、具備商業與人生決策價值**的深度分析。 
+
+        ### 📚 核心學理依據 (三大古籍準則) 
+        本系統之演算法與判斷邏輯，皆嚴格考證自命理三大經典，拒絕毫無根據的鐵口直斷： 
+        1. **《淵海子平》**：建構八字基礎格局與日主強弱判定。 
+        2. **《三命通會》**：統攝萬物類象、神煞吉凶與流年大運之交互影響。 
+        3. **《滴天髓》**：精微解析五行生剋制化、通關調候與用神取法。 
+        
+        ### 📊 網站簡報與架構 
+        *(大師請注意：若有簡報圖片，後續可在此處放入 `st.image("簡報檔名.jpg")`)* 
+        """)
+
     # --- 2. 四大功能入口 (2x2) ---
     st.markdown('<div class="section-bar" style="margin-top: 0;">四大核心功能入口</div>', unsafe_allow_html=True)
     col_f1, col_f2 = st.columns(2)
@@ -386,14 +401,37 @@ if 'analysis_mode' in st.session_state:
     # --- 兩人合盤邏輯 ---
     name2 = ""
     relation_type = ""
-    enable_dual = st.toggle("💑 啟用雙人合盤", value=st.session_state.get('enable_dual', False))
-    if enable_dual:
-        st.subheader("💞 對象資料")
-        name2 = st.text_input("對象姓名")
-        relation_type = st.selectbox("關係", ["情侶/夫妻", "合作夥伴", "其他"])
-        # ... (簡化對象時間輸入以節省空間)
+    p_year, p_month, p_day, p_hour, p_min = 1980, 1, 1, 12, 0
+    p_gender = "女"
     
-    question = st.text_area("您的問題", placeholder="例如：這段感情還有救嗎？")
+    # 如果是合盤模式，強制開啟對象資料
+    enable_dual = False
+    if mode == "兩人合盤分析" or st.session_state.get('enable_dual', False):
+        enable_dual = True
+        st.subheader("💞 對象資料")
+        c1, c2, c3 = st.columns(3)
+        name2 = c1.text_input("對象姓名/暱稱")
+        p_gender = c2.selectbox("對象性別", ["男", "女"], key="p_gender")
+        relation_type = c3.selectbox("關係類型", ["情侶/夫妻", "合作夥伴", "暗戀/曖昧", "其他"])
+        
+        st.markdown("#### 📅 對象出生時間 (國曆)")
+        pc1, pc2, pc3, pc4, pc5 = st.columns(5)
+        p_year = pc1.selectbox("年", range(1930, 2027), index=50, key="p_year")
+        p_month = pc2.selectbox("月", range(1, 13), key="p_month")
+        p_day = pc3.selectbox("日", range(1, 32), key="p_day")
+        p_hour = pc4.selectbox("時", range(0, 24), index=12, key="p_hour")
+        p_min = pc5.selectbox("分", range(0, 60), key="p_min")
+    else:
+        enable_dual = st.toggle("💑 啟用雙人合盤", value=False)
+        if enable_dual:
+            st.subheader("💞 對象資料")
+            c1, c2, c3 = st.columns(3)
+            name2 = c1.text_input("對象姓名/暱稱")
+            p_gender = c2.selectbox("對象性別", ["男", "女"], key="p_gender_toggle")
+            relation_type = c3.selectbox("關係類型", ["情侶/夫妻", "合作夥伴", "暗戀/曖昧", "其他"])
+            # ... 簡化版
+    
+    question = st.text_area("您的問題", placeholder="例如：這段感情還有救嗎？或未來的事業發展？")
     
     if st.button("🚀 開始 AI 命理分析"):
         # 收集資料準備紀錄
@@ -410,12 +448,12 @@ if 'analysis_mode' in st.session_state:
             "question": question,
             "is_couple_mode": enable_dual,
             "partner_name": name2 if enable_dual else "",
-            "partner_gender": "未知", # 原本簡化輸入沒這欄位，補上
-            "partner_birth_year": "1980", 
-            "partner_birth_month": "1",
-            "partner_birth_day": "1",
-            "partner_birth_hour": "12",
-            "partner_birth_minute": "0"
+            "partner_gender": p_gender if enable_dual else "",
+            "partner_birth_year": p_year if enable_dual else "", 
+            "partner_birth_month": p_month if enable_dual else "",
+            "partner_birth_day": p_day if enable_dual else "",
+            "partner_birth_hour": p_hour if enable_dual else "",
+            "partner_birth_minute": p_min if enable_dual else ""
         }
         append_user_submission(submission_data)
 
@@ -430,8 +468,13 @@ if 'analysis_mode' in st.session_state:
             else:
                 # 2. 根據模式執行不同的渲染與分析
                 if mode == "紫微斗數分析":
-                    st.warning("🔮 紫微斗數分析模組建置中，請改用八字 × 紫微交叉分析或八字命理分析。")
-                    # 這裡不顯示八字盤
+                    # 移除正在建構中的訊息，改為顯示八字盤並呼叫紫微指令
+                    st.markdown("### 📜 命盤基礎資料")
+                    st.markdown(render_bazi_table(bazi), unsafe_allow_html=True)
+                    
+                    prompt = f"你是一位精通紫微斗數的大師。請針對以下命盤進行「紫微斗數深度分析」：\n姓名：{name}\n性別：{gender}\n問題：{question}\n出生時間：{b_year}/{b_month}/{b_day} {b_hour}:{b_min}\n八字數據作為參考：{bazi['full']}\n\n請依照紫微斗數的邏輯，分析命宮、夫妻宮、財帛宮與事業宮的特質與建議。"
+                    result = ai_reply(prompt, is_master=is_master)
+                    st.markdown(f'<div class="main-card">{result}</div>', unsafe_allow_html=True)
                 
                 elif mode == "八字命理分析":
                     # 顯示八字盤
@@ -447,21 +490,22 @@ if 'analysis_mode' in st.session_state:
                     st.markdown("### 📜 八字命盤基礎")
                     st.markdown(render_bazi_table(bazi), unsafe_allow_html=True)
                     
-                    st.info("💡 紫微斗數詳細星盤模組建置中，目前以「八字為主，紫微邏輯為輔」進行交叉分析。")
-                    
                     prompt = f"你是一位精通八字與紫微斗數的大師。請針對以下命盤進行「交叉比對分析」：\n姓名：{name}\n問題：{question}\n八字數據：{bazi['full']}\n\n請結合兩套系統，提供更高維度的判斷建議。"
                     result = ai_reply(prompt, is_master=is_master)
                     st.markdown(f'<div class="main-card">{result}</div>', unsafe_allow_html=True)
                 
                 elif mode == "兩人合盤分析":
                     if not enable_dual:
-                        st.error("請先在上方開啟「💑 啟用雙人合盤」並填寫對象資料。")
+                        st.error("請先在上方填寫對象資料。")
                     else:
                         # 顯示第一人八字
                         st.markdown(f"### 📜 {name} 的命盤")
                         st.markdown(render_bazi_table(bazi), unsafe_allow_html=True)
                         
-                        prompt = f"你是一位專業合盤大師。請分析 {name} 與其對象 {name2} 的關係。\n關係類型：{relation_type}\n主諮詢者八字：{bazi['full']}\n問題：{question}\n\n請分析雙方吸引力、衝突點與相處建議。"
+                        # 準備對象 Prompt
+                        partner_info = f"對象姓名：{name2}\n對象性別：{p_gender}\n對象出生：{p_year}/{p_month}/{p_day} {p_hour}:{p_min}"
+                        
+                        prompt = f"你是一位專業合盤大師。請分析 {name} 與其對象 {name2} 的關係。\n關係類型：{relation_type}\n主諮詢者資料：{bazi['full']}\n{partner_info}\n問題：{question}\n\n請分析雙方吸引力、衝突點、緣分深淺與具體的相處建議。"
                         result = ai_reply(prompt, is_master=is_master)
                         st.markdown(f'<div class="main-card">{result}</div>', unsafe_allow_html=True)
 
