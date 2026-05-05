@@ -19,6 +19,8 @@ from fpdf import FPDF
 from data_logger import log_site_visit, append_user_submission, ensure_worksheet
 
 load_dotenv()
+st.set_page_config(page_title="HUGO 天命智庫", page_icon="🔮", layout="wide")
+
 openai_key = st.secrets.get("OPENAI_API_KEY", None) or os.getenv("OPENAI_API_KEY")
 
 if not openai_key:
@@ -159,11 +161,17 @@ st.markdown("""
 </style> 
 """, unsafe_allow_html=True)
 
-def ai_reply(prompt):
+def ai_reply(prompt, is_master=False):
+    system_role = "你是一位專業命理大師。請針對命盤進行深度分析。"
+    if is_master:
+        prompt = "【大師模式：完整分析】" + prompt
     try:
         response = client.chat.completions.create(
             model="gpt-4o-mini",
-            messages=[{"role": "user", "content": prompt}]
+            messages=[
+                {"role": "system", "content": system_role},
+                {"role": "user", "content": prompt}
+            ]
         )
         return response.choices[0].message.content
     except Exception as e:
@@ -210,7 +218,7 @@ def render_bazi_table(bazi):
                 <th>四柱</th><th>天干</th><th>十神</th><th>地支</th><th>藏干</th>
             </tr>
             <tr style="background-color: {y_color};"><td>年柱</td><td>{bazi['year_tg']}</td><td>{bazi['year_ss']}</td><td>{bazi['year_dz']}</td><td>{bazi['year_hide']}</td></tr>
-            <tr style="background-color: {m_color};"><td>月柱</td><td>{bazi['month_tg']}</td><td>{bazi['month_ss']}</td><td>{bazi['year_dz']}</td><td>{bazi['month_hide']}</td></tr>
+            <tr style="background-color: {m_color};"><td>月柱</td><td>{bazi['month_tg']}</td><td>{bazi['month_ss']}</td><td>{bazi['month_dz']}</td><td>{bazi['month_hide']}</td></tr>
             <tr style="background-color: {d_color};"><td>日柱</td><td>{bazi['day_tg']}</td><td>日主</td><td>{bazi['day_dz']}</td><td>{bazi['day_hide']}</td></tr>
             <tr style="background-color: {h_color};"><td>時柱</td><td>{bazi['hour_tg']}</td><td>{bazi['hour_ss']}</td><td>{bazi['hour_dz']}</td><td>{bazi['hour_hide']}</td></tr>
         </table>
@@ -239,7 +247,30 @@ if 'session_id' not in st.session_state:
 if 'visited_pages' not in st.session_state:
     st.session_state.visited_pages = set()
 
-st.set_page_config(page_title="HUGO 天命智庫", page_icon="🔮", layout="wide")
+# --- 側邊欄 (Sidebar) ---
+with st.sidebar:
+    st.markdown("### 🔮 HUGO 天命智庫")
+    if os.path.exists("logo.JPG"):
+        st.image("logo.JPG", use_container_width=True)
+    
+    st.markdown("---")
+    # 讀取訪客人數
+    v_count = 0
+    if os.path.exists("visitor_count.txt"):
+        with open("visitor_count.txt", "r") as f:
+            try: v_count = int(f.read())
+            except: v_count = 0
+    st.metric("📊 累計解盤人數", f"{v_count} 人")
+    
+    st.markdown("---")
+    master_password = st.sidebar.text_input("🔐 系統授權 (大師專用)", type="password", key="master_pwd")
+    is_master = False
+    if master_password.strip().upper() == "HUGO888":
+        is_master = True
+        st.success("✅ 大師模式已開啟")
+    
+    st.sidebar.markdown("---")
+    st.sidebar.caption("Powered by GPT-4o & HUGO Engine")
 
 # --- 1. 頂部 Hero 區 (包含 Logo 與 標題) ---
 logo_html = ""
@@ -251,6 +282,22 @@ else:
     logo_html = '<div class="logo-box"><h1 style="color:#9A7A38; margin:0;">HUGO 天命智庫</h1></div>'
 
 if 'analysis_mode' not in st.session_state:
+    # 訪客人數 +1
+    if 'visited_home' not in st.session_state:
+        st.session_state.visited_home = True
+        try:
+            count_file = "visitor_count.txt"
+            if os.path.exists(count_file):
+                with open(count_file, "r") as f:
+                    count = int(f.read().strip())
+            else:
+                count = 1000 # 初始值
+            count += 1
+            with open(count_file, "w") as f:
+                f.write(str(count))
+        except:
+            pass
+            
     log_site_visit("home")
     st.markdown(f"""
     <div class="main-card" style="margin-top: 0; padding-top: 20px; padding-bottom: 25px;">
@@ -392,7 +439,7 @@ if 'analysis_mode' in st.session_state:
                     
                     # 呼叫 AI 分析
                     prompt = f"你是一位專業命理大師。請針對以下八字命盤進行深度分析：\n姓名：{name}\n性別：{gender}\n出生時間：{b_year}/{b_month}/{b_day} {b_hour}:{b_min}\n職業：{occupation}\n問題：{question}\n命盤數據：{bazi['full']}\n\n請分析性格、事業、財運與感情建議。"
-                    result = ai_reply(prompt)
+                    result = ai_reply(prompt, is_master=is_master)
                     st.markdown(f'<div class="main-card">{result}</div>', unsafe_allow_html=True)
                 
                 elif mode == "八字 × 紫微交叉分析":
@@ -403,7 +450,7 @@ if 'analysis_mode' in st.session_state:
                     st.info("💡 紫微斗數詳細星盤模組建置中，目前以「八字為主，紫微邏輯為輔」進行交叉分析。")
                     
                     prompt = f"你是一位精通八字與紫微斗數的大師。請針對以下命盤進行「交叉比對分析」：\n姓名：{name}\n問題：{question}\n八字數據：{bazi['full']}\n\n請結合兩套系統，提供更高維度的判斷建議。"
-                    result = ai_reply(prompt)
+                    result = ai_reply(prompt, is_master=is_master)
                     st.markdown(f'<div class="main-card">{result}</div>', unsafe_allow_html=True)
                 
                 elif mode == "兩人合盤分析":
@@ -415,6 +462,6 @@ if 'analysis_mode' in st.session_state:
                         st.markdown(render_bazi_table(bazi), unsafe_allow_html=True)
                         
                         prompt = f"你是一位專業合盤大師。請分析 {name} 與其對象 {name2} 的關係。\n關係類型：{relation_type}\n主諮詢者八字：{bazi['full']}\n問題：{question}\n\n請分析雙方吸引力、衝突點與相處建議。"
-                        result = ai_reply(prompt)
+                        result = ai_reply(prompt, is_master=is_master)
                         st.markdown(f'<div class="main-card">{result}</div>', unsafe_allow_html=True)
 
