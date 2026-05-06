@@ -240,60 +240,6 @@ diagnostic_data = {
 }
 st.table(pd.DataFrame(diagnostic_data))
 
-# --- 四、付費引流區 (中段) ---
-st.markdown("## 💎 專業顧問服務方案")
-col_p1, col_p2, col_p3 = st.columns(3)
-
-with col_p1:
-    st.markdown("""
-    <div class="pricing-card">
-        <h3>免費版</h3>
-        <p>適合初步了解目前關係狀態</p>
-        <div class="pricing-price">$0</div>
-        <p style="text-align: left; font-size: 0.9em; min-height: 120px;">
-        ・提供基礎方向判讀<br>
-        ・協助你先看懂問題大概在哪裡
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-    if st.button("我要做兩人關係解析", key="btn_free"):
-        pass
-
-with col_p2:
-    st.markdown("""
-    <div class="pricing-card" style="border-color: #6c5ce7; background-color: #F0EFFF;">
-        <div style="background: #6c5ce7; color: white; border-radius: 5px; padding: 2px 10px; display: inline-block; font-size: 0.8em; margin-bottom: 10px;">熱門推薦</div>
-        <h3>299 深度分析</h3>
-        <p>適合正在曖昧、冷戰、分手邊緣的人</p>
-        <div class="pricing-price">$299</div>
-        <p style="text-align: left; font-size: 0.9em; min-height: 120px;">
-        ・單一感情問題深入分析<br>
-        ・提供對方心態與走向判讀<br>
-        ・給予 3 種實戰行動選項<br>
-        ・包含 3 次提問 (5天內有效)
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-    if st.button("我要看對方心態", key="btn_299"):
-        pass
-
-with col_p3:
-    st.markdown("""
-    <div class="pricing-card">
-        <h3>699 完整追蹤</h3>
-        <p>適合重大感情抉擇或拉扯中</p>
-        <div class="pricing-price">$699</div>
-        <p style="text-align: left; font-size: 0.9em; min-height: 120px;">
-        ・結合命盤、互動與心理模式<br>
-        ・提供完整判斷與策略調整<br>
-        ・非一次性回答，含階段追蹤<br>
-        ・專屬策略報告
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-    if st.button("查看 299 / 699 方案", key="btn_699"):
-        pass
-
 # --- 五、表單輸入區 (心靈卡片排版) ---
 st.markdown("---")
 
