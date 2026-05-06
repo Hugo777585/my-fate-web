@@ -146,13 +146,13 @@ st.markdown("""
     .gold { color: #9A7A38; font-weight: 900; }
 
     /* --- UI 淨化：隱藏官方元素與導航 --- */
-    #MainMenu {visibility: hidden;} 
-    header {visibility: hidden;} 
-    footer {visibility: hidden;} 
-    .stAppDeployButton, .stAppShareButton, .stActionButton {display: none !important;} 
+    #MainMenu {visibility: hidden !important;} 
+    header {visibility: hidden !important;} 
+    footer {visibility: hidden !important;} 
+    .stAppDeployButton, .stAppShareButton, .stActionButton, .viewerBadge_container__1QS1n {display: none !important;} 
     [data-testid="stSidebarNav"] {display: none !important;} 
 </style> 
-""", unsafe_allow_html=True)
+""",old_str:""", unsafe_allow_html=True)
 
 def ai_reply(prompt, is_master=False):
     system_role = "你是一位專業命理大師。請針對命盤進行深度分析。"
@@ -242,7 +242,9 @@ if 'visited_pages' not in st.session_state:
 
 # --- 大師模式全域判斷 ---
 is_master = False
-if st.session_state.get("admin_gate", "").strip().upper() == st.secrets.get("MASTER_PASSWORD", "1234").upper():
+# 優先檢查網址入口與管理中心的輸入
+admin_input = st.session_state.get("admin_gate_input", "")
+if admin_input.strip().upper() == st.secrets.get("MASTER_PASSWORD", "1234").upper():
     is_master = True
 
 # --- 側邊欄 (Sidebar) ---
@@ -494,12 +496,13 @@ if 'analysis_mode' in st.session_state:
                         st.markdown(f'<div class="main-card">{result}</div>', unsafe_allow_html=True)
 
 # --- 網址隱形入口管理區 ---
+# 確保邏輯在頁面最末端執行
 if st.query_params.get("manage") == "hugo": 
     st.markdown("---") 
-    with st.expander("🔐 大師專用管理中心"): 
+    with st.expander("🔐 大師專用管理中心", expanded=True): 
         # 從 secrets.toml 讀取主密碼，若無則預設為 1234 
-        admin_key = st.text_input("請輸入授權密碼", type="password", key="admin_gate") 
-        if admin_key == st.secrets.get("MASTER_PASSWORD", "1234"): 
+        admin_key = st.text_input("請輸入授權密碼", type="password", key="admin_gate_input") 
+        if admin_key.strip().upper() == st.secrets.get("MASTER_PASSWORD", "1234").upper(): 
             st.success("身分驗證成功，管理功能已開啟。") 
             # 此處預留未來放置客戶數據或系統監控的空間 
 else: 
