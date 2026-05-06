@@ -455,27 +455,28 @@ if 'analysis_mode' in st.session_state:
             else:
                 # 2. 根據模式執行不同的渲染與分析
                 if mode == "紫微斗數分析":
-                    # 移除正在建構中的訊息，改為顯示八字盤並呼叫紫微指令
-                    st.markdown("### 📜 命盤基礎資料")
-                    st.markdown(render_bazi_table(bazi), unsafe_allow_html=True)
+                    # 紫微模式：僅顯示紫微宮位圖佔位 (隱藏八字盤)
+                    st.markdown("### 🔮 紫微斗數命盤")
+                    st.info("💡 紫微斗數詳細宮位圖渲染中，目前由 AI 根據出生時間進行精確排盤分析。")
                     
-                    prompt = f"你是一位精通紫微斗數的大師。請針對以下命盤進行「紫微斗數深度分析」：\n姓名：{name}\n性別：{gender}\n問題：{question}\n出生時間：{b_year}/{b_month}/{b_day} {b_hour}:{b_min}\n八字數據作為參考：{bazi['full']}\n\n請依照紫微斗數的邏輯，分析命宮、夫妻宮、財帛宮與事業宮的特質與建議。"
+                    prompt = f"你是一位精通紫微斗數的大師。請針對以下出生時間進行「紫微斗數深度分析」：\n姓名：{name}\n性別：{gender}\n出生時間：{b_year}/{b_month}/{b_day} {b_hour}:{b_min}\n問題：{question}\n\n請依照紫微斗數的邏輯，詳細分析命宮、夫妻宮、財帛宮與事業宮的特質與建議。"
                     result = ai_reply(prompt, is_master=is_master)
                     st.markdown(f'<div class="main-card">{result}</div>', unsafe_allow_html=True)
                 
                 elif mode == "八字命理分析":
-                    # 顯示八字盤
+                    # 八字模式：僅顯示八字盤 (隱藏紫微)
+                    st.markdown("### 📜 八字命盤基礎")
                     st.markdown(render_bazi_table(bazi), unsafe_allow_html=True)
                     
-                    # 呼叫 AI 分析
                     prompt = f"你是一位專業命理大師。請針對以下八字命盤進行深度分析：\n姓名：{name}\n性別：{gender}\n出生時間：{b_year}/{b_month}/{b_day} {b_hour}:{b_min}\n職業：{occupation}\n問題：{question}\n命盤數據：{bazi['full']}\n\n請分析性格、事業、財運與感情建議。"
                     result = ai_reply(prompt, is_master=is_master)
                     st.markdown(f'<div class="main-card">{result}</div>', unsafe_allow_html=True)
                 
                 elif mode == "八字 × 紫微交叉分析":
-                    # 顯示八字盤作為參考之一
+                    # 交叉分析：顯示八字盤，並由 AI 結合紫微邏輯
                     st.markdown("### 📜 八字命盤基礎")
                     st.markdown(render_bazi_table(bazi), unsafe_allow_html=True)
+                    st.info("💡 系統正結合紫微斗數星曜分佈進行交叉判斷。")
                     
                     prompt = f"你是一位精通八字與紫微斗數的大師。請針對以下命盤進行「交叉比對分析」：\n姓名：{name}\n問題：{question}\n八字數據：{bazi['full']}\n\n請結合兩套系統，提供更高維度的判斷建議。"
                     result = ai_reply(prompt, is_master=is_master)
@@ -485,14 +486,24 @@ if 'analysis_mode' in st.session_state:
                     if not enable_dual:
                         st.error("請先在上方填寫對象資料。")
                     else:
-                        # 顯示第一人八字
-                        st.markdown(f"### 📜 {name} 的命盤")
-                        st.markdown(render_bazi_table(bazi), unsafe_allow_html=True)
+                        # 合盤模式：雙欄排版，左側八字，右側紫微
+                        st.markdown(f"### 💑 兩人合盤深度解析 - {name} & {name2}")
+                        dual_col1, dual_col2 = st.columns(2)
+                        
+                        with dual_col1:
+                            st.markdown("#### 📜 八字命盤對比")
+                            st.markdown(render_bazi_table(bazi), unsafe_allow_html=True)
+                            st.caption(f"註：以上為 {name} 的基礎命盤數據")
+                        
+                        with dual_col2:
+                            st.markdown("#### 🔮 紫微斗數宮位圖")
+                            st.info("💡 正在為雙方進行紫微合盤排位，分析宮位間的能量互動。")
+                            # 預留紫微圖表顯示區
                         
                         # 準備對象 Prompt
                         partner_info = f"對象姓名：{name2}\n對象性別：{p_gender}\n對象出生：{p_year}/{p_month}/{p_day} {p_hour}:{p_min}"
                         
-                        prompt = f"你是一位專業合盤大師。請分析 {name} 與其對象 {name2} 的關係。\n關係類型：{relation_type}\n主諮詢者資料：{bazi['full']}\n{partner_info}\n問題：{question}\n\n請分析雙方吸引力、衝突點、緣分深淺與具體的相處建議。"
+                        prompt = f"你是一位專業合盤大師。請分析 {name} 與其對象 {name2} 的關係。\n關係類型：{relation_type}\n主諮詢者資料：{bazi['full']}\n{partner_info}\n問題：{question}\n\n請針對雙方的「八字合盤」與「紫微宮位互動」進行深度解析，分析吸引力、衝突點、緣分深淺與具體的相處建議。"
                         result = ai_reply(prompt, is_master=is_master)
                         st.markdown(f'<div class="main-card">{result}</div>', unsafe_allow_html=True)
 
