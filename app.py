@@ -152,7 +152,7 @@ st.markdown("""
     .stAppDeployButton, .stAppShareButton, .stActionButton, .viewerBadge_container__1QS1n {display: none !important;} 
     [data-testid="stSidebarNav"] {display: none !important;} 
 </style> 
-""",old_str:""", unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
 def ai_reply(prompt, is_master=False):
     system_role = "你是一位專業命理大師。請針對命盤進行深度分析。"
