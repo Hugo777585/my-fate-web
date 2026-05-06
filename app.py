@@ -254,6 +254,11 @@ if 'session_id' not in st.session_state:
 if 'visited_pages' not in st.session_state:
     st.session_state.visited_pages = set()
 
+# --- 大師模式全域判斷 ---
+is_master = False
+if st.session_state.get("master_pwd_bottom", "").strip().upper() == st.secrets.get("MASTER_PASSWORD", "HUGO888").upper():
+    is_master = True
+
 # --- 側邊欄 (Sidebar) ---
 with st.sidebar:
     st.markdown("### 🔮 HUGO 天命智庫")
@@ -271,14 +276,6 @@ with st.sidebar:
     
     st.sidebar.markdown("---")
     st.sidebar.caption("Powered by GPT-4o & HUGO Engine")
-    
-    # --- 大師隱形入口 (Invisible Entry) ---
-    # 使用空字串作為 label，隱藏在側邊欄最底部
-    master_password = st.sidebar.text_input("", type="password", key="master_pwd", placeholder="授權碼...")
-    is_master = False
-    if master_password.strip().upper() == "HUGO888":
-        is_master = True
-        st.sidebar.success("✅ Master Mode Active")
 
 # --- 1. 頂部 Hero 區 (包含 Logo 與 標題) ---
 logo_html = ""
@@ -516,4 +513,12 @@ if 'analysis_mode' in st.session_state:
                         prompt = f"你是一位專業合盤大師。請分析 {name} 與其對象 {name2} 的關係。\n關係類型：{relation_type}\n主諮詢者資料：{bazi['full']}\n{partner_info}\n問題：{question}\n\n請分析雙方吸引力、衝突點、緣分深淺與具體的相處建議。"
                         result = ai_reply(prompt, is_master=is_master)
                         st.markdown(f'<div class="main-card">{result}</div>', unsafe_allow_html=True)
+
+# --- 大師管理專區 (位於頁面底部) ---
+st.markdown("---") # 分隔線 
+with st.expander("⚙️ 系統管理"): 
+    master_pwd_input = st.text_input("🔑 授權密碼", type="password", key="master_pwd_bottom") 
+    if master_pwd_input.strip().upper() == st.secrets.get("MASTER_PASSWORD", "HUGO888").upper(): 
+        st.success("✅ 大師模式已開啟")
+        # 這裡可以放之後想看到的後台數據或客人名單
 
