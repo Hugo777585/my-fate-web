@@ -133,20 +133,6 @@ st.markdown("""
         transform: translateY(-2px) !important;
     }
 
-    /* 7. 方案卡片 */
-    .price-card {
-        background-color: #FDFCF9;
-        padding: 30px;
-        border-radius: 22px;
-        text-align: center;
-        border: 2px solid #E2E2CC;
-        transition: all 0.3s ease;
-        height: 100%;
-    }
-    .price-card.featured { border-color: #9A7A38; background-color: #ECECD8; }
-    .price-title { font-size: 24px; font-weight: 900; color: #2F2F2F; }
-    .price-val { font-size: 38px; font-weight: 900; color: #9A7A38; margin: 20px 0; }
-
     /* 8. LOGO 控制 */
     .logo-box { text-align: center; margin-bottom: 25px; }
     .logo-img { max-width: 180px; height: auto; }
@@ -369,13 +355,6 @@ if 'analysis_mode' not in st.session_state:
     # --- 5. 第二層感情心理諮詢入口 ---
     st.markdown('<div class="section-bar">兩性情感心理諮詢</div>', unsafe_allow_html=True)
     if st.button("【進入感情心理分析】", key="cta_love"): st.switch_page("pages/02_love_analysis.py")
-
-    # --- 6. 方案引流區 ---
-    st.markdown('<div class="section-bar">專業諮詢方案</div>', unsafe_allow_html=True)
-    col_p1, col_p2, col_p3 = st.columns(3)
-    with col_p1: st.markdown('<div class="price-card"><div class="price-title">免費體驗</div><div class="price-val">$0</div><p>基礎命盤解析</p></div>', unsafe_allow_html=True); st.button("開始免費分析", key="p_free")
-    with col_p2: st.markdown('<div class="price-card featured"><div class="price-title">299 深度分析</div><div class="price-val">$299</div><p>單一感情問題深入分析</p></div>', unsafe_allow_html=True); st.button("了解 299 方案", key="p_299")
-    with col_p3: st.markdown('<div class="price-card"><div class="price-title">699 完整追蹤</div><div class="price-val">$699</div><p>命盤+互動+心理策略</p></div>', unsafe_allow_html=True); st.button("了解 699 方案", key="p_699")
 
     st.stop()
 
