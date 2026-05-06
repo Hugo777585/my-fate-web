@@ -171,7 +171,8 @@ def ai_reply(prompt, is_master=False):
         return f"AI 連線失敗：{str(e)}"
 
 def ai_love_consult_reply(context_prompt, is_master=False):
-    system_role = """你是一位結合命理分析、感情心理諮詢與關係策略的顧問。請用沉穩、理性、具同理心的方式分析。"""
+    # 使用標準半形符號重新定義 system_role
+    system_role = "你是一位結合命理分析、感情心理諮詢與關係策略的顧問。請用沉穩、理性、具同理心的方式分析。"
     if is_master:
         permission_instruction = "【大師模式：完整分析】"
     else:
