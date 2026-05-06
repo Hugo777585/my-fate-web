@@ -256,7 +256,7 @@ if 'visited_pages' not in st.session_state:
 
 # --- 大師模式全域判斷 ---
 is_master = False
-if st.session_state.get("master_pwd_bottom", "").strip().upper() == st.secrets.get("MASTER_PASSWORD", "HUGO888").upper():
+if st.session_state.get("admin_gate", "").strip().upper() == st.secrets.get("MASTER_PASSWORD", "1234").upper():
     is_master = True
 
 # --- 側邊欄 (Sidebar) ---
@@ -514,11 +514,16 @@ if 'analysis_mode' in st.session_state:
                         result = ai_reply(prompt, is_master=is_master)
                         st.markdown(f'<div class="main-card">{result}</div>', unsafe_allow_html=True)
 
-# --- 大師管理專區 (位於頁面底部) ---
-st.markdown("---") # 分隔線 
-with st.expander("⚙️ 系統管理"): 
-    master_pwd_input = st.text_input("🔑 授權密碼", type="password", key="master_pwd_bottom") 
-    if master_pwd_input.strip().upper() == st.secrets.get("MASTER_PASSWORD", "HUGO888").upper(): 
-        st.success("✅ 大師模式已開啟")
-        # 這裡可以放之後想看到的後台數據或客人名單
+# --- 網址隱形入口管理區 ---
+if st.query_params.get("manage") == "hugo": 
+    st.markdown("---") 
+    with st.expander("🔐 大師專用管理中心"): 
+        # 從 secrets.toml 讀取主密碼，若無則預設為 1234 
+        admin_key = st.text_input("請輸入授權密碼", type="password", key="admin_gate") 
+        if admin_key == st.secrets.get("MASTER_PASSWORD", "1234"): 
+            st.success("身分驗證成功，管理功能已開啟。") 
+            # 此處預留未來放置客戶數據或系統監控的空間 
+else: 
+    # 一般客人進來完全看不到任何管理痕跡 
+    pass
 
