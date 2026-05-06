@@ -158,6 +158,13 @@ st.markdown("""
 
     /* 金色重點 */
     .gold { color: #9A7A38; font-weight: 900; }
+
+    /* --- UI 淨化：隱藏官方元素與導航 --- */
+    #MainMenu {visibility: hidden;} 
+    header {visibility: hidden;} 
+    footer {visibility: hidden;} 
+    .stAppDeployButton, .stAppShareButton, .stActionButton {display: none !important;} 
+    [data-testid="stSidebarNav"] {display: none !important;} 
 </style> 
 """, unsafe_allow_html=True)
 
@@ -262,15 +269,16 @@ with st.sidebar:
             except: v_count = 0
     st.metric("📊 累計解盤人數", f"{v_count} 人")
     
-    st.markdown("---")
-    master_password = st.sidebar.text_input("🔐 系統授權 (大師專用)", type="password", key="master_pwd")
+    st.sidebar.markdown("---")
+    st.sidebar.caption("Powered by GPT-4o & HUGO Engine")
+    
+    # --- 大師隱形入口 (Invisible Entry) ---
+    # 使用空字串作為 label，隱藏在側邊欄最底部
+    master_password = st.sidebar.text_input("", type="password", key="master_pwd", placeholder="授權碼...")
     is_master = False
     if master_password.strip().upper() == "HUGO888":
         is_master = True
-        st.success("✅ 大師模式已開啟")
-    
-    st.sidebar.markdown("---")
-    st.sidebar.caption("Powered by GPT-4o & HUGO Engine")
+        st.sidebar.success("✅ Master Mode Active")
 
 # --- 1. 頂部 Hero 區 (包含 Logo 與 標題) ---
 logo_html = ""
