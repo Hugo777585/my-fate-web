@@ -349,6 +349,24 @@ def calculate_bazi(y, m, d, h, minute):
     except Exception as e:
         return None
 
+def render_partner_input():
+    """封裝對象資料輸入介面"""
+    st.subheader("💞 對象資料")
+    c1, c2, c3 = st.columns(3)
+    name2 = c1.text_input("對象姓名/暱稱", key="p_name")
+    p_gender = c2.selectbox("對象性別", ["男", "女"], key="p_gender")
+    relation_type = c3.selectbox("關係類型", ["情侶/夫妻", "合作夥伴", "暗戀/曖昧", "其他"], key="p_relation")
+    
+    st.markdown("#### 📅 對象出生時間 (國曆)")
+    pc1, pc2, pc3, pc4, pc5 = st.columns(5)
+    p_year = pc1.selectbox("年", range(1930, 2027), index=50, key="p_year")
+    p_month = pc2.selectbox("月", range(1, 13), key="p_month")
+    p_day = pc3.selectbox("日", range(1, 32), key="p_day")
+    p_hour = pc4.selectbox("時", range(0, 24), index=12, key="p_hour")
+    p_min = pc5.selectbox("分", range(0, 60), key="p_min")
+    
+    return name2, p_gender, relation_type, p_year, p_month, p_day, p_hour, p_min
+
 # --- 初始化 Session State ---
 if 'session_id' not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
@@ -505,32 +523,17 @@ if 'analysis_mode' in st.session_state:
     p_year, p_month, p_day, p_hour, p_min = 1980, 1, 1, 12, 0
     p_gender = "女"
     
-    # 如果是合盤模式，強制開啟對象資料
+    # 判斷是否為合盤模式
+    is_couple_mode = (mode == "兩人合盤分析" or st.session_state.get('enable_dual', False))
+    
     enable_dual = False
-    if mode == "兩人合盤分析" or st.session_state.get('enable_dual', False):
+    if is_couple_mode:
         enable_dual = True
-        st.subheader("💞 對象資料")
-        c1, c2, c3 = st.columns(3)
-        name2 = c1.text_input("對象姓名/暱稱")
-        p_gender = c2.selectbox("對象性別", ["男", "女"], key="p_gender")
-        relation_type = c3.selectbox("關係類型", ["情侶/夫妻", "合作夥伴", "暗戀/曖昧", "其他"])
-        
-        st.markdown("#### 📅 對象出生時間 (國曆)")
-        pc1, pc2, pc3, pc4, pc5 = st.columns(5)
-        p_year = pc1.selectbox("年", range(1930, 2027), index=50, key="p_year")
-        p_month = pc2.selectbox("月", range(1, 13), key="p_month")
-        p_day = pc3.selectbox("日", range(1, 32), key="p_day")
-        p_hour = pc4.selectbox("時", range(0, 24), index=12, key="p_hour")
-        p_min = pc5.selectbox("分", range(0, 60), key="p_min")
+        name2, p_gender, relation_type, p_year, p_month, p_day, p_hour, p_min = render_partner_input()
     else:
         enable_dual = st.toggle("💑 啟用雙人合盤", value=False)
         if enable_dual:
-            st.subheader("💞 對象資料")
-            c1, c2, c3 = st.columns(3)
-            name2 = c1.text_input("對象姓名/暱稱")
-            p_gender = c2.selectbox("對象性別", ["男", "女"], key="p_gender_toggle")
-            relation_type = c3.selectbox("關係類型", ["情侶/夫妻", "合作夥伴", "暗戀/曖昧", "其他"])
-            # ... 簡化版
+            name2, p_gender, relation_type, p_year, p_month, p_day, p_hour, p_min = render_partner_input()
     
     question = st.text_area("您的問題", placeholder="例如：這段感情還有救嗎？或未來的事業發展？")
     
