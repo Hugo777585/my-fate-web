@@ -37,11 +37,11 @@ client = OpenAI(api_key=openai_api_key)
 # --- Hugo 大師專屬：專業命理顧問感樣式 --- 
 st.markdown(""" 
 <style> 
-    /* 1. 全局背景色：#FDFCF9 (高級米白) */ 
+    /* 1. 全局背景色：#F0F2F6 (淡淡灰白色質感) */ 
     .stApp { 
-        background-color: #FDFCF9; 
-        color: #3E3A39; 
-        font-family: 'Noto Serif TC', serif;
+        background-color: #F0F2F6; 
+        color: #2D2D2D; 
+        font-family: 'Noto Sans TC', sans-serif;
     } 
 
     /* 隱藏預設元素與多餘白條 */
@@ -52,95 +52,112 @@ st.markdown("""
         max-width: 1200px;
     } 
     
-    /* 2. 主內容卡片：皇家典藏白 */
-    .main-card {
-        background-color: #FFFFFF;
-        padding: 40px;
-        border-radius: 25px;
-        box-shadow: 0 15px 50px rgba(154, 122, 56, 0.1);
-        margin-bottom: 35px;
-        border: 1px solid #E2E2CC;
-    }
-
-    /* 3. 區塊橫桿：典雅金色 #9A7A38 */
-    .section-bar {
-        background-color: #F4F4ED;
-        padding: 18px 30px;
-        border-radius: 20px;
+    /* 2. 皇家級主標題設計：深紫色色調 */
+    .royal-title {
+        color: #4B0082;
+        font-size: 42px;
         font-weight: 900;
-        font-size: 26px;
-        color: #9A7A38;
-        margin: 45px 0 30px 0;
-        border-left: 12px solid #9A7A38;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.03);
+        text-align: center;
+        margin-bottom: 10px;
+        text-shadow: 2px 2px 4px rgba(75, 0, 130, 0.1);
         letter-spacing: 2px;
     }
+    .royal-subtitle {
+        color: #673AB7;
+        font-size: 20px;
+        text-align: center;
+        margin-bottom: 40px;
+        font-style: italic;
+    }
 
-    /* 4. 功能卡片：皇家對齊感 */
+    /* 3. 重塑高級卡片 (Premium Panel)：五星級質感 */
+    .premium-panel {
+        background-color: #FFFFFF;
+        padding: 35px;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        margin-bottom: 30px;
+        border: 1px solid #E0E0E0;
+        transition: transform 0.3s ease;
+    }
+    .premium-panel:hover {
+        box-shadow: 0 15px 45px rgba(103, 58, 183, 0.12);
+    }
+
+    /* 4. 側邊欄美化 */
+    [data-testid="stSidebar"] {
+        background-color: #FFFFFF;
+        border-right: 1px solid #E0E0E0;
+    }
+    [data-testid="stSidebar"] .stMarkdown h3 {
+        color: #4B0082;
+        border-bottom: 2px solid #673AB7;
+        padding-bottom: 10px;
+    }
+
+    /* 5. 功能入口橫桿：深紫色漸層 */
+    .section-bar {
+        background: linear-gradient(90deg, #4B0082, #673AB7);
+        padding: 15px 25px;
+        border-radius: 15px;
+        font-weight: 900;
+        font-size: 22px;
+        color: white;
+        margin: 40px 0 25px 0;
+        box-shadow: 0 4px 15px rgba(75, 0, 130, 0.2);
+    }
+
+    /* 6. 功能卡片：響應式堆疊設計 */
     .feature-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 25px;
-        margin-bottom: 35px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        margin-bottom: 30px;
     }
     .feature-card {
         background-color: #FFFFFF;
-        border-radius: 25px;
-        padding: 35px;
+        border-radius: 20px;
+        padding: 30px;
         text-align: center;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-        transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-        border: 1px solid #F4F4ED;
-        height: 100%;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+        border: 1px solid #F0F0F0;
+        flex: 1 1 calc(50% - 20px);
+        min-width: 300px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
     }
+    @media (max-width: 768px) {
+        .feature-card { flex: 1 1 100%; }
+        .royal-title { font-size: 32px; }
+    }
     .feature-card:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 20px 45px rgba(154, 122, 56, 0.12);
-        border-color: #9A7A38;
+        transform: translateY(-5px);
+        border-color: #673AB7;
+        box-shadow: 0 12px 35px rgba(103, 58, 183, 0.15);
     }
-    .feature-icon { font-size: 50px; margin-bottom: 20px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1)); }
-    .feature-title { font-size: 26px; font-weight: 900; color: #3E3A39; margin-bottom: 15px; letter-spacing: 1px; }
-    .feature-desc { font-size: 17px; color: #666; line-height: 1.8; margin-bottom: 30px; }
+    .feature-icon { font-size: 45px; margin-bottom: 15px; }
+    .feature-title { font-size: 24px; font-weight: 900; color: #4B0082; margin-bottom: 12px; }
+    .feature-desc { font-size: 16px; color: #666; line-height: 1.6; margin-bottom: 25px; }
 
-    /* 5. 三大經典卡片：精緻感 */
-    .classic-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-        gap: 25px;
-    }
-    .classic-card {
-        background-color: #FFFFFF;
-        padding: 30px;
-        border-radius: 22px;
-        border: 1px solid #F4F4ED;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.03);
-        transition: all 0.3s ease;
-    }
-    .classic-card:hover { border-color: #9A7A38; }
-    .classic-header { color: #9A7A38; font-weight: 900; font-size: 21px; margin-bottom: 15px; border-bottom: 1px solid #F4F4ED; padding-bottom: 10px; }
-    .classic-point { background: #F4F4ED; color: #9A7A38; padding: 6px 15px; border-radius: 10px; font-weight: 800; display: inline-block; margin-top: 15px; }
-
-    /* 6. 按鈕樣式：尊榮感金色 */
+    /* 7. 按鈕樣式：深紫色質感 */
     .stButton > button {
-        height: 56px !important;
-        border-radius: 18px !important;
+        height: 54px !important;
+        border-radius: 12px !important;
         font-weight: 900 !important;
-        font-size: 19px !important;
-        background: linear-gradient(135deg, #9A7A38, #B38E45) !important;
+        font-size: 18px !important;
+        background-color: #673AB7 !important;
         color: white !important;
         border: none !important;
-        box-shadow: 0 8px 20px rgba(154, 122, 56, 0.25) !important;
-        transition: all 0.4s ease !important;
+        box-shadow: 0 5px 15px rgba(103, 58, 183, 0.3) !important;
+        transition: all 0.3s ease !important;
         width: 100% !important;
-        letter-spacing: 2px;
     }
     .stButton > button:hover {
-        background: linear-gradient(135deg, #B38E45, #9A7A38) !important;
-        box-shadow: 0 12px 30px rgba(154, 122, 56, 0.35) !important;
-        transform: translateY(-3px) !important;
+        background-color: #4B0082 !important;
+        box-shadow: 0 8px 25px rgba(75, 0, 130, 0.4) !important;
+        transform: translateY(-2px) !important;
     }
 
     /* 8. LOGO 控制 */
@@ -372,6 +389,23 @@ def render_partner_input():
     
     return name2, p_gender, relation_type, p_year, p_month, p_day, p_hour, p_min
 
+# --- GCP Service Account 讀取接口 (預留對接 Google Sheets) ---
+def get_gcp_credentials():
+    """
+    從 st.secrets 讀取 GCP Service Account 資訊。
+    確保在 Streamlit Cloud Secrets 中設定了 [GCP_SERVICE_ACCOUNT]
+    """
+    try:
+        if "GCP_SERVICE_ACCOUNT" in st.secrets:
+            info = dict(st.secrets["GCP_SERVICE_ACCOUNT"])
+            if "private_key" in info:
+                info["private_key"] = info["private_key"].replace("\\n", "\n")
+            return info
+        return None
+    except Exception as e:
+        print(f"GCP 憑證讀取錯誤: {e}")
+        return None
+
 # --- 初始化 Session State ---
 if 'session_id' not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
@@ -430,19 +464,21 @@ if 'analysis_mode' not in st.session_state:
             pass
             
     log_site_visit("home")
+    st.markdown('<div class="royal-title">🌌 HUGO 天命智庫</div>', unsafe_allow_html=True)
+    st.markdown('<div class="royal-subtitle">跨越時空的共振，為您指點命運的迷津。</div>', unsafe_allow_html=True)
+
     st.markdown(f"""
-    <div class="main-card" style="margin-top: 0; padding-top: 20px; padding-bottom: 25px;">
-        {logo_html}
+    <div class="premium-panel">
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 30px;">
             <div style="flex: 1; min-width: 300px;">
-                <h1 style="font-size: 32px; font-weight: 900; color: #2F2F2F; margin-bottom: 15px; line-height: 1.2;">你不是不順，是你還沒看懂自己的命盤。</h1>
-                <h3 style="font-size: 18px; color: #444; margin-bottom: 15px; line-height: 1.4;">當感情卡住、人生停滯、選擇變得困難——<br>不是你不夠努力，而是你還沒看懂「局」。</h3>
-                <p style="font-size: 15px; line-height: 1.6; color: #555;">
+                <h1 style="font-size: 32px; font-weight: 900; color: #4B0082; margin-bottom: 15px; line-height: 1.2;">你不是不順，是你還沒看懂自己的命盤。</h1>
+                <h3 style="font-size: 18px; color: #673AB7; margin-bottom: 15px; line-height: 1.4;">當感情卡住、人生停滯、選擇變得困難——<br>不是你不夠努力，而是你還沒看懂「局」。</h3>
+                <p style="font-size: 16px; line-height: 1.8; color: #555;">
                     HUGO 天命智庫結合傳統命理經典與現代 AI 大數據分析，協助你看清人生方向、關係狀態與下一步選擇。
                 </p>
             </div>
             <div style="flex: 0 0 220px; text-align: center;">
-                <div style="width: 180px; height: 180px; background: #E2E2CC; border-radius: 50%; margin: 0 auto; display: flex; align-items: center; justify-content: center; border: 4px solid #9A7A38; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
+                <div style="width: 180px; height: 180px; background: #F3E5F5; border-radius: 50%; margin: 0 auto; display: flex; align-items: center; justify-content: center; border: 4px solid #673AB7; box-shadow: 0 10px 25px rgba(103,58,183,0.2);">
                     <span style="font-size: 60px;">🔮</span>
                 </div>
             </div>
@@ -452,32 +488,59 @@ if 'analysis_mode' not in st.session_state:
 
     with st.expander("📖 關於 HUGO 天命智庫：核心優勢與學理準則"):
         st.markdown(""" 
-        ### 🌟 我們的優勢 
-        結合頂尖 AI 運算模型與深厚的傳統命理底蘊，剔除人為情緒干擾，提供**精準、客觀、具備商業與人生決策價值**的深度分析。 
-
-        ### 📚 核心學理依據 (三大古籍準則) 
-        本系統之演算法與判斷邏輯，皆嚴格考證自命理三大經典，拒絕毫無根據的鐵口直斷： 
-        1. **《淵海子平》**：建構八字基礎格局與日主強弱判定。 
-        2. **《三命通會》**：統攝萬物類象、神煞吉凶與流年大運之交互影響。 
-        3. **《滴天髓》**：精微解析五行生剋制化、通關調候與用神取法。 
-        
-        ### 📊 網站簡報與架構 
-        *(大師請注意：若有簡報圖片，後續可在此處放入 `st.image("簡報檔名.jpg")`)* 
-        """)
+        <div class="classic-grid">
+            <div class="classic-card">
+                <div class="classic-header">🌟 我們的優勢</div>
+                <p style="font-size: 15px; color: #555;">結合頂尖 AI 運算模型與深厚的傳統命理底蘊，剔除人為情緒干擾，提供精準、客觀、具備商業與人生決策價值的深度分析。</p>
+            </div>
+            <div class="classic-card">
+                <div class="classic-header">📚 核心學理依據</div>
+                <p style="font-size: 14px; color: #666; line-height: 1.6;">
+                1. <b>《淵海子平》</b>：建構八字基礎格局與日主強弱判定。<br>
+                2. <b>《三命通會》</b>：統攝萬物類象、神煞吉凶與交互影響。<br>
+                3. <b>《滴天髓》</b>：精微解析五行生剋、通關調候與用神。
+                </p>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
     # --- 2. 四大功能入口 (2x2) ---
-    st.markdown('<div class="section-bar" style="margin-top: 0;">四大核心功能入口</div>', unsafe_allow_html=True)
-    col_f1, col_f2 = st.columns(2)
-    with col_f1:
-        st.markdown('<div class="feature-card"><div><div class="feature-icon">📜</div><div class="feature-title">八字命理分析</div><div class="feature-desc">解析你的先天性格、事業走向、財運基礎與感情模式。</div></div></div>', unsafe_allow_html=True)
-        if st.button("開始八字分析", key="nav_bazi"): st.session_state.analysis_mode = "八字命理分析"; st.rerun()
-        st.markdown('<div class="feature-card"><div><div class="feature-icon">♾️</div><div class="feature-title">八字 × 紫微交叉分析</div><div class="feature-desc">將兩套命理系統交叉比對，提升判斷深度與準確度。</div></div></div>', unsafe_allow_html=True)
-        if st.button("啟動交叉分析", key="nav_cross"): st.session_state.analysis_mode = "八字 × 紫微交叉分析"; st.rerun()
-    with col_f2:
-        st.markdown('<div class="feature-card"><div><div class="feature-icon">✨</div><div class="feature-title">紫微斗數分析</div><div class="feature-desc">從命宮、夫妻宮、財帛宮與事業宮，看見人生不同面向的細節。</div></div></div>', unsafe_allow_html=True)
-        if st.button("開始紫微分析", key="nav_ziwei"): st.session_state.analysis_mode = "紫微斗數分析"; st.rerun()
-        st.markdown('<div class="feature-card"><div><div class="feature-icon">👩‍❤️‍👨</div><div class="feature-title">兩人合盤分析</div><div class="feature-desc">分析你與對象、伴侶或配偶的吸引力、衝突點與相處方式。</div></div></div>', unsafe_allow_html=True)
-        if st.button("開始合盤分析", key="nav_dual"): st.session_state.analysis_mode = "兩人合盤分析"; st.session_state.enable_dual = True; st.rerun()
+    st.markdown('<div class="section-bar">🔮 選擇您的命運分析入口</div>', unsafe_allow_html=True)
+    
+    st.markdown("""
+    <div class="feature-grid">
+        <div class="feature-card">
+            <div class="feature-icon">📜</div>
+            <div class="feature-title">八字命理分析</div>
+            <p class="feature-desc">透過您的出生年月日時，解析五行強弱、格局用神，洞悉性格特質與人生大運趨勢。</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔮</div>
+            <div class="feature-title">紫微斗數分析</div>
+            <p class="feature-desc">排定十二宮位，由 AI 深度解析您的本命格局、宮位吉凶與 14 主星的交互影響。</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">💑</div>
+            <div class="feature-title">兩人合盤深度解析</div>
+            <p class="feature-desc">結合雙方命盤，分析情感共振、性格衝突與緣分深淺，提供精確的關係相處策略。</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🧠</div>
+            <div class="feature-title">兩性情感心理諮詢</div>
+            <p class="feature-desc">跳脫命盤，針對目前的互動狀況進行心理判讀，為您指點情感迷津與行為建議。</p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    col_cta1, col_cta2 = st.columns(2)
+    with col_cta1:
+        if st.button("🚀 開始我的命盤分析", key="cta_main"):
+            st.session_state.analysis_mode = "八字命理分析"
+            st.rerun()
+    with col_cta2:
+        if st.button("💑 進行兩人合盤解析", key="cta_couple"):
+            st.session_state.analysis_mode = "兩人合盤分析"
+            st.rerun()
 
     # --- 3. 三大命理經典 ---
     st.markdown('<div class="section-bar">系統推算依據｜三大命理核心經典</div>', unsafe_allow_html=True)
