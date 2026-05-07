@@ -37,11 +37,11 @@ client = OpenAI(api_key=openai_api_key)
 # --- Hugo 大師專屬：專業命理顧問感樣式 --- 
 st.markdown(""" 
 <style> 
-    /* 1. 全局背景色：#B3AAAA */ 
+    /* 1. 全局背景色：#FDFCF9 (高級米白) */ 
     .stApp { 
-        background-color: #B3AAAA; 
-        color: #2F2F2F; 
-        font-family: 'Noto Sans TC', sans-serif;
+        background-color: #FDFCF9; 
+        color: #3E3A39; 
+        font-family: 'Noto Serif TC', serif;
     } 
 
     /* 隱藏預設元素與多餘白條 */
@@ -49,93 +49,98 @@ st.markdown("""
     .block-container { 
         padding-top: 2rem; 
         padding-bottom: 2rem; 
-        max-width: 1100px;
+        max-width: 1200px;
     } 
     
-    /* 2. 主內容卡片背景：#C9C9C2 */
+    /* 2. 主內容卡片：皇家典藏白 */
     .main-card {
-        background-color: #C9C9C2;
-        padding: 35px;
-        border-radius: 22px;
-        box-shadow: 0 12px 40px rgba(0,0,0,0.15);
-        margin-bottom: 30px;
-        border: 1px solid rgba(0,0,0,0.05);
+        background-color: #FFFFFF;
+        padding: 40px;
+        border-radius: 25px;
+        box-shadow: 0 15px 50px rgba(154, 122, 56, 0.1);
+        margin-bottom: 35px;
+        border: 1px solid #E2E2CC;
     }
 
-    /* 3. 區塊橫桿 / 標題區背景：#E2E2CC */
+    /* 3. 區塊橫桿：典雅金色 #9A7A38 */
     .section-bar {
-        background-color: #E2E2CC;
-        padding: 15px 25px;
-        border-radius: 18px;
+        background-color: #F4F4ED;
+        padding: 18px 30px;
+        border-radius: 20px;
         font-weight: 900;
-        font-size: 24px;
-        color: #2F2F2F;
-        margin: 40px 0 25px 0;
-        border-left: 10px solid #9A7A38;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        font-size: 26px;
+        color: #9A7A38;
+        margin: 45px 0 30px 0;
+        border-left: 12px solid #9A7A38;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.03);
+        letter-spacing: 2px;
     }
 
-    /* 4. 2x2 功能大卡片 */
+    /* 4. 功能卡片：皇家對齊感 */
     .feature-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 20px;
-        margin-bottom: 30px;
+        gap: 25px;
+        margin-bottom: 35px;
     }
     .feature-card {
-        background-color: #E2E2CC;
-        border-radius: 20px;
-        padding: 30px;
+        background-color: #FFFFFF;
+        border-radius: 25px;
+        padding: 35px;
         text-align: center;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-        transition: all 0.3s ease;
-        border: 1px solid rgba(154, 122, 56, 0.2);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        border: 1px solid #F4F4ED;
         height: 100%;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
     }
     .feature-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+        transform: translateY(-8px);
+        box-shadow: 0 20px 45px rgba(154, 122, 56, 0.12);
+        border-color: #9A7A38;
     }
-    .feature-icon { font-size: 45px; margin-bottom: 15px; }
-    .feature-title { font-size: 24px; font-weight: 900; color: #2F2F2F; margin-bottom: 12px; }
-    .feature-desc { font-size: 16px; color: #444; line-height: 1.6; margin-bottom: 25px; }
+    .feature-icon { font-size: 50px; margin-bottom: 20px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1)); }
+    .feature-title { font-size: 26px; font-weight: 900; color: #3E3A39; margin-bottom: 15px; letter-spacing: 1px; }
+    .feature-desc { font-size: 17px; color: #666; line-height: 1.8; margin-bottom: 30px; }
 
-    /* 5. 三大經典卡片 */
+    /* 5. 三大經典卡片：精緻感 */
     .classic-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 20px;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 25px;
     }
     .classic-card {
-        background-color: #F4F4ED;
-        padding: 25px;
-        border-radius: 18px;
-        border: 1px solid #E2E2CC;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        background-color: #FFFFFF;
+        padding: 30px;
+        border-radius: 22px;
+        border: 1px solid #F4F4ED;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.03);
+        transition: all 0.3s ease;
     }
-    .classic-header { color: #9A7A38; font-weight: 900; font-size: 19px; margin-bottom: 10px; }
-    .classic-point { background: #E2E2CC; padding: 5px 12px; border-radius: 8px; font-weight: 700; display: inline-block; margin-top: 10px; }
+    .classic-card:hover { border-color: #9A7A38; }
+    .classic-header { color: #9A7A38; font-weight: 900; font-size: 21px; margin-bottom: 15px; border-bottom: 1px solid #F4F4ED; padding-bottom: 10px; }
+    .classic-point { background: #F4F4ED; color: #9A7A38; padding: 6px 15px; border-radius: 10px; font-weight: 800; display: inline-block; margin-top: 15px; }
 
-    /* 6. 按鈕樣式：高度 48px+，重點金色 #9A7A38 */
+    /* 6. 按鈕樣式：尊榮感金色 */
     .stButton > button {
-        height: 52px !important;
-        border-radius: 15px !important;
+        height: 56px !important;
+        border-radius: 18px !important;
         font-weight: 900 !important;
-        font-size: 18px !important;
-        background-color: #9A7A38 !important;
+        font-size: 19px !important;
+        background: linear-gradient(135deg, #9A7A38, #B38E45) !important;
         color: white !important;
         border: none !important;
-        box-shadow: 0 6px 15px rgba(154, 122, 56, 0.3) !important;
-        transition: all 0.3s ease !important;
+        box-shadow: 0 8px 20px rgba(154, 122, 56, 0.25) !important;
+        transition: all 0.4s ease !important;
         width: 100% !important;
+        letter-spacing: 2px;
     }
     .stButton > button:hover {
-        background-color: #B38E45 !important;
-        box-shadow: 0 10px 25px rgba(154, 122, 56, 0.4) !important;
-        transform: translateY(-2px) !important;
+        background: linear-gradient(135deg, #B38E45, #9A7A38) !important;
+        box-shadow: 0 12px 30px rgba(154, 122, 56, 0.35) !important;
+        transform: translateY(-3px) !important;
     }
 
     /* 8. LOGO 控制 */

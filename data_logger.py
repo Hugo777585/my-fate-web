@@ -12,8 +12,14 @@ def get_gsheet_client():
         scopes = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
         
         # 支援 Streamlit Cloud Secrets 與 local secrets.toml
-        if "gcp_service_account" in st.secrets:
+        # 優先讀取大師指定的 [GCP_SERVICE_ACCOUNT]
+        service_account_info = None
+        if "GCP_SERVICE_ACCOUNT" in st.secrets:
+            service_account_info = dict(st.secrets["GCP_SERVICE_ACCOUNT"])
+        elif "gcp_service_account" in st.secrets:
             service_account_info = dict(st.secrets["gcp_service_account"])
+            
+        if service_account_info:
             if "private_key" in service_account_info:
                 service_account_info["private_key"] = service_account_info["private_key"].replace("\\n", "\n")
             
