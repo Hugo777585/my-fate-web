@@ -11,6 +11,7 @@ import csv
 import base64
 import hashlib
 import uuid
+from ziwei_engine_v2 import calculate_ziwei
 from dotenv import load_dotenv
 from google.oauth2.service_account import Credentials
 from lunar_python import Lunar, Solar
@@ -145,6 +146,67 @@ st.markdown("""
     /* 金色重點 */
     .gold { color: #9A7A38; font-weight: 900; }
 
+    /* --- 紫微斗數 4x4 星盤樣式 --- */
+    .ziwei-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        grid-template-rows: repeat(4, 1fr);
+        gap: 5px;
+        width: 100%;
+        max-width: 800px;
+        aspect-ratio: 1 / 1;
+        margin: 20px auto;
+        background-color: #2F2F2F;
+        border: 2px solid #9A7A38;
+        padding: 5px;
+    }
+    .ziwei-cell {
+        background-color: #F4F4ED;
+        border: 1px solid #9A7A38;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        font-size: 14px;
+        position: relative;
+    }
+    .ziwei-center {
+        grid-column: 2 / 4;
+        grid-row: 2 / 4;
+        background-color: #E2E2CC;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        padding: 20px;
+        font-weight: 900;
+        color: #9A7A38;
+    }
+    .palace-name {
+        position: absolute;
+        bottom: 5px;
+        right: 5px;
+        font-weight: 900;
+        color: #9A7A38;
+        font-size: 16px;
+    }
+    .dz-name {
+        position: absolute;
+        bottom: 5px;
+        left: 5px;
+        color: #666;
+        font-size: 12px;
+    }
+    .star-list {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        color: #E74C3C;
+        font-weight: 800;
+        font-size: 15px;
+    }
+
     /* --- UI 淨化：隱藏官方元素與導航 --- */
     #MainMenu {visibility: hidden !important;} 
     header {visibility: hidden !important;} 
@@ -153,6 +215,48 @@ st.markdown("""
     [data-testid="stSidebarNav"] {display: none !important;} 
 </style> 
 """, unsafe_allow_html=True)
+
+def render_ziwei_chart(ziwei_data):
+    if not ziwei_data: return ""
+    
+    palaces = ziwei_data["palaces"]
+    # 紫微 4x4 宮位順序 (地支對應 Grid 位置)
+    # 巳(1,1) 午(1,2) 未(1,3) 申(1,4)
+    # 辰(2,1)           酉(2,4)
+    # 卯(3,1)           戌(3,4)
+    # 寅(4,1) 丑(4,2) 子(4,3) 亥(4,4)
+    
+    grid_map = {
+        "巳": "grid-area: 1 / 1;", "午": "grid-area: 1 / 2;", "未": "grid-area: 1 / 3;", "申": "grid-area: 1 / 4;",
+        "辰": "grid-area: 2 / 1;", "酉": "grid-area: 2 / 4;",
+        "卯": "grid-area: 3 / 1;", "戌": "grid-area: 3 / 4;",
+        "寅": "grid-area: 4 / 1;", "丑": "grid-area: 4 / 2;", "子": "grid-area: 4 / 3;", "亥": "grid-area: 4 / 4;"
+    }
+    
+    cells_html = ""
+    for dz, pos in grid_map.items():
+        p_info = palaces.get(dz, {"name": "", "stars": []})
+        stars_html = "".join([f"<span>{s}</span>" for s in p_info["stars"]])
+        cells_html += f"""
+        <div class="ziwei-cell" style="{pos}">
+            <div class="star-list">{stars_html}</div>
+            <div class="dz-name">{dz}</div>
+            <div class="palace-name">{p_info["name"]}</div>
+        </div>
+        """
+        
+    info = ziwei_data["basic_info"]
+    center_html = f"""
+    <div class="ziwei-center">
+        <div style="font-size: 20px; margin-bottom: 10px;">HUGO 天命智庫</div>
+        <div style="font-size: 16px; color: #2F2F2F;">
+            {info['year']}年 {info['month']}月 {info['day']}日<br>
+            {info['hour']}時生
+        </div>
+    </div>
+    """
+    
+    return f'<div class="ziwei-grid">{cells_html}{center_html}</div>'
 
 def ai_reply(prompt, is_master=False):
     system_role = "你是一位專業命理大師。請針對命盤進行深度分析。"
@@ -455,12 +559,28 @@ if 'analysis_mode' in st.session_state:
             else:
                 # 2. 根據模式執行不同的渲染與分析
                 if mode == "紫微斗數分析":
-                    # 紫微模式：僅顯示紫微宮位圖佔位 (隱藏八字盤)
+                    # 紫微模式：顯示 4x4 星盤
+                    ziwei_data = calculate_ziwei(b_year, b_month, b_day, b_hour)
                     st.markdown("### 🔮 紫微斗數命盤")
-                    st.info("💡 紫微斗數詳細宮位圖渲染中，目前由 AI 根據出生時間進行精確排盤分析。")
+                    st.markdown(render_ziwei_chart(ziwei_data), unsafe_allow_html=True)
                     
-                    prompt = f"你是一位精通紫微斗數的大師。請針對以下出生時間進行「紫微斗數深度分析」：\n姓名：{name}\n性別：{gender}\n出生時間：{b_year}/{b_month}/{b_day} {b_hour}:{b_min}\n問題：{question}\n\n請依照紫微斗數的邏輯，詳細分析命宮、夫妻宮、財帛宮與事業宮的特質與建議。"
-                    result = ai_reply(prompt, is_master=is_master)
+                    # 專屬紫微 System Prompt
+                    ziwei_system_role = "你是一位精通紫微斗數的大師。請嚴格遵守紫微斗數的邏輯（星曜、宮位、四化）來解盤，絕對禁止混入八字術語（如：十神、日主、五行強弱）。"
+                    
+                    prompt = f"請針對以下紫微斗數命盤數據進行深度分析：\nJSON數據：{json.dumps(ziwei_data, ensure_ascii=False)}\n用戶問題：{question}\n\n請詳細分析命宮、夫妻宮、財帛宮與事業宮的特質，並針對用戶問題給予具體建議。"
+                    
+                    try:
+                        response = client.chat.completions.create(
+                            model="gpt-4o-mini",
+                            messages=[
+                                {"role": "system", "content": ziwei_system_role},
+                                {"role": "user", "content": prompt}
+                            ]
+                        )
+                        result = response.choices[0].message.content
+                    except Exception as e:
+                        result = f"AI 紫微分析失敗：{str(e)}"
+                        
                     st.markdown(f'<div class="main-card">{result}</div>', unsafe_allow_html=True)
                 
                 elif mode == "八字命理分析":
@@ -497,13 +617,13 @@ if 'analysis_mode' in st.session_state:
                         
                         with dual_col2:
                             st.markdown("#### 🔮 紫微斗數宮位圖")
-                            st.info("💡 正在為雙方進行紫微合盤排位，分析宮位間的能量互動。")
-                            # 預留紫微圖表顯示區
+                            ziwei_data = calculate_ziwei(b_year, b_month, b_day, b_hour)
+                            st.markdown(render_ziwei_chart(ziwei_data), unsafe_allow_html=True)
                         
                         # 準備對象 Prompt
                         partner_info = f"對象姓名：{name2}\n對象性別：{p_gender}\n對象出生：{p_year}/{p_month}/{p_day} {p_hour}:{p_min}"
                         
-                        prompt = f"你是一位專業合盤大師。請分析 {name} 與其對象 {name2} 的關係。\n關係類型：{relation_type}\n主諮詢者資料：{bazi['full']}\n{partner_info}\n問題：{question}\n\n請針對雙方的「八字合盤」與「紫微宮位互動」進行深度解析，分析吸引力、衝突點、緣分深淺與具體的相處建議。"
+                        prompt = f"你是一位專業合盤大師。請分析 {name} 與其對象 {name2} 的關係。\n關係類型：{relation_type}\n主諮詢者資料：八字({bazi['full']}), 紫微({json.dumps(ziwei_data, ensure_ascii=False)})\n{partner_info}\n問題：{question}\n\n請針對雙方的「八字合盤」與「紫微宮位互動」進行深度解析，分析吸引力、衝突點、緣分深淺與具體的相處建議。"
                         result = ai_reply(prompt, is_master=is_master)
                         st.markdown(f'<div class="main-card">{result}</div>', unsafe_allow_html=True)
 
