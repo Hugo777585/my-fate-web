@@ -156,70 +156,87 @@ st.markdown("""
     .gold { color: #9A7A38; font-weight: 900; }
 
     /* --- 紫微斗數 4x4 星盤樣式 --- */
+    .ziwei-container {
+        width: 100%;
+        overflow-x: auto;
+        padding: 10px 0;
+        display: flex;
+        justify-content: center;
+    }
     .ziwei-grid {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
         grid-template-rows: repeat(4, 1fr);
-        gap: 5px;
+        gap: 4px;
         width: 100%;
-        max-width: 800px;
+        max-width: 600px; /* 縮小最大寬度以適應更多螢幕 */
         aspect-ratio: 1 / 1;
-        margin: 20px auto;
         background-color: #2F2F2F;
         border: 2px solid #9A7A38;
-        padding: 5px;
+        padding: 4px;
+        box-sizing: border-box;
     }
     .ziwei-cell {
         background-color: #FDFCF9;
         border: 1px solid #9A7A38;
-        padding: 8px;
+        padding: 4px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
         position: relative;
-        box-shadow: inset 0 0 10px rgba(154, 122, 56, 0.05);
+        box-shadow: inset 0 0 5px rgba(154, 122, 56, 0.05);
+        box-sizing: border-box;
+        overflow: hidden;
     }
     .ziwei-center {
         grid-column: 2 / 4;
         grid-row: 2 / 4;
         background-color: #F4F4ED;
         background-image: radial-gradient(circle, #E2E2CC 1px, transparent 1px);
-        background-size: 20px 20px;
+        background-size: 15px 15px;
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
         text-align: center;
-        padding: 20px;
+        padding: 10px;
         font-weight: 900;
         color: #9A7A38;
         border: 2px solid #9A7A38;
+        box-sizing: border-box;
     }
     .palace-name {
         position: absolute;
-        bottom: 5px;
-        right: 8px;
+        bottom: 2px;
+        right: 4px;
         font-weight: 900;
         color: #9A7A38;
-        font-size: 17px;
-        letter-spacing: 1px;
+        font-size: 13px;
+        letter-spacing: 0.5px;
     }
     .dz-name {
         position: absolute;
-        bottom: 5px;
-        left: 8px;
+        bottom: 2px;
+        left: 4px;
         color: #888;
-        font-size: 13px;
+        font-size: 10px;
         font-family: serif;
     }
     .star-list {
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: 2px;
         color: #C0392B;
         font-weight: 900;
-        font-size: 16px;
-        line-height: 1.2;
+        font-size: 12px;
+        line-height: 1.1;
+    }
+    
+    @media (max-width: 480px) {
+        .palace-name { font-size: 11px; }
+        .star-list { font-size: 10px; }
+        .ziwei-center { padding: 5px; }
+        .ziwei-center div { font-size: 12px !important; }
     }
 
     /* --- UI 淨化：隱藏官方元素與導航 --- */
@@ -263,15 +280,15 @@ def render_ziwei_chart(ziwei_data):
     info = ziwei_data["basic_info"]
     center_html = f"""
     <div class="ziwei-center">
-        <div style="font-size: 20px; margin-bottom: 10px;">HUGO 天命智庫</div>
-        <div style="font-size: 16px; color: #2F2F2F;">
+        <div style="font-size: 18px; margin-bottom: 5px;">HUGO 天命智庫</div>
+        <div style="font-size: 14px; color: #2F2F2F; line-height: 1.4;">
             {info['year']}年 {info['month']}月 {info['day']}日<br>
             {info['hour']}時生
         </div>
     </div>
     """
     
-    return f'<div class="ziwei-grid">{cells_html}{center_html}</div>'
+    return f'<div class="ziwei-container"><div class="ziwei-grid">{cells_html}{center_html}</div></div>'
 
 def ai_reply(prompt, is_master=False):
     system_role = "你是一位專業命理大師。請針對命盤進行深度分析。"
