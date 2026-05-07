@@ -543,31 +543,41 @@ if 'analysis_mode' in st.session_state:
     question = st.text_area("您的問題", placeholder="例如：這段感情還有救嗎？或未來的事業發展？")
     
     if st.button("🚀 開始 AI 命理分析"):
-        # 收集資料準備紀錄
-        submission_data = {
-            "user_name": name,
-            "gender": gender,
-            "job_status": occupation,
-            "birth_year": b_year,
-            "birth_month": b_month,
-            "birth_day": b_day,
-            "birth_hour": b_hour,
-            "birth_minute": b_min,
-            "analysis_mode": mode,
-            "question": question,
-            "is_couple_mode": enable_dual,
-            "partner_name": name2 if enable_dual else "",
-            "partner_gender": p_gender if enable_dual else "",
-            "partner_birth_year": p_year if enable_dual else "", 
-            "partner_birth_month": p_month if enable_dual else "",
-            "partner_birth_day": p_day if enable_dual else "",
-            "partner_birth_hour": p_hour if enable_dual else "",
-            "partner_birth_minute": p_min if enable_dual else ""
-        }
-        append_user_submission(submission_data)
+        # 防錯機制：檢查必要欄位
+        if not name:
+            st.error("請輸入您的姓名/暱稱。")
+        elif enable_dual and not name2:
+            st.error("請輸入對象的姓名/暱稱。")
+        elif not question:
+            st.warning("建議輸入具體問題，大師能為您提供更精確的指引。")
+            # 即使沒填問題也允許分析，但給予警告
+        
+        if name and (not enable_dual or name2):
+            # 收集資料準備紀錄
+            submission_data = {
+                "user_name": name,
+                "gender": gender,
+                "job_status": occupation,
+                "birth_year": b_year,
+                "birth_month": b_month,
+                "birth_day": b_day,
+                "birth_hour": b_hour,
+                "birth_minute": b_min,
+                "analysis_mode": mode,
+                "question": question,
+                "is_couple_mode": enable_dual,
+                "partner_name": name2 if enable_dual else "",
+                "partner_gender": p_gender if enable_dual else "",
+                "partner_birth_year": p_year if enable_dual else "", 
+                "partner_birth_month": p_month if enable_dual else "",
+                "partner_birth_day": p_day if enable_dual else "",
+                "partner_birth_hour": p_hour if enable_dual else "",
+                "partner_birth_minute": p_min if enable_dual else ""
+            }
+            append_user_submission(submission_data)
 
-        with st.spinner("大師發功中..."):
-            mode = st.session_state.analysis_mode
+            with st.spinner("🔮 大師正在觀星測算中..."):
+                mode = st.session_state.analysis_mode
             
             # 1. 基礎資料準備
             bazi = calculate_bazi(b_year, b_month, b_day, b_hour, b_min)
