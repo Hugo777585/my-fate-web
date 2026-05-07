@@ -22,13 +22,13 @@ from data_logger import log_site_visit, append_user_submission, ensure_worksheet
 load_dotenv()
 st.set_page_config(page_title="HUGO 天命智庫", page_icon="🔮", layout="wide")
 
-openai_key = st.secrets.get("OPENAI_API_KEY", None) or os.getenv("OPENAI_API_KEY")
+if "OPENAI_API_KEY" not in st.secrets: 
+    st.error("尚未設定 OPENAI_API_KEY，請先到 Streamlit Cloud Secrets 加入金鑰。") 
+    st.stop() 
 
-if not openai_key:
-    st.error("尚未設定 OPENAI_API_KEY，請先到 Streamlit Cloud Secrets 加入金鑰。")
-    st.stop()
+openai_api_key = st.secrets["OPENAI_API_KEY"]
 
-client = OpenAI(api_key=openai_key)
+client = OpenAI(api_key=openai_api_key)
 
 # --- Hugo 大師專屬：專業命理顧問感樣式 --- 
 st.markdown(""" 
