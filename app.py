@@ -11,7 +11,7 @@ import csv
 import base64
 import hashlib
 import uuid
-from ziwei_engine_v2 import calculate_ziwei
+from ziwei_engine import calculate_ziwei
 from dotenv import load_dotenv
 from google.oauth2.service_account import Credentials
 from lunar_python import Lunar, Solar
@@ -161,19 +161,21 @@ st.markdown("""
         padding: 5px;
     }
     .ziwei-cell {
-        background-color: #F4F4ED;
+        background-color: #FDFCF9;
         border: 1px solid #9A7A38;
-        padding: 10px;
+        padding: 8px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        font-size: 14px;
         position: relative;
+        box-shadow: inset 0 0 10px rgba(154, 122, 56, 0.05);
     }
     .ziwei-center {
         grid-column: 2 / 4;
         grid-row: 2 / 4;
-        background-color: #E2E2CC;
+        background-color: #F4F4ED;
+        background-image: radial-gradient(circle, #E2E2CC 1px, transparent 1px);
+        background-size: 20px 20px;
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -182,29 +184,33 @@ st.markdown("""
         padding: 20px;
         font-weight: 900;
         color: #9A7A38;
+        border: 2px solid #9A7A38;
     }
     .palace-name {
         position: absolute;
         bottom: 5px;
-        right: 5px;
+        right: 8px;
         font-weight: 900;
         color: #9A7A38;
-        font-size: 16px;
+        font-size: 17px;
+        letter-spacing: 1px;
     }
     .dz-name {
         position: absolute;
         bottom: 5px;
-        left: 5px;
-        color: #666;
-        font-size: 12px;
+        left: 8px;
+        color: #888;
+        font-size: 13px;
+        font-family: serif;
     }
     .star-list {
         display: flex;
         flex-direction: column;
-        gap: 2px;
-        color: #E74C3C;
-        font-weight: 800;
-        font-size: 15px;
+        gap: 4px;
+        color: #C0392B;
+        font-weight: 900;
+        font-size: 16px;
+        line-height: 1.2;
     }
 
     /* --- UI 淨化：隱藏官方元素與導航 --- */
