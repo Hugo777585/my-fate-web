@@ -1,6 +1,7 @@
 import streamlit as st
 import streamlit.components.v1 as components
 from openai import OpenAI
+import google.generativeai as genai
 import datetime
 import time
 import os
@@ -33,6 +34,13 @@ if not openai_api_key:
     st.stop()
 
 client = OpenAI(api_key=openai_api_key)
+
+# --- 抓取 Google API 金鑰 ---
+google_api_key = st.secrets.get("GOOGLE_API_KEY") or os.getenv("GOOGLE_API_KEY")
+if not google_api_key:
+    st.error("尚未設定 GOOGLE_API_KEY，請先到 Streamlit Cloud Secrets 加入金鑰。")
+    st.stop()
+genai.configure(api_key=google_api_key)
 
 # --- Hugo 大師專屬：專業命理顧問感樣式 --- 
 st.markdown(""" 
@@ -289,18 +297,13 @@ def render_ziwei_chart(ziwei_data):
     return f'{ziwei_css}<div class="ziwei-container"><div class="ziwei-grid">{cells_html}{center_html}</div></div>'
 
 def ai_reply(prompt, is_master=False):
-    system_role = "你是一位專業命理大師。請針對命盤進行深度分析。"
+    system_role = "你是一位精通《淵海子平》、《三命通會》與《滴天髓》的命理大師 Hugo。語氣沉穩、睿智，必須深入探討干支生剋與格局，拒絕罐頭回覆。"
     if is_master:
-        prompt = "【大師模式：完整分析】" + prompt
+        prompt = "【大師模式：性格、事業、財運、感情這四個面向，每個面向必須產出至少 250 字的深度論述】" + prompt
     try:
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": system_role},
-                {"role": "user", "content": prompt}
-            ]
-        )
-        return response.choices[0].message.content
+        model = genai.GenerativeModel('gemini-3.1-pro-latest', system_instruction=system_role)
+        response = model.generate_content(prompt)
+        return response.text
     except Exception as e:
         return f"AI 連線失敗：{str(e)}"
 
