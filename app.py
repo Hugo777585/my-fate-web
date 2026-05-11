@@ -176,8 +176,9 @@ st.markdown("""
 </style> 
 """, unsafe_allow_html=True)
 
-def render_ziwei_chart(ziwei_data):
-    if not ziwei_data: return ""
+def render_ziwei_chart(ziwei_data, user_info=None):
+    if not ziwei_data or 'palaces' not in ziwei_data:
+        return ""
     
     # 將 CSS 樣式直接包裹在函數內，確保渲染時能正確加載
     ziwei_css = """
@@ -340,13 +341,17 @@ def render_ziwei_chart(ziwei_data):
         """
         
     info = ziwei_data["basic_info"]
+    user_name = user_info.get('name', '').strip() if user_info else ''
+    user_gender = user_info.get('gender', '').strip() if user_info else ''
+    center_title = user_name if user_name else 'HUGO 天命智庫'
+    gender_label = f"{user_gender} | " if user_gender else ''
+    birth_line = f"{info['year']}年 {info['month']}月 {info['day']}日 {info['hour']}時生"
     center_html = f"""
     <div class="ziwei-center">
         <div class="ziwei-center-content">
-            <div class="ziwei-center-title">HUGO 天命智庫</div>
+            <div class="ziwei-center-title">{center_title}</div>
             <div class="ziwei-center-meta">
-                {info['year']}年 {info['month']}月 {info['day']}日<br>
-                {info['hour']}時生
+                {gender_label}{birth_line}
             </div>
         </div>
     </div>
@@ -370,15 +375,35 @@ def render_ziwei_chart(ziwei_data):
     )
     return sanitized_html
 
+
+def generate_content_with_retry(model, contents, config=None, max_retries=1):
+    attempt = 0
+    while True:
+        try:
+            return genai_client.models.generate_content(
+                model=model,
+                contents=contents,
+                config=config
+            )
+        except Exception as e:
+            status_code = getattr(e, 'status_code', None)
+            error_text = str(e)
+            if attempt < max_retries and (status_code == 503 or '503' in error_text or 'ServiceUnavailable' in error_text):
+                attempt += 1
+                time.sleep(1)
+                continue
+            raise
+
 def ai_reply(prompt, is_master=False):
     system_role = "你是一位精通《淵海子平》、《三命通會》與《滴天髓》的命理大師 Hugo。語氣沉穩、睿智，必須深入探討干支生剋與格局，拒絕罐頭回覆。你必須具備時效性，能看清當下的歲運流轉。"
     if is_master:
         prompt = "【大師模式：性格、事業、財運、感情這四個面向，每個面向必須產出至少 250 字的深度論述】" + prompt
     try:
-        response = genai_client.models.generate_content(
+        response = generate_content_with_retry(
             model='gemini-flash-latest',
             contents=prompt,
-            config=types.GenerateContentConfig(system_instruction=system_role)
+            config=types.GenerateContentConfig(system_instruction=system_role),
+            max_retries=1
         )
         return response.text
     except Exception as e:
@@ -685,12 +710,12 @@ if 'analysis_mode' in st.session_state:
                     # 紫微模式：顯示 4x4 星盤
                     ziwei_data = calculate_ziwei(b_year, b_month, b_day, b_hour)
                     st.markdown("### 🔮 紫微斗數命盤")
-                    ziwei_html = render_ziwei_chart(ziwei_data)
+                    ziwei_html = render_ziwei_chart(ziwei_data, user_info={'name': name, 'gender': gender})
                     clean_html = ziwei_html.replace('```html', '').replace('```', '').strip()
                     components.html(clean_html, height=1000, scrolling=True)
                     
-                    # 專屬紫微 System Prompt
-                    ziwei_system_role = "你是一位精通紫微斗數的大師。請嚴格遵守紫微斗數的邏輯（星曜、宮位、四化）來解盤，絕對禁止混入八字術語（如：十神、日主、五行強弱）。"
+                    # 專屬紫微 System Prompt - 命盤已預先計算完成
+                    ziwei_system_role = "你是一位精通紫微斗數的大師。命盤已經使用公式精準計算完成，請不要重新計算，直接針對以下數據進行大師級解析。請嚴格遵守紫微斗數的邏輯（星曜、宮位、四化）來解盤，絕對禁止混入八字術語（如：十神、日主、五行強弱）。"
                     
                     prompt = f"{year_context}\n\n請針對以下紫微斗數命盤數據進行深度分析：\nJSON數據：{json.dumps(ziwei_data, ensure_ascii=False)}\n用戶問題：{question}\n\n請詳細分析命宮、夫妻宮、財帛宮與事業宮的特質，並針對用戶問題給予具體建議。"
                     
@@ -741,7 +766,7 @@ if 'analysis_mode' in st.session_state:
                         with dual_col2:
                             st.markdown("#### 🔮 紫微斗數宮位圖")
                             ziwei_data = calculate_ziwei(b_year, b_month, b_day, b_hour)
-                            ziwei_html = render_ziwei_chart(ziwei_data)
+                            ziwei_html = render_ziwei_chart(ziwei_data, user_info={'name': name, 'gender': gender})
                             clean_html = ziwei_html.replace('```html', '').replace('```', '').strip()
                             components.html(clean_html, height=1000, scrolling=True)
                         
