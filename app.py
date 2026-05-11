@@ -21,6 +21,8 @@ from fpdf import FPDF
 from data_logger import log_site_visit, append_user_submission, ensure_worksheet
 
 load_dotenv()
+today = datetime.date.today()
+year_context = f"今天是 {today}。請務必針對目前的 2026 丙午年以及未來的 2027 丁未年進行深度流年分析，絕對不要分析已經過去的 2024 或 2025 年。"
 st.set_page_config(page_title="HUGO 天命智庫", page_icon="🔮", layout="wide")
 
 # --- 抓取 OpenAI 金鑰 ---
@@ -298,7 +300,7 @@ def render_ziwei_chart(ziwei_data):
     return f'{ziwei_css}<div class="ziwei-container"><div class="ziwei-grid">{cells_html}{center_html}</div></div>'
 
 def ai_reply(prompt, is_master=False):
-    system_role = "你是一位精通《淵海子平》、《三命通會》與《滴天髓》的命理大師 Hugo。語氣沉穩、睿智，必須深入探討干支生剋與格局，拒絕罐頭回覆。"
+    system_role = "你是一位精通《淵海子平》、《三命通會》與《滴天髓》的命理大師 Hugo。語氣沉穩、睿智，必須深入探討干支生剋與格局，拒絕罐頭回覆。你必須具備時效性，能看清當下的歲運流轉。"
     if is_master:
         prompt = "【大師模式：性格、事業、財運、感情這四個面向，每個面向必須產出至少 250 字的深度論述】" + prompt
     try:
@@ -317,7 +319,7 @@ def ai_love_consult_reply(context_prompt, is_master=False):
         permission_instruction = "【大師模式：完整分析】"
     else:
         permission_instruction = "【一般模式：初步引導】"
-    full_prompt = f"{system_role}\n\n{context_prompt}\n{permission_instruction}"
+    full_prompt = f"{system_role}\n\n{year_context}\n\n{context_prompt}\n{permission_instruction}"
     try:
         response = client.chat.completions.create(
             model="gpt-4o-mini",
@@ -616,7 +618,7 @@ if 'analysis_mode' in st.session_state:
                     # 專屬紫微 System Prompt
                     ziwei_system_role = "你是一位精通紫微斗數的大師。請嚴格遵守紫微斗數的邏輯（星曜、宮位、四化）來解盤，絕對禁止混入八字術語（如：十神、日主、五行強弱）。"
                     
-                    prompt = f"請針對以下紫微斗數命盤數據進行深度分析：\nJSON數據：{json.dumps(ziwei_data, ensure_ascii=False)}\n用戶問題：{question}\n\n請詳細分析命宮、夫妻宮、財帛宮與事業宮的特質，並針對用戶問題給予具體建議。"
+                    prompt = f"{year_context}\n\n請針對以下紫微斗數命盤數據進行深度分析：\nJSON數據：{json.dumps(ziwei_data, ensure_ascii=False)}\n用戶問題：{question}\n\n請詳細分析命宮、夫妻宮、財帛宮與事業宮的特質，並針對用戶問題給予具體建議。"
                     
                     try:
                         response = client.chat.completions.create(
@@ -637,7 +639,7 @@ if 'analysis_mode' in st.session_state:
                     st.markdown("### 📜 八字命盤基礎")
                     st.markdown(render_bazi_table(bazi), unsafe_allow_html=True)
                     
-                    prompt = f"你是一位專業命理大師。請針對以下八字命盤進行深度分析：\n姓名：{name}\n性別：{gender}\n出生時間：{b_year}/{b_month}/{b_day} {b_hour}:{b_min}\n職業：{occupation}\n問題：{question}\n命盤數據：{bazi['full']}\n\n請分析性格、事業、財運與感情建議。"
+                    prompt = f"{year_context}\n\n你是一位專業命理大師。請針對以下八字命盤進行深度分析：\n姓名：{name}\n性別：{gender}\n出生時間：{b_year}/{b_month}/{b_day} {b_hour}:{b_min}\n職業：{occupation}\n問題：{question}\n命盤數據：{bazi['full']}\n\n請分析性格、事業、財運與感情建議。"
                     result = ai_reply(prompt, is_master=is_master)
                     st.markdown(f'<div class="main-card">{result}</div>', unsafe_allow_html=True)
                 
@@ -647,7 +649,7 @@ if 'analysis_mode' in st.session_state:
                     st.markdown(render_bazi_table(bazi), unsafe_allow_html=True)
                     st.info("💡 系統正結合紫微斗數星曜分佈進行交叉判斷。")
                     
-                    prompt = f"你是一位精通八字與紫微斗數的大師。請針對以下命盤進行「交叉比對分析」：\n姓名：{name}\n問題：{question}\n八字數據：{bazi['full']}\n\n請結合兩套系統，提供更高維度的判斷建議。"
+                    prompt = f"{year_context}\n\n你是一位精通八字與紫微斗數的大師。請針對以下命盤進行「交叉比對分析」：\n姓名：{name}\n問題：{question}\n八字數據：{bazi['full']}\n\n請結合兩套系統，提供更高維度的判斷建議。"
                     result = ai_reply(prompt, is_master=is_master)
                     st.markdown(f'<div class="main-card">{result}</div>', unsafe_allow_html=True)
                 
@@ -672,7 +674,7 @@ if 'analysis_mode' in st.session_state:
                         # 準備對象 Prompt
                         partner_info = f"對象姓名：{name2}\n對象性別：{p_gender}\n對象出生：{p_year}/{p_month}/{p_day} {p_hour}:{p_min}"
                         
-                        prompt = f"你是一位專業合盤大師。請分析 {name} 與其對象 {name2} 的關係。\n關係類型：{relation_type}\n主諮詢者資料：八字({bazi['full']}), 紫微({json.dumps(ziwei_data, ensure_ascii=False)})\n{partner_info}\n問題：{question}\n\n請針對雙方的「八字合盤」與「紫微宮位互動」進行深度解析，分析吸引力、衝突點、緣分深淺與具體的相處建議。"
+                        prompt = f"{year_context}\n\n你是一位專業合盤大師。請分析 {name} 與其對象 {name2} 的關係。\n關係類型：{relation_type}\n主諮詢者資料：八字({bazi['full']}), 紫微({json.dumps(ziwei_data, ensure_ascii=False)})\n{partner_info}\n問題：{question}\n\n請針對雙方的「八字合盤」與「紫微宮位互動」進行深度解析，分析吸引力、衝突點、緣分深淺與具體的相處建議。"
                         result = ai_reply(prompt, is_master=is_master)
                         st.markdown(f'<div class="main-card">{result}</div>', unsafe_allow_html=True)
 
