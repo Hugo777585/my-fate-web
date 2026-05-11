@@ -687,7 +687,7 @@ if 'analysis_mode' in st.session_state:
                     st.markdown("### 🔮 紫微斗數命盤")
                     ziwei_html = render_ziwei_chart(ziwei_data)
                     clean_html = ziwei_html.replace('```html', '').replace('```', '').strip()
-                    st.markdown(clean_html, unsafe_allow_html=True)
+                    components.html(clean_html, height=1000, scrolling=True)
                     
                     # 專屬紫微 System Prompt
                     ziwei_system_role = "你是一位精通紫微斗數的大師。請嚴格遵守紫微斗數的邏輯（星曜、宮位、四化）來解盤，絕對禁止混入八字術語（如：十神、日主、五行強弱）。"
@@ -743,7 +743,7 @@ if 'analysis_mode' in st.session_state:
                             ziwei_data = calculate_ziwei(b_year, b_month, b_day, b_hour)
                             ziwei_html = render_ziwei_chart(ziwei_data)
                             clean_html = ziwei_html.replace('```html', '').replace('```', '').strip()
-                            st.markdown(clean_html, unsafe_allow_html=True)
+                            components.html(clean_html, height=1000, scrolling=True)
                         
                         # 準備對象 Prompt
                         partner_info = f"對象姓名：{name2}\n對象性別：{p_gender}\n對象出生：{p_year}/{p_month}/{p_day} {p_hour}:{p_min}"
