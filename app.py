@@ -359,8 +359,15 @@ def render_ziwei_chart(ziwei_data):
         f'</div>'
     )
     full_html = ziwei_css + chart_html
-    # 清除任何潛在 Markdown code fence，確保純 HTML 呈現
-    sanitized_html = full_html.replace('```html', '').replace('```css', '').replace('```', '')
+    # 清除任何潛在 Markdown code fence 或 html 標籤，確保純 HTML 呈現
+    sanitized_html = (
+        full_html
+        .replace('```html', '')
+        .replace('```css', '')
+        .replace('```', '')
+        .replace('<html>', '')
+        .replace('</html>', '')
+    )
     return sanitized_html
 
 def ai_reply(prompt, is_master=False):
@@ -678,7 +685,8 @@ if 'analysis_mode' in st.session_state:
                     # 紫微模式：顯示 4x4 星盤
                     ziwei_data = calculate_ziwei(b_year, b_month, b_day, b_hour)
                     st.markdown("### 🔮 紫微斗數命盤")
-                    st.markdown(render_ziwei_chart(ziwei_data), unsafe_allow_html=True)
+                    chart_html = render_ziwei_chart(ziwei_data)
+                    st.markdown(chart_html, unsafe_allow_html=True)
                     
                     # 專屬紫微 System Prompt
                     ziwei_system_role = "你是一位精通紫微斗數的大師。請嚴格遵守紫微斗數的邏輯（星曜、宮位、四化）來解盤，絕對禁止混入八字術語（如：十神、日主、五行強弱）。"
@@ -732,7 +740,8 @@ if 'analysis_mode' in st.session_state:
                         with dual_col2:
                             st.markdown("#### 🔮 紫微斗數宮位圖")
                             ziwei_data = calculate_ziwei(b_year, b_month, b_day, b_hour)
-                            st.markdown(render_ziwei_chart(ziwei_data), unsafe_allow_html=True)
+                            chart_html = render_ziwei_chart(ziwei_data)
+                            st.markdown(chart_html, unsafe_allow_html=True)
                         
                         # 準備對象 Prompt
                         partner_info = f"對象姓名：{name2}\n對象性別：{p_gender}\n對象出生：{p_year}/{p_month}/{p_day} {p_hour}:{p_min}"
