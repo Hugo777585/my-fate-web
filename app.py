@@ -18,6 +18,7 @@ from dotenv import load_dotenv
 from google.oauth2.service_account import Credentials
 from lunar_python import Lunar, Solar
 from tone_engine import analyze_tone_strategy
+from iztro import get_astrolabe_by_solar_date
 from fpdf import FPDF
 from data_logger import log_site_visit, append_user_submission, ensure_worksheet
 
@@ -176,6 +177,53 @@ st.markdown("""
 </style> 
 """, unsafe_allow_html=True)
 
+def get_ziwei_data(birth_year, birth_month, birth_day, birth_hour):
+    """
+    使用 iztro 引擎獲取紫微斗數星曜數據
+    """
+    # 將小時轉換為 0-23 格式（iztro 需要）
+    if birth_hour in range(12):
+        birth_hour = birth_hour * 2  # 地支索引轉小時
+    
+    # 使用 iztro 獲取星曜數據
+    astrolabe = get_astrolabe_by_solar_date(birth_year, birth_month, birth_day, birth_hour, 0, 'male')
+    
+    # 轉化為我們需要的字典格式
+    palaces = {}
+    dz_list = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥']
+    palace_names = ['命宮', '兄弟', '夫妻', '子女', '財帛', '疾厄', '遷移', '交友', '官祿', '田宅', '福德', '父母']
+    
+    for i, dz in enumerate(dz_list):
+        palace = astrolabe.get_palace(dz)
+        if palace:
+            main_stars = [star.name for star in palace.main_stars] if palace.main_stars else []
+            minor_stars = [star.name for star in palace.minor_stars] if palace.minor_stars else []
+            all_stars = main_stars + minor_stars
+            
+            palaces[dz] = {
+                'name': palace_names[i],
+                'stars': all_stars,
+                'main_star': main_stars[0] if main_stars else '',
+                'minor_stars': minor_stars
+            }
+        else:
+            palaces[dz] = {
+                'name': palace_names[i],
+                'stars': [],
+                'main_star': '',
+                'minor_stars': []
+            }
+    
+    return {
+        'palaces': palaces,
+        'basic_info': {
+            'year': birth_year,
+            'month': birth_month,
+            'day': birth_day,
+            'hour': f"{birth_hour//2}時"  # 轉回地支格式顯示
+        }
+    }
+
 def render_ziwei_chart(ziwei_data, user_info=None):
     if not ziwei_data or 'palaces' not in ziwei_data:
         return ""
@@ -307,6 +355,16 @@ def render_ziwei_chart(ziwei_data, user_info=None):
         font-weight: 900;
         text-shadow: 0 0 10px rgba(255, 183, 77, 0.4);
     }
+    .main-star {
+        display: block;
+        color: #ff6b35;
+        font-weight: 900;
+        font-size: 14px;
+        text-shadow: 0 0 15px rgba(255, 107, 53, 0.6);
+        margin-bottom: 4px;
+        border-bottom: 1px solid rgba(255, 107, 53, 0.3);
+        padding-bottom: 2px;
+    }
     @media (max-width: 480px) {
         .ziwei-grid { gap: 4px; padding: 6px; }
         .palace-name { font-size: 8px; right: 4px; bottom: 4px; padding: 2px 6px; }
@@ -330,8 +388,17 @@ def render_ziwei_chart(ziwei_data, user_info=None):
     
     cells_html = ""
     for dz, pos in grid_map.items():
-        p_info = palaces.get(dz, {"name": "", "stars": []})
-        stars_html = "".join([f"<span>{s}</span>" for s in p_info["stars"]])
+        p_info = palaces.get(dz, {"name": "", "stars": [], "main_star": "", "minor_stars": []})
+        main_star = p_info.get("main_star", "")
+        minor_stars = p_info.get("minor_stars", [])
+        
+        # 主星醒目顯示，其他星曜正常
+        stars_html = ""
+        if main_star:
+            stars_html += f'<div class="main-star">{main_star}</div>'
+        for star in minor_stars:
+            stars_html += f"<span>{star}</span>"
+            
         cells_html += f"""
         <div class="ziwei-cell" style="{pos}">
             <div class="star-list">{stars_html}</div>
@@ -708,14 +775,14 @@ if 'analysis_mode' in st.session_state:
                 # 2. 根據模式執行不同的渲染與分析
                 if mode == "紫微斗數分析":
                     # 紫微模式：顯示 4x4 星盤
-                    ziwei_data = calculate_ziwei(b_year, b_month, b_day, b_hour)
+                    ziwei_data = get_ziwei_data(b_year, b_month, b_day, b_hour)
                     st.markdown("### 🔮 紫微斗數命盤")
                     ziwei_html = render_ziwei_chart(ziwei_data, user_info={'name': name, 'gender': gender})
                     clean_html = ziwei_html.replace('```html', '').replace('```', '').strip()
                     components.html(clean_html, height=1000, scrolling=True)
                     
                     # 專屬紫微 System Prompt - 命盤已預先計算完成
-                    ziwei_system_role = "你是一位精通紫微斗數的大師。命盤已經使用公式精準計算完成，請不要重新計算，直接針對以下數據進行大師級解析。請嚴格遵守紫微斗數的邏輯（星曜、宮位、四化）來解盤，絕對禁止混入八字術語（如：十神、日主、五行強弱）。"
+                    ziwei_system_role = "你是一位精通紫微斗數的大師。命盤已經透過 iztro 引擎精準排好，請直接根據這些宮位星曜進行大師級解析，不要自行推算。請嚴格遵守紫微斗數的邏輯（星曜、宮位、四化）來解盤，絕對禁止混入八字術語（如：十神、日主、五行強弱）。"
                     
                     prompt = f"{year_context}\n\n請針對以下紫微斗數命盤數據進行深度分析：\nJSON數據：{json.dumps(ziwei_data, ensure_ascii=False)}\n用戶問題：{question}\n\n請詳細分析命宮、夫妻宮、財帛宮與事業宮的特質，並針對用戶問題給予具體建議。"
                     
@@ -765,7 +832,7 @@ if 'analysis_mode' in st.session_state:
                         
                         with dual_col2:
                             st.markdown("#### 🔮 紫微斗數宮位圖")
-                            ziwei_data = calculate_ziwei(b_year, b_month, b_day, b_hour)
+                            ziwei_data = get_ziwei_data(b_year, b_month, b_day, b_hour)
                             ziwei_html = render_ziwei_chart(ziwei_data, user_info={'name': name, 'gender': gender})
                             clean_html = ziwei_html.replace('```html', '').replace('```', '').strip()
                             components.html(clean_html, height=1000, scrolling=True)
