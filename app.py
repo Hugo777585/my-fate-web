@@ -18,7 +18,6 @@ from dotenv import load_dotenv
 from google.oauth2.service_account import Credentials
 from lunar_python import Lunar, Solar
 from tone_engine import analyze_tone_strategy
-from iztro import get_astrolabe_by_solar_date
 from fpdf import FPDF
 from data_logger import log_site_visit, append_user_submission, ensure_worksheet
 
@@ -181,33 +180,12 @@ def get_ziwei_data(birth_year, birth_month, birth_day, birth_hour):
     """
     使用 iztro 引擎獲取紫微斗數星曜數據
     """
-    # 將小時轉換為 0-23 格式（iztro 需要）
-    if birth_hour in range(12):
-        birth_hour = birth_hour * 2  # 地支索引轉小時
+    # 將小時轉換為 0-11 索引格式（ziwei_engine 需要）
+    if birth_hour not in range(12):
+        birth_hour = birth_hour // 2 % 12
     
-    # 使用 iztro 獲取星曜數據
-    astrolabe = get_astrolabe_by_solar_date(birth_year, birth_month, birth_day, birth_hour, 0, 'male')
-    
-    # 轉化為我們需要的字典格式
-    palaces = {}
-    dz_list = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥']
-    palace_names = ['命宮', '兄弟', '夫妻', '子女', '財帛', '疾厄', '遷移', '交友', '官祿', '田宅', '福德', '父母']
-    
-    for i, dz in enumerate(dz_list):
-        palace = astrolabe.get_palace(dz)
-        if palace:
-            main_stars = [star.name for star in palace.main_stars] if palace.main_stars else []
-            minor_stars = [star.name for star in palace.minor_stars] if palace.minor_stars else []
-            all_stars = main_stars + minor_stars
-            
-            palaces[dz] = {
-                'name': palace_names[i],
-                'stars': all_stars,
-                'main_star': main_stars[0] if main_stars else '',
-                'minor_stars': minor_stars
-            }
-        else:
-            palaces[dz] = {
+    # 使用新的 ziwei_engine 獲取數據
+    return calculate_ziwei(birth_year, birth_month, birth_day, birth_hour)
                 'name': palace_names[i],
                 'stars': [],
                 'main_star': '',

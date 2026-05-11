@@ -23,18 +23,26 @@ def calculate_ziwei(birth_year, birth_month, birth_day, birth_hour_index):
     for palace in chart.palaces:
         dz = branch_map.get(palace.earthly_branch, palace.earthly_branch)
         stars = []
+        main_stars = []
+        minor_stars = []
         
         # Add main stars
         for star in palace.major_stars:
-            stars.append(star.name)
+            star_name = star.name
+            stars.append(star_name)
+            main_stars.append(star_name)
         
         # Add minor stars  
         for star in palace.minor_stars:
-            stars.append(star.name)
+            star_name = star.name
+            stars.append(star_name)
+            minor_stars.append(star_name)
             
         full_palaces[dz] = {
             'name': palace.name,  # Keep English name for now, can translate later
-            'stars': stars
+            'stars': stars,
+            'main_star': main_stars[0] if main_stars else '',
+            'minor_stars': minor_stars
         }
 
     return {
