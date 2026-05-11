@@ -2,6 +2,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 from openai import OpenAI
 import google.genai as genai
+from google.genai import types
 import datetime
 import time
 import os
@@ -184,113 +185,118 @@ def render_ziwei_chart(ziwei_data):
     .ziwei-container {
         width: 100%;
         overflow-x: auto;
-        padding: 16px 0;
+        padding: 20px 0;
         display: flex;
         justify-content: center;
-        background: radial-gradient(circle at top, rgba(255,215,130,0.12), transparent 60%);
+        background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
     }
     .ziwei-grid {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
         grid-template-rows: repeat(4, 1fr);
-        gap: 6px;
+        gap: 8px;
         width: 100%;
-        max-width: 620px;
+        max-width: 650px;
         aspect-ratio: 1 / 1;
-        background: linear-gradient(180deg, #15110d, #2a2118);
-        border: 2px solid rgba(212, 175, 55, 0.96);
-        border-radius: 28px;
-        padding: 8px;
+        background: linear-gradient(145deg, #1e1e1e, #2a2a2a);
+        border: 3px solid #d4af37;
+        border-radius: 32px;
+        padding: 12px;
         box-sizing: border-box;
-        box-shadow: 0 28px 80px rgba(0, 0, 0, 0.35);
+        box-shadow: 0 32px 100px rgba(0, 0, 0, 0.5), inset 0 0 50px rgba(212, 175, 55, 0.05);
     }
     .ziwei-cell {
-        background: linear-gradient(180deg, rgba(29, 23, 19, 0.98), rgba(42, 34, 27, 0.94));
-        border: 1px solid rgba(212, 175, 55, 0.18);
-        padding: 10px 10px 8px 10px;
+        background: linear-gradient(145deg, #2c2c2c, #1f1f1f);
+        border: 1px solid rgba(212, 175, 55, 0.3);
+        padding: 12px 12px 10px 12px;
         display: flex;
         flex-direction: column;
         justify-content: flex-start;
         position: relative;
         box-sizing: border-box;
         overflow: hidden;
-        box-shadow: inset 0 0 18px rgba(255, 215, 150, 0.08);
-        border-radius: 18px;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3), inset 0 0 20px rgba(255, 215, 150, 0.02);
+        border-radius: 20px;
     }
     .ziwei-center {
         grid-column: 2 / 4;
         grid-row: 2 / 4;
-        background: radial-gradient(circle at center, rgba(255, 215, 130, 0.16), rgba(30, 23, 18, 0.98));
+        background: radial-gradient(circle at center, rgba(212, 175, 55, 0.1), #1a1a1a);
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
         text-align: center;
-        padding: 18px 14px;
+        padding: 24px 16px;
         font-weight: 900;
         color: #f5e8c0;
-        border: 1px solid rgba(212, 175, 55, 0.65);
+        border: 2px solid #d4af37;
         box-sizing: border-box;
-        border-radius: 24px;
+        border-radius: 50%;
         position: relative;
+        box-shadow: 0 12px 40px rgba(212, 175, 55, 0.2), inset 0 0 30px rgba(255, 215, 150, 0.05);
     }
     .ziwei-center::before {
-        content: 'HUGO';
+        content: 'HUGO 天命智庫';
         position: absolute;
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        font-size: 72px;
-        color: rgba(255, 215, 150, 0.08);
-        letter-spacing: 0.4em;
+        font-size: 14px;
+        color: rgba(255, 215, 150, 0.15);
+        letter-spacing: 0.2em;
         font-weight: 900;
         pointer-events: none;
         user-select: none;
+        text-align: center;
+        line-height: 1.2;
     }
     .ziwei-center-content {
         position: relative;
         z-index: 1;
     }
     .ziwei-center-title {
-        font-size: 18px;
-        margin-bottom: 8px;
+        font-size: 16px;
+        margin-bottom: 6px;
         letter-spacing: 1px;
+        color: #d4af37;
     }
     .ziwei-center-meta {
-        font-size: 12px;
-        color: rgba(245, 232, 192, 0.88);
-        line-height: 1.5;
+        font-size: 11px;
+        color: rgba(245, 232, 192, 0.9);
+        line-height: 1.4;
     }
     .palace-name {
         position: absolute;
-        bottom: 8px;
-        right: 8px;
+        bottom: 10px;
+        right: 10px;
         font-weight: 900;
         color: #1d1005;
-        font-size: 11px;
-        letter-spacing: 0.6px;
-        background: rgba(212, 175, 55, 0.96);
-        padding: 2px 6px;
-        border-radius: 10px;
+        font-size: 10px;
+        letter-spacing: 0.5px;
+        background: linear-gradient(135deg, #d4af37, #b8860b);
+        padding: 3px 8px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     }
     .dz-name {
         position: absolute;
-        bottom: 8px;
-        left: 8px;
-        color: rgba(255, 255, 255, 0.7);
-        font-size: 10px;
+        bottom: 10px;
+        left: 10px;
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 9px;
         font-family: serif;
-        background: rgba(0, 0, 0, 0.22);
-        padding: 2px 4px;
-        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.4);
+        padding: 2px 5px;
+        border-radius: 10px;
     }
     .star-list {
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: 5px;
         color: #f7d097;
         font-weight: 900;
-        font-size: 13px;
+        font-size: 12px;
         line-height: 1.2;
         align-items: flex-start;
     }
@@ -298,14 +304,16 @@ def render_ziwei_chart(ziwei_data):
         display: block;
         color: #ffb84d;
         font-weight: 900;
-        text-shadow: 0 0 8px rgba(255, 183, 77, 0.35);
+        text-shadow: 0 0 10px rgba(255, 183, 77, 0.4);
     }
     @media (max-width: 480px) {
-        .ziwei-grid { gap: 3px; padding: 3px; }
-        .palace-name { font-size: 9px; right: 3px; bottom: 3px; }
-        .dz-name { font-size: 8px; left: 3px; bottom: 3px; }
-        .star-list { font-size: 9px; }
-        .ziwei-center { padding: 14px 10px; }
+        .ziwei-grid { gap: 4px; padding: 6px; }
+        .palace-name { font-size: 8px; right: 4px; bottom: 4px; padding: 2px 6px; }
+        .dz-name { font-size: 7px; left: 4px; bottom: 4px; padding: 1px 4px; }
+        .star-list { font-size: 10px; }
+        .ziwei-center { padding: 18px 12px; }
+        .ziwei-center-title { font-size: 14px; }
+        .ziwei-center-meta { font-size: 10px; }
     }
     </style>
     """
@@ -334,10 +342,12 @@ def render_ziwei_chart(ziwei_data):
     info = ziwei_data["basic_info"]
     center_html = f"""
     <div class="ziwei-center">
-        <div style="font-size: 16px; margin-bottom: 5px;">HUGO 天命智庫</div>
-        <div style="font-size: 12px; color: #2F2F2F; line-height: 1.3;">
-            {info['year']}年 {info['month']}月 {info['day']}日<br>
-            {info['hour']}時生
+        <div class="ziwei-center-content">
+            <div class="ziwei-center-title">HUGO 天命智庫</div>
+            <div class="ziwei-center-meta">
+                {info['year']}年 {info['month']}月 {info['day']}日<br>
+                {info['hour']}時生
+            </div>
         </div>
     </div>
     """
@@ -351,7 +361,8 @@ def ai_reply(prompt, is_master=False):
     try:
         response = genai_client.models.generate_content(
             model='gemini-flash-latest',
-            contents=prompt
+            contents=prompt,
+            config=types.GenerateContentConfig(system_instruction=system_role)
         )
         return response.text
     except Exception as e:
@@ -668,8 +679,8 @@ if 'analysis_mode' in st.session_state:
                     try:
                         response = genai_client.models.generate_content(
                             model='gemini-flash-latest',
-                            system_instruction=ziwei_system_role,
-                            contents=prompt
+                            contents=prompt,
+                            config=types.GenerateContentConfig(system_instruction=ziwei_system_role)
                         )
                         result = response.text
                     except Exception as e:
