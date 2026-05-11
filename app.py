@@ -358,7 +358,10 @@ def render_ziwei_chart(ziwei_data):
         f'<div class="ziwei-grid">{cells_html}{center_html}</div>'
         f'</div>'
     )
-    return ziwei_css + chart_html
+    full_html = ziwei_css + chart_html
+    # 清除任何潛在 Markdown code fence，確保純 HTML 呈現
+    sanitized_html = full_html.replace('```html', '').replace('```css', '').replace('```', '')
+    return sanitized_html
 
 def ai_reply(prompt, is_master=False):
     system_role = "你是一位精通《淵海子平》、《三命通會》與《滴天髓》的命理大師 Hugo。語氣沉穩、睿智，必須深入探討干支生剋與格局，拒絕罐頭回覆。你必須具備時效性，能看清當下的歲運流轉。"
