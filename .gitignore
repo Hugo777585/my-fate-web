@@ -1,5 +1,6 @@
 # API Keys and Secrets
 hugo-key.json
+google-credentials.json
 .streamlit/secrets.toml
 
 # Python dependencies

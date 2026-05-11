@@ -1,10 +1,26 @@
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
+import streamlit as st
 
 def log_to_sheets(client_name, gender, birth_date, birth_time, mbti, report_summary):
     # 1. 設定連線權限與金鑰檔案
     scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-    creds = ServiceAccountCredentials.from_json_keyfile_name('google-credentials.json', scope)
+    
+    # 從 st.secrets 讀取憑證
+    service_account_info = None
+    if "GCP_SERVICE_ACCOUNT" in st.secrets:
+        service_account_info = dict(st.secrets["GCP_SERVICE_ACCOUNT"])
+    elif "gcp_service_account" in st.secrets:
+        service_account_info = dict(st.secrets["gcp_service_account"])
+    
+    if service_account_info:
+        if "private_key" in service_account_info:
+            service_account_info["private_key"] = service_account_info["private_key"].replace("\\n", "\n")
+        creds = ServiceAccountCredentials.from_json_keyfile_dict(service_account_info, scope)
+    else:
+        # 如果沒有 secrets，使用本地檔案（但不推薦）
+        creds = ServiceAccountCredentials.from_json_keyfile_name('google-credentials.json', scope)
+    
     client = gspread.authorize(creds)
 
     # 2. 開啟您的試算表 (請將括號內換成您試算表的真正名稱)
