@@ -186,21 +186,6 @@ def get_ziwei_data(birth_year, birth_month, birth_day, birth_hour):
     
     # 使用新的 ziwei_engine 獲取數據
     return calculate_ziwei(birth_year, birth_month, birth_day, birth_hour)
-                'name': palace_names[i],
-                'stars': [],
-                'main_star': '',
-                'minor_stars': []
-            }
-    
-    return {
-        'palaces': palaces,
-        'basic_info': {
-            'year': birth_year,
-            'month': birth_month,
-            'day': birth_day,
-            'hour': f"{birth_hour//2}時"  # 轉回地支格式顯示
-        }
-    }
 
 def render_ziwei_chart(ziwei_data, user_info=None):
     if not ziwei_data or 'palaces' not in ziwei_data:
