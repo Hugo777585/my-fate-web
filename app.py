@@ -303,7 +303,7 @@ def ai_reply(prompt, is_master=False):
         prompt = "【大師模式：性格、事業、財運、感情這四個面向，每個面向必須產出至少 250 字的深度論述】" + prompt
     try:
         response = genai_client.models.generate_content(
-            model='gemini-2.0-flash',
+            model='gemini-flash-latest',
             contents=prompt
         )
         return response.text
