@@ -1,7 +1,7 @@
 import streamlit as st
 import streamlit.components.v1 as components
 from openai import OpenAI
-import google.generativeai as genai
+import google.genai as genai
 import datetime
 import time
 import os
@@ -407,7 +407,7 @@ if admin_input.strip().upper() == st.secrets.get("MASTER_PASSWORD", "1234").uppe
 with st.sidebar:
     st.markdown("### 🔮 HUGO 天命智庫")
     if os.path.exists("logo.JPG"):
-        st.image("logo.JPG", use_container_width=True)
+        st.image("logo.JPG", width='stretch')
     
     st.markdown("---")
     # 讀取訪客人數
