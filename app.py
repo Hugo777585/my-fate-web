@@ -184,83 +184,128 @@ def render_ziwei_chart(ziwei_data):
     .ziwei-container {
         width: 100%;
         overflow-x: auto;
-        padding: 10px 0;
+        padding: 16px 0;
         display: flex;
         justify-content: center;
-        background-color: transparent;
+        background: radial-gradient(circle at top, rgba(255,215,130,0.12), transparent 60%);
     }
     .ziwei-grid {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
         grid-template-rows: repeat(4, 1fr);
-        gap: 4px;
+        gap: 6px;
         width: 100%;
-        max-width: 550px;
+        max-width: 620px;
         aspect-ratio: 1 / 1;
-        background-color: #2F2F2F;
-        border: 2px solid #9A7A38;
-        padding: 4px;
+        background: linear-gradient(180deg, #15110d, #2a2118);
+        border: 2px solid rgba(212, 175, 55, 0.96);
+        border-radius: 28px;
+        padding: 8px;
         box-sizing: border-box;
+        box-shadow: 0 28px 80px rgba(0, 0, 0, 0.35);
     }
     .ziwei-cell {
-        background-color: #FDFCF9;
-        border: 1px solid #9A7A38;
-        padding: 4px;
+        background: linear-gradient(180deg, rgba(29, 23, 19, 0.98), rgba(42, 34, 27, 0.94));
+        border: 1px solid rgba(212, 175, 55, 0.18);
+        padding: 10px 10px 8px 10px;
         display: flex;
         flex-direction: column;
-        justify-content: space-between;
+        justify-content: flex-start;
         position: relative;
         box-sizing: border-box;
         overflow: hidden;
+        box-shadow: inset 0 0 18px rgba(255, 215, 150, 0.08);
+        border-radius: 18px;
     }
     .ziwei-center {
         grid-column: 2 / 4;
         grid-row: 2 / 4;
-        background-color: #F4F4ED;
-        background-image: radial-gradient(circle, #E2E2CC 1px, transparent 1px);
-        background-size: 12px 12px;
+        background: radial-gradient(circle at center, rgba(255, 215, 130, 0.16), rgba(30, 23, 18, 0.98));
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
         text-align: center;
-        padding: 10px;
+        padding: 18px 14px;
         font-weight: 900;
-        color: #9A7A38;
-        border: 2px solid #9A7A38;
+        color: #f5e8c0;
+        border: 1px solid rgba(212, 175, 55, 0.65);
         box-sizing: border-box;
+        border-radius: 24px;
+        position: relative;
+    }
+    .ziwei-center::before {
+        content: 'HUGO';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 72px;
+        color: rgba(255, 215, 150, 0.08);
+        letter-spacing: 0.4em;
+        font-weight: 900;
+        pointer-events: none;
+        user-select: none;
+    }
+    .ziwei-center-content {
+        position: relative;
+        z-index: 1;
+    }
+    .ziwei-center-title {
+        font-size: 18px;
+        margin-bottom: 8px;
+        letter-spacing: 1px;
+    }
+    .ziwei-center-meta {
+        font-size: 12px;
+        color: rgba(245, 232, 192, 0.88);
+        line-height: 1.5;
     }
     .palace-name {
         position: absolute;
-        bottom: 2px;
-        right: 4px;
+        bottom: 8px;
+        right: 8px;
         font-weight: 900;
-        color: #9A7A38;
-        font-size: 12px;
-        letter-spacing: 0.5px;
+        color: #1d1005;
+        font-size: 11px;
+        letter-spacing: 0.6px;
+        background: rgba(212, 175, 55, 0.96);
+        padding: 2px 6px;
+        border-radius: 10px;
     }
     .dz-name {
         position: absolute;
-        bottom: 2px;
-        left: 4px;
-        color: #888;
+        bottom: 8px;
+        left: 8px;
+        color: rgba(255, 255, 255, 0.7);
         font-size: 10px;
         font-family: serif;
+        background: rgba(0, 0, 0, 0.22);
+        padding: 2px 4px;
+        border-radius: 8px;
     }
     .star-list {
         display: flex;
         flex-direction: column;
-        gap: 1px;
-        color: #C0392B;
+        gap: 4px;
+        color: #f7d097;
         font-weight: 900;
-        font-size: 11px;
-        line-height: 1.1;
+        font-size: 13px;
+        line-height: 1.2;
+        align-items: flex-start;
+    }
+    .star-list span {
+        display: block;
+        color: #ffb84d;
+        font-weight: 900;
+        text-shadow: 0 0 8px rgba(255, 183, 77, 0.35);
     }
     @media (max-width: 480px) {
-        .ziwei-grid { gap: 2px; padding: 2px; }
-        .palace-name { font-size: 10px; right: 2px; }
-        .dz-name { font-size: 8px; left: 2px; }
+        .ziwei-grid { gap: 3px; padding: 3px; }
+        .palace-name { font-size: 9px; right: 3px; bottom: 3px; }
+        .dz-name { font-size: 8px; left: 3px; bottom: 3px; }
         .star-list { font-size: 9px; }
+        .ziwei-center { padding: 14px 10px; }
     }
     </style>
     """
@@ -621,14 +666,12 @@ if 'analysis_mode' in st.session_state:
                     prompt = f"{year_context}\n\n請針對以下紫微斗數命盤數據進行深度分析：\nJSON數據：{json.dumps(ziwei_data, ensure_ascii=False)}\n用戶問題：{question}\n\n請詳細分析命宮、夫妻宮、財帛宮與事業宮的特質，並針對用戶問題給予具體建議。"
                     
                     try:
-                        response = client.chat.completions.create(
-                            model="gpt-4o-mini",
-                            messages=[
-                                {"role": "system", "content": ziwei_system_role},
-                                {"role": "user", "content": prompt}
-                            ]
+                        response = genai_client.models.generate_content(
+                            model='gemini-flash-latest',
+                            system_instruction=ziwei_system_role,
+                            contents=prompt
                         )
-                        result = response.choices[0].message.content
+                        result = response.text
                     except Exception as e:
                         result = f"AI 紫微分析失敗：{str(e)}"
                         
