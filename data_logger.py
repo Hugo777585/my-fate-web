@@ -164,3 +164,43 @@ def log_site_visit(page_name):
         st.session_state.visited_pages.add(page_name)
     except Exception as e:
         print(f"寫入 site_visits 失敗: {e}")
+
+def append_analysis_result(data):
+    """將分析結果寫入 Google Sheets"""
+    try:
+        headers = [
+            "created_at", "user_name", "gender", "birth_date", "analysis_mode", 
+            "question", "ai_response", "is_master_mode", "user_ip_hash", "session_id"
+        ]
+        
+        worksheet = ensure_worksheet("analysis_results", headers)
+        if not worksheet: 
+            print("無法取得 analysis_results 工作表")
+            return
+        
+        ip_hash, ua = get_anonymous_id()
+        
+        # 限制回應長度
+        safe_response = str(data.get("ai_response", ""))[:10000]
+        safe_question = str(data.get("question", ""))[:1000]
+        
+        birth_date = f"{data.get('birth_year', '')}-{data.get('birth_month', '')}-{data.get('birth_day', '')}"
+        
+        row = [
+            datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            data.get("user_name", ""),
+            data.get("gender", ""),
+            birth_date,
+            data.get("analysis_mode", ""),
+            safe_question,
+            safe_response,
+            "Yes" if data.get("is_master_mode") else "No",
+            ip_hash,
+            st.session_state.get('session_id', 'no_session')
+        ]
+        worksheet.append_row(row)
+        print(f"成功寫入分析結果到 Google Sheets: {data.get('user_name', '')}")
+    except Exception as e:
+        print(f"寫入 analysis_results 失敗: {e}")
+        import traceback
+        print(f"完整錯誤信息: {traceback.format_exc()}")

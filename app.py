@@ -19,7 +19,7 @@ from google.oauth2.service_account import Credentials
 from lunar_python import Lunar, Solar
 from tone_engine import analyze_tone_strategy
 from fpdf import FPDF
-from data_logger import log_site_visit, append_user_submission, ensure_worksheet
+from data_logger import log_site_visit, append_user_submission, ensure_worksheet, append_analysis_result
 
 load_dotenv()
 today = datetime.date.today()
@@ -760,6 +760,20 @@ if 'analysis_mode' in st.session_state:
                         result = f"AI 紫微分析失敗：{str(e)}"
                         
                     st.markdown(f'<div class="main-card">{result}</div>', unsafe_allow_html=True)
+                    
+                    # 記錄分析結果
+                    analysis_data = {
+                        "user_name": name,
+                        "gender": gender,
+                        "birth_year": b_year,
+                        "birth_month": b_month,
+                        "birth_day": b_day,
+                        "analysis_mode": mode,
+                        "question": question,
+                        "ai_response": result,
+                        "is_master_mode": is_master
+                    }
+                    append_analysis_result(analysis_data)
                 
                 elif mode == "八字命理分析":
                     # 八字模式：僅顯示八字盤 (隱藏紫微)
@@ -769,6 +783,20 @@ if 'analysis_mode' in st.session_state:
                     prompt = f"{year_context}\n\n你是一位專業命理大師。請針對以下八字命盤進行深度分析：\n姓名：{name}\n性別：{gender}\n出生時間：{b_year}/{b_month}/{b_day} {b_hour}:{b_min}\n職業：{occupation}\n問題：{question}\n命盤數據：{bazi['full']}\n\n請分析性格、事業、財運與感情建議。"
                     result = ai_reply(prompt, is_master=is_master)
                     st.markdown(f'<div class="main-card">{result}</div>', unsafe_allow_html=True)
+                    
+                    # 記錄分析結果
+                    analysis_data = {
+                        "user_name": name,
+                        "gender": gender,
+                        "birth_year": b_year,
+                        "birth_month": b_month,
+                        "birth_day": b_day,
+                        "analysis_mode": mode,
+                        "question": question,
+                        "ai_response": result,
+                        "is_master_mode": is_master
+                    }
+                    append_analysis_result(analysis_data)
                 
                 elif mode == "八字 × 紫微交叉分析":
                     # 交叉分析：顯示八字盤，並由 AI 結合紫微邏輯
@@ -779,6 +807,20 @@ if 'analysis_mode' in st.session_state:
                     prompt = f"{year_context}\n\n你是一位精通八字與紫微斗數的大師。請針對以下命盤進行「交叉比對分析」：\n姓名：{name}\n問題：{question}\n八字數據：{bazi['full']}\n\n請結合兩套系統，提供更高維度的判斷建議。"
                     result = ai_reply(prompt, is_master=is_master)
                     st.markdown(f'<div class="main-card">{result}</div>', unsafe_allow_html=True)
+                    
+                    # 記錄分析結果
+                    analysis_data = {
+                        "user_name": name,
+                        "gender": gender,
+                        "birth_year": b_year,
+                        "birth_month": b_month,
+                        "birth_day": b_day,
+                        "analysis_mode": mode,
+                        "question": question,
+                        "ai_response": result,
+                        "is_master_mode": is_master
+                    }
+                    append_analysis_result(analysis_data)
                 
                 elif mode == "兩人合盤分析":
                     if not enable_dual:
@@ -806,6 +848,20 @@ if 'analysis_mode' in st.session_state:
                         prompt = f"{year_context}\n\n你是一位專業合盤大師。請分析 {name} 與其對象 {name2} 的關係。\n關係類型：{relation_type}\n主諮詢者資料：八字({bazi['full']}), 紫微({json.dumps(ziwei_data, ensure_ascii=False)})\n{partner_info}\n問題：{question}\n\n請針對雙方的「八字合盤」與「紫微宮位互動」進行深度解析，分析吸引力、衝突點、緣分深淺與具體的相處建議。"
                         result = ai_reply(prompt, is_master=is_master)
                         st.markdown(f'<div class="main-card">{result}</div>', unsafe_allow_html=True)
+                        
+                        # 記錄分析結果
+                        analysis_data = {
+                            "user_name": f"{name} & {name2}",
+                            "gender": f"{gender} & {p_gender}",
+                            "birth_year": b_year,
+                            "birth_month": b_month,
+                            "birth_day": b_day,
+                            "analysis_mode": mode,
+                            "question": question,
+                            "ai_response": result,
+                            "is_master_mode": is_master
+                        }
+                        append_analysis_result(analysis_data)
 
 # --- 網址隱形入口管理區 ---
 # 確保邏輯在頁面最末端執行
