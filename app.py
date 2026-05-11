@@ -40,7 +40,8 @@ google_api_key = st.secrets.get("GOOGLE_API_KEY") or os.getenv("GOOGLE_API_KEY")
 if not google_api_key:
     st.error("尚未設定 GOOGLE_API_KEY，請先到 Streamlit Cloud Secrets 加入金鑰。")
     st.stop()
-genai.configure(api_key=google_api_key)
+
+genai_client = genai.Client(api_key=google_api_key)
 
 # --- Hugo 大師專屬：專業命理顧問感樣式 --- 
 st.markdown(""" 
@@ -301,8 +302,10 @@ def ai_reply(prompt, is_master=False):
     if is_master:
         prompt = "【大師模式：性格、事業、財運、感情這四個面向，每個面向必須產出至少 250 字的深度論述】" + prompt
     try:
-        model = genai.GenerativeModel('gemini-3.1-pro-preview', system_instruction=system_role)
-        response = model.generate_content(prompt)
+        response = genai_client.models.generate_content(
+            model='gemini-2.0-flash',
+            contents=prompt
+        )
         return response.text
     except Exception as e:
         return f"AI 連線失敗：{str(e)}"
