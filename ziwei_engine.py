@@ -1,5 +1,5 @@
 ﻿import datetime
-from iztro import Astro
+from iztro_py import astro
 
 def calculate_ziwei(birth_year, birth_month, birth_day, birth_hour_index):
     # Convert 24-hour format to 12-branch index if needed
@@ -10,30 +10,30 @@ def calculate_ziwei(birth_year, birth_month, birth_day, birth_hour_index):
     palace_names = ['命宮', '兄弟', '夫妻', '子女', '財帛', '疾厄', '遷移', '交友', '官祿', '田宅', '福德', '父母']
 
     # Use iztro-py for accurate Ziwei Dou Shu calculation
-    astro = Astro.new(birth_year, birth_month, birth_day, birth_hour_index * 2, 0, 'male')  # Assuming male, can be adjusted
-    chart = astro.get_chart()
+    chart = astro.by_solar(f'{birth_year}-{birth_month}-{birth_day}', birth_hour_index, '男')
+
+    # Mapping from English to Chinese earthly branches
+    branch_map = {
+        'ziEarthly': '子', 'chouEarthly': '丑', 'yinEarthly': '寅', 'maoEarthly': '卯',
+        'chenEarthly': '辰', 'siEarthly': '巳', 'wuEarthly': '午', 'weiEarthly': '未',
+        'shenEarthly': '申', 'youEarthly': '酉', 'xuEarthly': '戌', 'haiEarthly': '亥'
+    }
 
     full_palaces = {}
-    for i in range(12):
-        palace_name = palace_names[i]
-        dz = dz_list[i]
+    for palace in chart.palaces:
+        dz = branch_map.get(palace.earthly_branch, palace.earthly_branch)
         stars = []
-
-        # Get stars for this palace
-        palace_data = chart.get_palace(dz)
-        if palace_data:
-            # Add main stars
-            main_stars = palace_data.get('main_stars', [])
-            for star in main_stars:
-                stars.append(star.name)
-
-            # Add minor stars
-            minor_stars = palace_data.get('minor_stars', [])
-            for star in minor_stars:
-                stars.append(star.name)
-
+        
+        # Add main stars
+        for star in palace.major_stars:
+            stars.append(star.name)
+        
+        # Add minor stars  
+        for star in palace.minor_stars:
+            stars.append(star.name)
+            
         full_palaces[dz] = {
-            'name': palace_name,
+            'name': palace.name,  # Keep English name for now, can translate later
             'stars': stars
         }
 
