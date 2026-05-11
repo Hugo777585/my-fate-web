@@ -25,9 +25,6 @@ def get_gsheet_client():
             
             creds = Credentials.from_service_account_info(service_account_info, scopes=scopes)
             return gspread.authorize(creds)
-        elif os.path.exists("hugo-key.json"):
-            creds = Credentials.from_service_account_file("hugo-key.json", scopes=scopes)
-            return gspread.authorize(creds)
         else:
             return None
     except Exception as e:
