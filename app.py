@@ -675,15 +675,11 @@ if 'analysis_mode' in st.session_state:
 
 # --- 網址隱形入口管理區 ---
 # 確保邏輯在頁面最末端執行
-if st.query_params.get("manage") == "hugo": 
-    st.markdown("---") 
-    with st.expander("🔐 大師專用管理中心", expanded=True): 
-        # 從 secrets.toml 讀取主密碼，若無則預設為 1234 
-        admin_key = st.text_input("請輸入授權密碼", type="password", key="admin_gate_input") 
-        if admin_key.strip().upper() == st.secrets.get("MASTER_PASSWORD", "1234").upper(): 
-            st.success("身分驗證成功，管理功能已開啟。") 
-            # 此處預留未來放置客戶數據或系統監控的空間 
-else: 
-    # 一般客人進來完全看不到任何管理痕跡 
-    pass
+st.markdown("---") 
+with st.expander("🔐 大師專用管理中心", expanded=True): 
+    # 從 secrets.toml 讀取主密碼，若無則預設為 1234 
+    admin_key = st.text_input("請輸入授權密碼", type="password", key="admin_gate_input") 
+    if admin_key == "hugo888": 
+        st.success("身分驗證成功，管理功能已開啟。") 
+        # 此處預留未來放置客戶數據或系統監控的空間
 
