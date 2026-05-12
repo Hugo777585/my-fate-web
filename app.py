@@ -6,7 +6,6 @@ from google.genai import types
 import datetime
 import time
 import os
-import gspread
 import re
 import json
 import csv
@@ -15,11 +14,10 @@ import hashlib
 import uuid
 from ziwei_engine import calculate_ziwei
 from dotenv import load_dotenv
-from google.oauth2.service_account import Credentials
 from lunar_python import Lunar, Solar
 from tone_engine import analyze_tone_strategy
 from fpdf import FPDF
-from data_logger import log_site_visit, append_user_submission, ensure_worksheet, append_analysis_result
+from data_logger import log_site_visit, append_user_submission, append_analysis_result
 
 load_dotenv()
 today = datetime.date.today()

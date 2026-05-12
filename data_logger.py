@@ -1,183 +1,78 @@
 import streamlit as st
-import gspread
-from google.oauth2.service_account import Credentials
+from pyairtable import Table
 import datetime
 import hashlib
 import uuid
-import os
 
-def get_gsheet_client():
-    """初始化並回傳 Google Sheets 客戶端"""
-    try:
-        scopes = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
 
-        service_account_info = None
-        # 優先從 Streamlit Secrets 讀取 Service Account 憑證
-        if "GCP_SERVICE_ACCOUNT" in st.secrets:
-            service_account_info = st.secrets["GCP_SERVICE_ACCOUNT"]
-        elif "gcp_service_account" in st.secrets:
-            service_account_info = st.secrets["gcp_service_account"]
-        elif "google_service_account" in st.secrets:
-            service_account_info = st.secrets["google_service_account"]
-        elif "service_account" in st.secrets:
-            service_account_info = st.secrets["service_account"]
-        elif "google_sheets" in st.secrets and isinstance(st.secrets["google_sheets"], dict):
-            service_account_info = st.secrets["google_sheets"].get("service_account") or st.secrets["google_sheets"].get("service_account_info")
+def get_airtable_credentials():
+    """從 Streamlit Secrets 中讀取 Airtable API Key 與 Base ID。"""
+    api_key = st.secrets.get("AIRTABLE_API_KEY") or st.secrets.get("airtable_api_key")
+    base_id = st.secrets.get("AIRTABLE_BASE_ID") or st.secrets.get("airtable_base_id")
 
-        if isinstance(service_account_info, str):
-            import json
-            service_account_info = json.loads(service_account_info)
+    if not api_key:
+        st.error("⚠️ 無法取得 Airtable API Key，請在 Streamlit Secrets 中設定 AIRTABLE_API_KEY。")
+        print("Airtable 認證失敗：缺少 AIRTABLE_API_KEY")
+        return None, None
 
-        if isinstance(service_account_info, dict):
-            service_account_info = dict(service_account_info)
-            if "private_key" in service_account_info and isinstance(service_account_info["private_key"], str):
-                service_account_info["private_key"] = service_account_info["private_key"].replace("\\n", "\n")
+    if not base_id:
+        st.error("⚠️ 無法取得 Airtable Base ID，請在 Streamlit Secrets 中設定 AIRTABLE_BASE_ID。")
+        print("Airtable 認證失敗：缺少 AIRTABLE_BASE_ID")
+        return None, None
 
-            creds = Credentials.from_service_account_info(service_account_info, scopes=scopes)
-            return gspread.authorize(creds)
+    return api_key, base_id
 
-        st.error("⚠️ 無法取得 Google Sheets Service Account 憑證，請確認 Streamlit Secrets 中有 gcp_service_account 或 GCP_SERVICE_ACCOUNT。")
-        print("Google Sheets 認證失敗：找不到 Service Account 憑證")
+
+def get_airtable_table(table_name):
+    api_key, base_id = get_airtable_credentials()
+    if not api_key or not base_id:
         return None
+
+    try:
+        return Table(api_key, base_id, table_name)
     except Exception as e:
-        st.error(f"⚠️ Google Sheets 認證失敗：{e}")
-        print(f"初始化 Google Sheets 失敗: {e}")
+        st.error(f"⚠️ 無法建立 Airtable 客戶端：{e}")
+        print(f"Airtable 客戶端初始化失敗: {e}")
         import traceback
         print(traceback.format_exc())
         return None
 
-def ensure_worksheet(sheet_name, headers):
-    """確保工作表存在且標題列正確"""
-    try:
-        client = get_gsheet_client()
-        if not client: return None
-        
-        spreadsheet_id = st.secrets.get("google_sheets", {}).get("spreadsheet_id")
-        if not spreadsheet_id: return None
-        
-        spreadsheet = client.open_by_key(spreadsheet_id)
-        
-        try:
-            worksheet = spreadsheet.worksheet(sheet_name)
-        except gspread.exceptions.WorksheetNotFound:
-            worksheet = spreadsheet.add_worksheet(title=sheet_name, rows="100", cols=len(headers))
-            if headers:
-                worksheet.append_row(headers)
-            return worksheet
-            
-        # 檢查標題列
-        current_headers = worksheet.row_values(1)
-        if not current_headers and headers:
-            worksheet.append_row(headers)
-            
-        return worksheet
-    except Exception as e:
-        print(f"確保工作表 {sheet_name} 失敗: {e}")
-        return None
 
 def get_anonymous_id():
     """取得匿名化的 IP Hash 與 User Agent"""
     try:
-        # 嘗試從 Streamlit 1.34.0+ 的 st.context 取得資訊
         if hasattr(st, "context") and hasattr(st.context, "headers"):
             headers = st.context.headers
             ip = headers.get("X-Forwarded-For", "unknown").split(",")[0]
             ua = headers.get("User-Agent", "unknown")
         else:
-            # 舊版 Streamlit 或是本地運行 fallback
             ip = "127.0.0.1"
             ua = "local-browser"
-            
+
         ip_hash = hashlib.sha256(ip.encode()).hexdigest()[:16]
         return ip_hash, ua
     except Exception as e:
         print(f"取得匿名 ID 失敗: {e}")
         return "unknown_hash", "unknown_ua"
 
+
 def append_user_submission(data):
-    """將使用者輸入資料寫入 Google Sheets"""
-    try:
-        headers = [
-            "created_at", "user_name", "gender", "job_status", 
-            "birth_year", "birth_month", "birth_day", "birth_hour", "birth_minute",
-            "analysis_mode", "question", "is_couple_mode",
-            "partner_name", "partner_gender", "partner_birth_year", 
-            "partner_birth_month", "partner_birth_day", "partner_birth_hour", "partner_birth_minute",
-            "user_ip_hash", "user_agent", "session_id"
-        ]
-        
-        worksheet = ensure_worksheet("user_submissions", headers)
-        if not worksheet:
-            st.error("⚠️ 試算表連線失敗，無法取得 user_submissions 工作表，請檢查 Google Sheets 設定。")
-            return
-        
-        ip_hash, ua = get_anonymous_id()
-        
-        # 限制問題長度
-        safe_question = str(data.get("question", ""))[:3000]
-        
-        row = [
-            datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            data.get("user_name"),
-            data.get("gender"),
-            data.get("job_status"),
-            data.get("birth_year"),
-            data.get("birth_month"),
-            data.get("birth_day"),
-            data.get("birth_hour"),
-            data.get("birth_minute"),
-            data.get("analysis_mode"),
-            safe_question,
-            "Yes" if data.get("is_couple_mode") else "No",
-            data.get("partner_name", ""),
-            data.get("partner_gender", ""),
-            data.get("partner_birth_year", ""),
-            data.get("partner_birth_month", ""),
-            data.get("partner_birth_day", ""),
-            data.get("partner_birth_hour", ""),
-            data.get("partner_birth_minute", ""),
-            ip_hash,
-            ua,
-            st.session_state.get('session_id', 'no_session')
-        ]
-        worksheet.append_row(row)
-    except Exception as e:
-        st.error(f"⚠️ 試算表連線失敗，錯誤代碼：{e}")
-        print(f"寫入 user_submissions 失敗: {e}")
-        import traceback
-        print(f"完整錯誤信息: {traceback.format_exc()}")
+    """目前僅保留接口，實際寫入僅記錄分析結果與網站訪客。"""
+    print("Airtable logging: user_submissions skipped.")
+
 
 def log_site_visit(page_name):
-    """紀錄網站瀏覽紀錄，相同 session 僅紀錄一次同頁面瀏覽"""
+    """紀錄網站訪客資料到 Airtable site_visits 表。"""
     try:
         if 'visited_pages' not in st.session_state:
             st.session_state.visited_pages = set()
-            
+
         if page_name in st.session_state.visited_pages:
             return
-            
-        headers = [
-            "visited_at", "page_name", "session_id", 
-            "user_ip_hash", "user_agent", "referrer", 
-            "screen_width", "screen_height"
-        ]
 
-        client = get_gsheet_client()
-        if not client:
-            st.error("⚠️ 試算表連線失敗，無法建立 Google Sheets 客戶端，請檢查 Service Account 設定。")
+        table = get_airtable_table("site_visits")
+        if not table:
             return
-
-        spreadsheet_id = st.secrets.get("google_sheets", {}).get("spreadsheet_id")
-        if not spreadsheet_id:
-            st.error("⚠️ 試算表連線失敗，缺少 spreadsheet_id，請確認 Streamlit Secrets 設定。")
-            return
-
-        spreadsheet = client.open_by_key(spreadsheet_id)
-        try:
-            worksheet = spreadsheet.worksheet("site_visits")
-        except gspread.exceptions.WorksheetNotFound:
-            worksheet = spreadsheet.add_worksheet(title="site_visits", rows="1000", cols="10")
-            worksheet.append_row(headers)
 
         ip_hash, ua = get_anonymous_id()
         referrer = ""
@@ -185,74 +80,54 @@ def log_site_visit(page_name):
             referrer = st.context.headers.get("Referer", "")
         except Exception:
             pass
-        
-        row = [
-            datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            page_name,
-            st.session_state.get('session_id', 'no_session'),
-            ip_hash,
-            ua,
-            referrer,
-            "", # screen_width 暫無直接取得方式
-            ""  # screen_height 暫無直接取得方式
-        ]
-        worksheet.append_row(row)
+
+        record = {
+            "Time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "Page Name": page_name,
+            "Session ID": st.session_state.get('session_id', 'no_session'),
+            "IP Hash": ip_hash,
+            "User Agent": ua,
+            "Referrer": referrer,
+            "Screen Width": "",
+            "Screen Height": ""
+        }
+        table.create(record)
         st.session_state.visited_pages.add(page_name)
     except Exception as e:
-        st.error(f"⚠️ 試算表連線失敗，錯誤代碼：{e}")
+        st.error(f"⚠️ Airtable 寫入失敗，site_visits 錯誤：{e}")
         print(f"寫入 site_visits 失敗: {e}")
         import traceback
-        print(f"完整錯誤信息: {traceback.format_exc()}")
+        print(traceback.format_exc())
+
 
 def append_analysis_result(data):
-    """將分析結果寫入 Google Sheets"""
+    """將分析結果寫入 Airtable analysis_results 表。"""
     try:
-        headers = [
-            "created_at", "user_name", "gender", "birth_date", "analysis_mode", 
-            "question", "ai_response", "is_master_mode", "user_ip_hash", "session_id"
-        ]
-
-        client = get_gsheet_client()
-        if not client:
-            st.error("⚠️ 試算表連線失敗，無法建立 Google Sheets 客戶端，請檢查 Service Account 設定。")
+        table = get_airtable_table("analysis_results")
+        if not table:
             return
 
-        spreadsheet_id = st.secrets.get("google_sheets", {}).get("spreadsheet_id")
-        if not spreadsheet_id:
-            st.error("⚠️ 試算表連線失敗，缺少 spreadsheet_id，請確認 Streamlit Secrets 設定。")
-            return
-
-        spreadsheet = client.open_by_key(spreadsheet_id)
-        try:
-            worksheet = spreadsheet.worksheet("analysis_results")
-        except gspread.exceptions.WorksheetNotFound:
-            worksheet = spreadsheet.add_worksheet(title="analysis_results", rows="1000", cols="10")
-            worksheet.append_row(headers)
-        
         ip_hash, ua = get_anonymous_id()
-        
-        # 限制回應長度
         safe_response = str(data.get("ai_response", ""))[:10000]
         safe_question = str(data.get("question", ""))[:1000]
-        
         birth_date = f"{data.get('birth_year', '')}-{data.get('birth_month', '')}-{data.get('birth_day', '')}"
-        
-        row = [
-            datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            data.get("user_name", ""),
-            data.get("gender", ""),
-            birth_date,
-            data.get("analysis_mode", ""),
-            safe_question,
-            safe_response,
-            "Yes" if data.get("is_master_mode") else "No",
-            ip_hash,
-            st.session_state.get('session_id', 'no_session')
-        ]
-        worksheet.append_row(row)
-        print(f"成功寫入分析結果到 Google Sheets: {data.get('user_name', '')}")
+
+        record = {
+            "Time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "Name": data.get("user_name", ""),
+            "Gender": data.get("gender", ""),
+            "Birth Date": birth_date,
+            "Analysis Mode": data.get("analysis_mode", ""),
+            "Question": safe_question,
+            "AI Response": safe_response,
+            "Master Mode": "Yes" if data.get("is_master_mode") else "No",
+            "IP Hash": ip_hash,
+            "Session ID": st.session_state.get('session_id', 'no_session')
+        }
+        table.create(record)
+        print(f"成功寫入分析結果到 Airtable: {data.get('user_name', '')}")
     except Exception as e:
-        st.error(f"⚠️ 試算表連線失敗，錯誤代碼：{e}")
+        st.error(f"⚠️ Airtable 寫入失敗，analysis_results 錯誤：{e}")
         print(f"寫入 analysis_results 失敗: {e}")
         import traceback
-        print(f"完整錯誤信息: {traceback.format_exc()}")
+        print(traceback.format_exc())
