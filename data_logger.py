@@ -110,6 +110,8 @@ def append_analysis_result(data):
         ip_hash, ua = get_anonymous_id()
         safe_response = str(data.get("ai_response", ""))[:10000]
         safe_question = str(data.get("question", ""))[:1000]
+        safe_user_questions = str(data.get("User_Questions", ""))[:1000]
+        safe_outline = str(data.get("AI_Outline", ""))[:2000]
         birth_date = f"{data.get('birth_year', '')}-{data.get('birth_month', '')}-{data.get('birth_day', '')}"
 
         record = {
@@ -119,6 +121,8 @@ def append_analysis_result(data):
             "Birth Date": birth_date,
             "Analysis Mode": data.get("analysis_mode", ""),
             "Question": safe_question,
+            "User_Questions": safe_user_questions,
+            "AI_Outline": safe_outline,
             "AI Response": safe_response,
             "Master Mode": "Yes" if data.get("is_master_mode") else "No",
             "IP Hash": ip_hash,

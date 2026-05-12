@@ -422,6 +422,18 @@ def generate_content_with_retry(model, contents, config=None, max_retries=1):
                 continue
             raise
 
+def extract_ai_outline(text):
+    if not text:
+        return ""
+    markers = ["AI Outline:", "AI Outline：", "AI_Outline:", "AI_Outline：", "大綱：", "AI 大綱："]
+    for marker in markers:
+        idx = text.find(marker)
+        if idx != -1:
+            outline = text[idx + len(marker):].strip()
+            return outline
+    return ""
+
+
 def ai_reply(prompt, is_master=False):
     system_role = "你是一位精通《淵海子平》、《三命通會》與《滴天髓》的命理大師 Hugo。語氣沉穩、睿智，必須深入探討干支生剋與格局，拒絕罐頭回覆。你必須具備時效性，能看清當下的歲運流轉。"
     if is_master:
@@ -688,7 +700,13 @@ if 'analysis_mode' in st.session_state:
         if enable_dual:
             name2, p_gender, relation_type, p_year, p_month, p_day, p_hour, p_min = render_partner_input()
     
+    user_questions = st.text_area(
+        "您目前最想諮詢的事項或問題？",
+        height=140,
+        placeholder="請詳細描述您目前最想深度諮詢的核心問題，例如感情、事業、健康或人生抉擇。"
+    )
     question = st.text_area("您的問題", placeholder="例如：這段感情還有救嗎？或未來的事業發展？")
+    primary_issue = user_questions.strip() or question.strip()
     
     if st.button("🚀 開始 AI 命理分析"):
         # 防錯機制：檢查必要欄位
@@ -696,8 +714,8 @@ if 'analysis_mode' in st.session_state:
             st.error("請輸入您的姓名/暱稱。")
         elif enable_dual and not name2:
             st.error("請輸入對象的姓名/暱稱。")
-        elif not question:
-            st.warning("建議輸入具體問題，大師能為您提供更精確的指引。")
+        elif not primary_issue:
+            st.warning("建議輸入您目前最想諮詢的事項或問題，以便大師提供更精確的回覆。")
             # 即使沒填問題也允許分析，但給予警告
         
         if name and (not enable_dual or name2):
@@ -712,6 +730,7 @@ if 'analysis_mode' in st.session_state:
                 "birth_hour": b_hour,
                 "birth_minute": b_min,
                 "analysis_mode": mode,
+                "user_questions": user_questions,
                 "question": question,
                 "is_couple_mode": enable_dual,
                 "partner_name": name2 if enable_dual else "",
@@ -745,7 +764,7 @@ if 'analysis_mode' in st.session_state:
                     # 專屬紫微 System Prompt - 命盤已預先計算完成
                     ziwei_system_role = "你是一位精通紫微斗數的大師。命盤已經透過 iztro 引擎精準排好，請直接根據這些宮位星曜進行大師級解析，不要自行推算。請嚴格遵守紫微斗數的邏輯（星曜、宮位、四化）來解盤，絕對禁止混入八字術語（如：十神、日主、五行強弱）。"
                     
-                    prompt = f"{year_context}\n\n請針對以下紫微斗數命盤數據進行深度分析：\nJSON數據：{json.dumps(ziwei_data, ensure_ascii=False)}\n用戶問題：{question}\n\n請詳細分析命宮、夫妻宮、財帛宮與事業宮的特質，並針對用戶問題給予具體建議。"
+                    prompt = f"{year_context}\n\n請優先針對客戶填寫的問題進行深度解答：\n{primary_issue}\n\n補充問題：{question}\n\n請針對以下紫微斗數命盤數據進行深度分析：\nJSON數據：{json.dumps(ziwei_data, ensure_ascii=False)}\n\n請詳細分析命宮、夫妻宮、財帛宮與事業宮的特質，並針對用戶問題給予具體建議。\n\n請在回答末尾附上「AI Outline：」段落，列出本次分析的重點摘要與要點提示。"
                     
                     try:
                         response = genai_client.models.generate_content(
@@ -757,6 +776,7 @@ if 'analysis_mode' in st.session_state:
                     except Exception as e:
                         result = f"AI 紫微分析失敗：{str(e)}"
                         
+                    ai_outline = extract_ai_outline(result)
                     st.markdown(f'<div class="main-card">{result}</div>', unsafe_allow_html=True)
                     
                     # 記錄分析結果
@@ -768,7 +788,9 @@ if 'analysis_mode' in st.session_state:
                         "birth_day": b_day,
                         "analysis_mode": mode,
                         "question": question,
+                        "User_Questions": user_questions,
                         "ai_response": result,
+                        "AI_Outline": ai_outline,
                         "is_master_mode": is_master
                     }
                     append_analysis_result(analysis_data)
@@ -778,8 +800,9 @@ if 'analysis_mode' in st.session_state:
                     st.markdown("### 📜 八字命盤基礎")
                     st.markdown(render_bazi_table(bazi), unsafe_allow_html=True)
                     
-                    prompt = f"{year_context}\n\n你是一位專業命理大師。請針對以下八字命盤進行深度分析：\n姓名：{name}\n性別：{gender}\n出生時間：{b_year}/{b_month}/{b_day} {b_hour}:{b_min}\n職業：{occupation}\n問題：{question}\n命盤數據：{bazi['full']}\n\n請分析性格、事業、財運與感情建議。"
+                    prompt = f"{year_context}\n\n請優先針對客戶填寫的問題進行深度解答：\n{primary_issue}\n\n補充問題：{question}\n\n你是一位專業命理大師。請針對以下八字命盤進行深度分析：\n姓名：{name}\n性別：{gender}\n出生時間：{b_year}/{b_month}/{b_day} {b_hour}:{b_min}\n職業：{occupation}\n命盤數據：{bazi['full']}\n\n請分析性格、事業、財運與感情建議，並在回答末尾附上「AI Outline：」段落，列出本次分析的重點摘要與要點提示."
                     result = ai_reply(prompt, is_master=is_master)
+                    ai_outline = extract_ai_outline(result)
                     st.markdown(f'<div class="main-card">{result}</div>', unsafe_allow_html=True)
                     
                     # 記錄分析結果
@@ -791,7 +814,9 @@ if 'analysis_mode' in st.session_state:
                         "birth_day": b_day,
                         "analysis_mode": mode,
                         "question": question,
+                        "User_Questions": user_questions,
                         "ai_response": result,
+                        "AI_Outline": ai_outline,
                         "is_master_mode": is_master
                     }
                     append_analysis_result(analysis_data)
@@ -802,8 +827,9 @@ if 'analysis_mode' in st.session_state:
                     st.markdown(render_bazi_table(bazi), unsafe_allow_html=True)
                     st.info("💡 系統正結合紫微斗數星曜分佈進行交叉判斷。")
                     
-                    prompt = f"{year_context}\n\n你是一位精通八字與紫微斗數的大師。請針對以下命盤進行「交叉比對分析」：\n姓名：{name}\n問題：{question}\n八字數據：{bazi['full']}\n\n請結合兩套系統，提供更高維度的判斷建議。"
+                    prompt = f"{year_context}\n\n請優先針對客戶填寫的問題進行深度解答：\n{primary_issue}\n\n補充問題：{question}\n\n你是一位精通八字與紫微斗數的大師。請針對以下命盤進行「交叉比對分析」：\n姓名：{name}\n八字數據：{bazi['full']}\n\n請結合兩套系統，提供更高維度的判斷建議，並在回答末尾附上「AI Outline：」段落，列出本次分析的重點摘要與要點提示."
                     result = ai_reply(prompt, is_master=is_master)
+                    ai_outline = extract_ai_outline(result)
                     st.markdown(f'<div class="main-card">{result}</div>', unsafe_allow_html=True)
                     
                     # 記錄分析結果
@@ -815,7 +841,9 @@ if 'analysis_mode' in st.session_state:
                         "birth_day": b_day,
                         "analysis_mode": mode,
                         "question": question,
+                        "User_Questions": user_questions,
                         "ai_response": result,
+                        "AI_Outline": ai_outline,
                         "is_master_mode": is_master
                     }
                     append_analysis_result(analysis_data)
@@ -843,8 +871,9 @@ if 'analysis_mode' in st.session_state:
                         # 準備對象 Prompt
                         partner_info = f"對象姓名：{name2}\n對象性別：{p_gender}\n對象出生：{p_year}/{p_month}/{p_day} {p_hour}:{p_min}"
                         
-                        prompt = f"{year_context}\n\n你是一位專業合盤大師。請分析 {name} 與其對象 {name2} 的關係。\n關係類型：{relation_type}\n主諮詢者資料：八字({bazi['full']}), 紫微({json.dumps(ziwei_data, ensure_ascii=False)})\n{partner_info}\n問題：{question}\n\n請針對雙方的「八字合盤」與「紫微宮位互動」進行深度解析，分析吸引力、衝突點、緣分深淺與具體的相處建議。"
+                        prompt = f"{year_context}\n\n請優先針對客戶填寫的問題進行深度解答：\n{primary_issue}\n\n補充問題：{question}\n\n你是一位專業合盤大師。請分析 {name} 與其對象 {name2} 的關係。\n關係類型：{relation_type}\n主諮詢者資料：八字({bazi['full']}), 紫微({json.dumps(ziwei_data, ensure_ascii=False)})\n{partner_info}\n\n請針對雙方的「八字合盤」與「紫微宮位互動」進行深度解析，分析吸引力、衝突點、緣分深淺與具體的相處建議，並在回答末尾附上「AI Outline：」段落，列出本次分析的重點摘要與要點提示."
                         result = ai_reply(prompt, is_master=is_master)
+                        ai_outline = extract_ai_outline(result)
                         st.markdown(f'<div class="main-card">{result}</div>', unsafe_allow_html=True)
                         
                         # 記錄分析結果
@@ -856,7 +885,9 @@ if 'analysis_mode' in st.session_state:
                             "birth_day": b_day,
                             "analysis_mode": mode,
                             "question": question,
+                            "User_Questions": user_questions,
                             "ai_response": result,
+                            "AI_Outline": ai_outline,
                             "is_master_mode": is_master
                         }
                         append_analysis_result(analysis_data)
