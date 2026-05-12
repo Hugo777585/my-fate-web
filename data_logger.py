@@ -146,16 +146,30 @@ def log_site_visit(page_name):
             "user_ip_hash", "user_agent", "referrer", 
             "screen_width", "screen_height"
         ]
-        
-        worksheet = ensure_worksheet("site_visits", headers)
-        if not worksheet:
-            st.error("⚠️ 試算表連線失敗，無法取得 site_visits 工作表，請檢查 Google Sheets 設定。")
+
+        client = get_gsheet_client()
+        if not client:
+            st.error("⚠️ 試算表連線失敗，無法建立 Google Sheets 客戶端，請檢查 Service Account 設定。")
             return
-        
+
+        spreadsheet_id = st.secrets.get("google_sheets", {}).get("spreadsheet_id")
+        if not spreadsheet_id:
+            st.error("⚠️ 試算表連線失敗，缺少 spreadsheet_id，請確認 Streamlit Secrets 設定。")
+            return
+
+        spreadsheet = client.open_by_key(spreadsheet_id)
+        try:
+            worksheet = spreadsheet.worksheet("site_visits")
+        except gspread.exceptions.WorksheetNotFound:
+            worksheet = spreadsheet.add_worksheet(title="site_visits", rows="1000", cols="10")
+            worksheet.append_row(headers)
+
         ip_hash, ua = get_anonymous_id()
         referrer = ""
-        try: referrer = st.context.headers.get("Referer", "")
-        except: pass
+        try:
+            referrer = st.context.headers.get("Referer", "")
+        except Exception:
+            pass
         
         row = [
             datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -182,11 +196,23 @@ def append_analysis_result(data):
             "created_at", "user_name", "gender", "birth_date", "analysis_mode", 
             "question", "ai_response", "is_master_mode", "user_ip_hash", "session_id"
         ]
-        
-        worksheet = ensure_worksheet("analysis_results", headers)
-        if not worksheet:
-            st.error("⚠️ 試算表連線失敗，無法取得 analysis_results 工作表，請檢查 Google Sheets 設定。")
+
+        client = get_gsheet_client()
+        if not client:
+            st.error("⚠️ 試算表連線失敗，無法建立 Google Sheets 客戶端，請檢查 Service Account 設定。")
             return
+
+        spreadsheet_id = st.secrets.get("google_sheets", {}).get("spreadsheet_id")
+        if not spreadsheet_id:
+            st.error("⚠️ 試算表連線失敗，缺少 spreadsheet_id，請確認 Streamlit Secrets 設定。")
+            return
+
+        spreadsheet = client.open_by_key(spreadsheet_id)
+        try:
+            worksheet = spreadsheet.worksheet("analysis_results")
+        except gspread.exceptions.WorksheetNotFound:
+            worksheet = spreadsheet.add_worksheet(title="analysis_results", rows="1000", cols="10")
+            worksheet.append_row(headers)
         
         ip_hash, ua = get_anonymous_id()
         
