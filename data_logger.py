@@ -10,25 +10,40 @@ def get_gsheet_client():
     """初始化並回傳 Google Sheets 客戶端"""
     try:
         scopes = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
-        
-        # 支援 Streamlit Cloud Secrets 與 local secrets.toml
-        # 優先讀取大師指定的 [GCP_SERVICE_ACCOUNT]
+
         service_account_info = None
+        # 優先從 Streamlit Secrets 讀取 Service Account 憑證
         if "GCP_SERVICE_ACCOUNT" in st.secrets:
-            service_account_info = dict(st.secrets["GCP_SERVICE_ACCOUNT"])
+            service_account_info = st.secrets["GCP_SERVICE_ACCOUNT"]
         elif "gcp_service_account" in st.secrets:
-            service_account_info = dict(st.secrets["gcp_service_account"])
-            
-        if service_account_info:
-            if "private_key" in service_account_info:
+            service_account_info = st.secrets["gcp_service_account"]
+        elif "google_service_account" in st.secrets:
+            service_account_info = st.secrets["google_service_account"]
+        elif "service_account" in st.secrets:
+            service_account_info = st.secrets["service_account"]
+        elif "google_sheets" in st.secrets and isinstance(st.secrets["google_sheets"], dict):
+            service_account_info = st.secrets["google_sheets"].get("service_account") or st.secrets["google_sheets"].get("service_account_info")
+
+        if isinstance(service_account_info, str):
+            import json
+            service_account_info = json.loads(service_account_info)
+
+        if isinstance(service_account_info, dict):
+            service_account_info = dict(service_account_info)
+            if "private_key" in service_account_info and isinstance(service_account_info["private_key"], str):
                 service_account_info["private_key"] = service_account_info["private_key"].replace("\\n", "\n")
-            
+
             creds = Credentials.from_service_account_info(service_account_info, scopes=scopes)
             return gspread.authorize(creds)
-        else:
-            return None
+
+        st.error("⚠️ 無法取得 Google Sheets Service Account 憑證，請確認 Streamlit Secrets 中有 gcp_service_account 或 GCP_SERVICE_ACCOUNT。")
+        print("Google Sheets 認證失敗：找不到 Service Account 憑證")
+        return None
     except Exception as e:
+        st.error(f"⚠️ Google Sheets 認證失敗：{e}")
         print(f"初始化 Google Sheets 失敗: {e}")
+        import traceback
+        print(traceback.format_exc())
         return None
 
 def ensure_worksheet(sheet_name, headers):
