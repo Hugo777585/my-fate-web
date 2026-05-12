@@ -92,7 +92,9 @@ def append_user_submission(data):
         ]
         
         worksheet = ensure_worksheet("user_submissions", headers)
-        if not worksheet: return
+        if not worksheet:
+            st.error("⚠️ 試算表連線失敗，無法取得 user_submissions 工作表，請檢查 Google Sheets 設定。")
+            return
         
         ip_hash, ua = get_anonymous_id()
         
@@ -125,7 +127,10 @@ def append_user_submission(data):
         ]
         worksheet.append_row(row)
     except Exception as e:
+        st.error(f"⚠️ 試算表連線失敗，錯誤代碼：{e}")
         print(f"寫入 user_submissions 失敗: {e}")
+        import traceback
+        print(f"完整錯誤信息: {traceback.format_exc()}")
 
 def log_site_visit(page_name):
     """紀錄網站瀏覽紀錄，相同 session 僅紀錄一次同頁面瀏覽"""
@@ -143,7 +148,9 @@ def log_site_visit(page_name):
         ]
         
         worksheet = ensure_worksheet("site_visits", headers)
-        if not worksheet: return
+        if not worksheet:
+            st.error("⚠️ 試算表連線失敗，無法取得 site_visits 工作表，請檢查 Google Sheets 設定。")
+            return
         
         ip_hash, ua = get_anonymous_id()
         referrer = ""
@@ -163,7 +170,10 @@ def log_site_visit(page_name):
         worksheet.append_row(row)
         st.session_state.visited_pages.add(page_name)
     except Exception as e:
+        st.error(f"⚠️ 試算表連線失敗，錯誤代碼：{e}")
         print(f"寫入 site_visits 失敗: {e}")
+        import traceback
+        print(f"完整錯誤信息: {traceback.format_exc()}")
 
 def append_analysis_result(data):
     """將分析結果寫入 Google Sheets"""
@@ -174,8 +184,8 @@ def append_analysis_result(data):
         ]
         
         worksheet = ensure_worksheet("analysis_results", headers)
-        if not worksheet: 
-            print("無法取得 analysis_results 工作表")
+        if not worksheet:
+            st.error("⚠️ 試算表連線失敗，無法取得 analysis_results 工作表，請檢查 Google Sheets 設定。")
             return
         
         ip_hash, ua = get_anonymous_id()
@@ -201,6 +211,7 @@ def append_analysis_result(data):
         worksheet.append_row(row)
         print(f"成功寫入分析結果到 Google Sheets: {data.get('user_name', '')}")
     except Exception as e:
+        st.error(f"⚠️ 試算表連線失敗，錯誤代碼：{e}")
         print(f"寫入 analysis_results 失敗: {e}")
         import traceback
         print(f"完整錯誤信息: {traceback.format_exc()}")
