@@ -1,357 +1,168 @@
 import streamlit as st
 import streamlit.components.v1 as components
 from openai import OpenAI
+import google.genai as genai
+from google.genai import types
 import datetime
 import time
 import os
-import gspread
 import re
 import json
 import csv
 import base64
+import hashlib
+import uuid
+from ziwei_engine import calculate_ziwei
 from dotenv import load_dotenv
-from google.oauth2.service_account import Credentials
 from lunar_python import Lunar, Solar
 from tone_engine import analyze_tone_strategy
 from fpdf import FPDF
+# from data_logger import log_site_visit, append_user_submission, append_analysis_result
 
 load_dotenv()
-openai_key = st.secrets.get("OPENAI_API_KEY", None) or os.getenv("OPENAI_API_KEY")
+today = datetime.date.today()
+year_context = f"今天是 {today}。請務必針對目前的 2026 丙午年以及未來的 2027 丁未年進行深度流年分析，絕對不要分析已經過去的 2024 或 2025 年。"
+st.set_page_config(page_title="HUGO 天命智庫", page_icon="🔮", layout="wide")
 
-if not openai_key:
+# --- 抓取 OpenAI 金鑰 ---
+openai_api_key = st.secrets.get("OPENAI_API_KEY") or \
+                 st.secrets.get("openai_api_key") or \
+                 st.secrets.get("openai", {}).get("api_key") or \
+                 os.getenv("OPENAI_API_KEY")
+
+if not openai_api_key:
     st.error("尚未設定 OPENAI_API_KEY，請先到 Streamlit Cloud Secrets 加入金鑰。")
     st.stop()
 
-client = OpenAI(api_key=openai_key)
+client = OpenAI(api_key=openai_api_key)
+
+# --- 抓取 Google API 金鑰 ---
+google_api_key = st.secrets.get("GOOGLE_API_KEY") or os.getenv("GOOGLE_API_KEY")
+if not google_api_key:
+    st.error("尚未設定 GOOGLE_API_KEY，請先到 Streamlit Cloud Secrets 加入金鑰。")
+    st.stop()
+
+genai_client = genai.Client(api_key=google_api_key)
 
 # --- Hugo 大師專屬：專業命理顧問感樣式 --- 
 st.markdown(""" 
 <style> 
-    /* 1. 全局背景色：#B3AAAA */ 
-    .stApp { 
-        background-color: #B3AAAA; 
-        color: #2F2F2F; 
-        font-family: 'Noto Sans TC', sans-serif;
-    } 
-
-    /* 隱藏預設元素與多餘白條 */
+    .stApp { background-color: #FDFCF9; color: #3E3A39; font-family: 'Noto Serif TC', serif; } 
     hr, .stDivider, div[data-testid="stDivider"], header, footer { display: none !important; }
-    .block-container { 
-        padding-top: 2rem; 
-        padding-bottom: 2rem; 
-        max-width: 1100px;
-    } 
-    
-    /* 2. 主內容卡片背景：#C9C9C2 */
-    .main-card {
-        background-color: #C9C9C2;
-        padding: 35px;
-        border-radius: 22px;
-        box-shadow: 0 12px 40px rgba(0,0,0,0.15);
-        margin-bottom: 30px;
-        border: 1px solid rgba(0,0,0,0.05);
-    }
-
-    /* 3. 區塊橫桿 / 標題區背景：#E2E2CC */
-    .section-bar {
-        background-color: #E2E2CC;
-        padding: 15px 25px;
-        border-radius: 18px;
-        font-weight: 900;
-        font-size: 24px;
-        color: #2F2F2F;
-        margin: 40px 0 25px 0;
-        border-left: 10px solid #9A7A38;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    }
-
-    /* 4. 2x2 功能大卡片 */
-    .feature-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 20px;
-        margin-bottom: 30px;
-    }
-    .feature-card {
-        background-color: #E2E2CC;
-        border-radius: 20px;
-        padding: 30px;
-        text-align: center;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-        transition: all 0.3s ease;
-        border: 1px solid rgba(154, 122, 56, 0.2);
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-    }
-    .feature-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 15px 35px rgba(0,0,0,0.15);
-    }
-    .feature-icon { font-size: 45px; margin-bottom: 15px; }
-    .feature-title { font-size: 24px; font-weight: 900; color: #2F2F2F; margin-bottom: 12px; }
-    .feature-desc { font-size: 16px; color: #444; line-height: 1.6; margin-bottom: 25px; }
-
-    /* 5. 三大經典卡片 */
-    .classic-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 20px;
-    }
-    .classic-card {
-        background-color: #F4F4ED;
-        padding: 25px;
-        border-radius: 18px;
-        border: 1px solid #E2E2CC;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-    }
-    .classic-header { color: #9A7A38; font-weight: 900; font-size: 19px; margin-bottom: 10px; }
-    .classic-point { background: #E2E2CC; padding: 5px 12px; border-radius: 8px; font-weight: 700; display: inline-block; margin-top: 10px; }
-
-    /* 6. 按鈕樣式：高度 48px+，重點金色 #9A7A38 */
-    .stButton > button {
-        height: 52px !important;
-        border-radius: 15px !important;
-        font-weight: 900 !important;
-        font-size: 18px !important;
-        background-color: #9A7A38 !important;
-        color: white !important;
-        border: none !important;
-        box-shadow: 0 6px 15px rgba(154, 122, 56, 0.3) !important;
-        transition: all 0.3s ease !important;
-        width: 100% !important;
-    }
-    .stButton > button:hover {
-        background-color: #B38E45 !important;
-        box-shadow: 0 10px 25px rgba(154, 122, 56, 0.4) !important;
-        transform: translateY(-2px) !important;
-    }
-
-    /* 7. 方案卡片 */
-    .price-card {
-        background-color: #FDFCF9;
-        padding: 30px;
-        border-radius: 22px;
-        text-align: center;
-        border: 2px solid #E2E2CC;
-        transition: all 0.3s ease;
-        height: 100%;
-    }
-    .price-card.featured { border-color: #9A7A38; background-color: #ECECD8; }
-    .price-title { font-size: 24px; font-weight: 900; color: #2F2F2F; }
-    .price-val { font-size: 38px; font-weight: 900; color: #9A7A38; margin: 20px 0; }
-
-    /* 8. LOGO 控制 */
-    .logo-box { text-align: center; margin-bottom: 25px; }
+    .block-container { padding-top: 2rem; padding-bottom: 2rem; max-width: 1200px; } 
+    .main-card { background-color: #FFFFFF; padding: 40px; border-radius: 25px; box-shadow: 0 15px 50px rgba(154, 122, 56, 0.1); margin-bottom: 35px; border: 1px solid #E2E2CC; }
+    .section-bar { background-color: #F4F4ED; padding: 18px 30px; border-radius: 20px; font-weight: 900; font-size: 26px; color: #9A7A38; margin: 45px 0 30px 0; border-left: 12px solid #9A7A38; box-shadow: 0 5px 15px rgba(0,0,0,0.03); letter-spacing: 2px; }
+    .feature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-bottom: 35px; }
+    .feature-card { background-color: #FFFFFF; border-radius: 25px; padding: 35px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.05); transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1); border: 1px solid #F4F4ED; height: 100%; display: flex; flex-direction: column; justify-content: space-between; }
+    .feature-card:hover { transform: translateY(-8px); box-shadow: 0 20px 45px rgba(154, 122, 56, 0.12); border-color: #9A7A38; }
+    .feature-icon { font-size: 50px; margin-bottom: 20px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1)); }
+    .feature-title { font-size: 26px; font-weight: 900; color: #3E3A39; margin-bottom: 15px; letter-spacing: 1px; }
+    .feature-desc { font-size: 17px; color: #666; line-height: 1.8; margin-bottom: 30px; }
+    .classic-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px; }
+    .classic-card { background-color: #FFFFFF; padding: 30px; border-radius: 22px; border: 1px solid #F4F4ED; box-shadow: 0 8px 20px rgba(0,0,0,0.03); transition: all 0.3s ease; }
+    .classic-card:hover { border-color: #9A7A38; }
+    .classic-header { color: #9A7A38; font-weight: 900; font-size: 21px; margin-bottom: 15px; border-bottom: 1px solid #F4F4ED; padding-bottom: 10px; }
+    .stButton > button { height: 56px !important; border-radius: 18px !important; font-weight: 900 !important; font-size: 19px !important; background: linear-gradient(135deg, #9A7A38, #B38E45) !important; color: white !important; border: none !important; box-shadow: 0 8px 20px rgba(154, 122, 56, 0.25) !important; transition: all 0.4s ease !important; width: 100% !important; letter-spacing: 2px; }
     .logo-img { max-width: 180px; height: auto; }
-    @media (max-width: 600px) {
-        .logo-img { max-width: 130px; }
-        .feature-grid { grid-template-columns: 1fr; }
-        .stButton > button { width: 100% !important; }
-    }
-
-    /* 金色重點 */
-    .gold { color: #9A7A38; font-weight: 900; }
 </style> 
 """, unsafe_allow_html=True)
 
-def ai_reply(prompt):
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": prompt}]
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        return f"AI 連線失敗：{str(e)}"
+def get_ziwei_data(birth_year, birth_month, birth_day, birth_hour):
+    if birth_hour not in range(12): birth_hour = birth_hour // 2 % 12
+    return calculate_ziwei(birth_year, birth_month, birth_day, birth_hour)
 
-def ai_love_consult_reply(context_prompt, is_master=False):
-    system_role = """你是一位結合命理分析、感情心理諮詢與關係策略的顧問。請用沉穩、理性、具同理心的方式分析。"""
-    if is_master:
-        permission_instruction = "【大師模式：完整分析】"
-    else:
-        permission_instruction = "【一般模式：初步引導】"
-    full_prompt = f"{system_role}\n\n{context_prompt}\n{permission_instruction}"
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "system", "content": system_role}, {"role": "user", "content": full_prompt}]
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        return f"AI 諮詢失敗：{str(e)}"
-
-def get_wuxing_color(char):
-    if not char: return "#FFFFFF"
-    char = char[0]
-    wuxing_map = {
-        '甲': '#C8E6C9', '乙': '#C8E6C9', '寅': '#C8E6C9', '卯': '#C8E6C9',
-        '丙': '#FFCDD2', '丁': '#FFCDD2', '巳': '#FFCDD2', '午': '#FFCDD2',
-        '戊': '#FFF9C4', '己': '#FFF9C4', '辰': '#FFF9C4', '戌': '#FFF9C4', '丑': '#FFF9C4', '未': '#FFF9C4',
-        '庚': '#F5F5F5', '辛': '#F5F5F5', '申': '#F5F5F5', '酉': '#F5F5F5',
-        '壬': '#BBDEFB', '癸': '#BBDEFB', '亥': '#BBDEFB', '子': '#BBDEFB',
-    }
-    return wuxing_map.get(char, "#FFFFFF")
-
-def render_bazi_table(bazi):
-    if not bazi: return ""
-    y_color = get_wuxing_color(bazi['year_dz'])
-    m_color = get_wuxing_color(bazi['month_dz'])
-    d_color = get_wuxing_color(bazi['day_dz'])
-    h_color = get_wuxing_color(bazi['hour_dz'])
-    html = f"""
-    <div style="overflow-x: auto; margin-bottom: 20px;">
-        <table style="width: 100%; border-collapse: collapse; text-align: center; border: 2px solid #9A7A38;">
-            <tr style="background-color: #9A7A38; color: white;">
-                <th>四柱</th><th>天干</th><th>十神</th><th>地支</th><th>藏干</th>
-            </tr>
-            <tr style="background-color: {y_color};"><td>年柱</td><td>{bazi['year_tg']}</td><td>{bazi['year_ss']}</td><td>{bazi['year_dz']}</td><td>{bazi['year_hide']}</td></tr>
-            <tr style="background-color: {m_color};"><td>月柱</td><td>{bazi['month_tg']}</td><td>{bazi['month_ss']}</td><td>{bazi['year_dz']}</td><td>{bazi['month_hide']}</td></tr>
-            <tr style="background-color: {d_color};"><td>日柱</td><td>{bazi['day_tg']}</td><td>日主</td><td>{bazi['day_dz']}</td><td>{bazi['day_hide']}</td></tr>
-            <tr style="background-color: {h_color};"><td>時柱</td><td>{bazi['hour_tg']}</td><td>{bazi['hour_ss']}</td><td>{bazi['hour_dz']}</td><td>{bazi['hour_hide']}</td></tr>
-        </table>
-    </div>
+def render_ziwei_chart(ziwei_data, user_info=None):
+    if not ziwei_data or 'palaces' not in ziwei_data: return ""
+    ziwei_css = """
+    <style>
+    .ziwei-container { width: 100%; overflow-x: auto; padding: 20px 0; display: flex; justify-content: center; background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%); }
+    .ziwei-grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr); gap: 8px; width: 100%; max-width: 650px; aspect-ratio: 1 / 1; background: linear-gradient(145deg, #1e1e1e, #2a2a2a); border: 3px solid #d4af37; border-radius: 32px; padding: 12px; }
+    .ziwei-cell { background: linear-gradient(145deg, #2c2c2c, #1f1f1f); border: 1px solid rgba(212, 175, 55, 0.3); padding: 12px; display: flex; flex-direction: column; position: relative; border-radius: 20px; }
+    .ziwei-center { grid-column: 2 / 4; grid-row: 2 / 4; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; color: #f5e8c0; border: 2px solid #d4af37; border-radius: 50%; }
+    .palace-name { position: absolute; bottom: 10px; right: 10px; font-weight: 900; color: #d4af37; font-size: 10px; }
+    .star-list { display: flex; flex-direction: column; gap: 5px; color: #ffb84d; font-weight: 900; font-size: 12px; }
+    </style>
     """
-    return html
+    palaces = ziwei_data["palaces"]
+    grid_map = {"巳": "grid-area: 1 / 1;", "午": "grid-area: 1 / 2;", "未": "grid-area: 1 / 3;", "申": "grid-area: 1 / 4;", "辰": "grid-area: 2 / 1;", "酉": "grid-area: 2 / 4;", "卯": "grid-area: 3 / 1;", "戌": "grid-area: 3 / 4;", "寅": "grid-area: 4 / 1;", "丑": "grid-area: 4 / 2;", "子": "grid-area: 4 / 3;", "亥": "grid-area: 4 / 4;"}
+    cells_html = ""
+    for dz, pos in grid_map.items():
+        p_info = palaces.get(dz, {"name": "", "stars": [], "main_star": "", "minor_stars": []})
+        stars_html = f'<div class="main-star">{p_info.get("main_star", "")}</div>'
+        for star in p_info.get("minor_stars", []): stars_html += f"<span>{star}</span>"
+        cells_html += f'<div class="ziwei-cell" style="{pos}"><div class="star-list">{stars_html}</div><div class="palace-name">{p_info["name"]}</div></div>'
+    chart_html = f'<div class="ziwei-container"><div class="ziwei-grid">{cells_html}<div class="ziwei-center">HUGO<br>天命智庫</div></div></div>'
+    return ziwei_css + chart_html
+
+def generate_content_with_retry(model, contents, config=None, max_retries=1):
+    attempt = 0
+    while True:
+        try: return genai_client.models.generate_content(model=model, contents=contents, config=config)
+        except Exception:
+            if attempt < max_retries: attempt += 1; time.sleep(1); continue
+            raise
+
+def extract_ai_outline(text):
+    if not text: return ""
+    markers = ["AI Outline:", "大綱：", "AI 大綱："]
+    for marker in markers:
+        idx = text.find(marker)
+        if idx != -1: return text[idx + len(marker):].strip()
+    return ""
+
+def ai_reply(prompt, is_master=False):
+    system_role = "你是一位精通命理的大師 Hugo。"
+    try:
+        response = generate_content_with_retry(model='gemini-flash-latest', contents=prompt, config=types.GenerateContentConfig(system_instruction=system_role))
+        return response.text
+    except Exception as e: return f"AI 連線失敗：{str(e)}"
 
 def calculate_bazi(y, m, d, h, minute):
     try:
         solar = Solar.fromYmdHms(int(y), int(m), int(d), int(h), int(minute), 0)
         lunar = solar.getLunar()
         eight_char = lunar.getEightChar()
-        return {
-            'year_tg': eight_char.getYearGan(), 'year_dz': eight_char.getYearZhi(), 'year_ss': eight_char.getYearShiShenGan(), 'year_hide': "".join(eight_char.getYearHideGan()),
-            'month_tg': eight_char.getMonthGan(), 'month_dz': eight_char.getMonthZhi(), 'month_ss': eight_char.getMonthShiShenGan(), 'month_hide': "".join(eight_char.getMonthHideGan()),
-            'day_tg': eight_char.getDayGan(), 'day_dz': eight_char.getDayZhi(), 'day_ss': '日主', 'day_hide': "".join(eight_char.getDayHideGan()),
-            'hour_tg': eight_char.getTimeGan(), 'hour_dz': eight_char.getTimeZhi(), 'hour_ss': eight_char.getTimeShiShenGan(), 'hour_hide': "".join(eight_char.getTimeHideGan()),
-            'full': {'year': eight_char.getYear(), 'month': eight_char.getMonth(), 'day': eight_char.getDay(), 'hour': eight_char.getTime()}
-        }
-    except Exception as e:
-        return None
-
-# --- Google Sheets 連線 (簡化版) ---
-def init_gsheets():
-    try:
-        scopes = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
-        if "gcp_service_account" in st.secrets:
-            creds = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scopes)
-        elif os.path.exists("hugo-key.json"):
-            creds = Credentials.from_service_account_file("hugo-key.json", scopes=scopes)
-        else: return None
-        client = gspread.authorize(creds)
-        sheet = client.open_by_url(st.secrets["gsheets_url"]).sheet1 if "gsheets_url" in st.secrets else client.open("雨果天命智庫客戶紀錄").sheet1
-        return sheet
+        return {'year_tg': eight_char.getYearGan(), 'year_dz': eight_char.getYearZhi(), 'year_ss': eight_char.getYearShiShenGan(), 'year_hide': "".join(eight_char.getYearHideGan()), 'month_tg': eight_char.getMonthGan(), 'month_dz': eight_char.getMonthZhi(), 'month_ss': eight_char.getMonthShiShenGan(), 'month_hide': "".join(eight_char.getMonthHideGan()), 'day_tg': eight_char.getDayGan(), 'day_dz': eight_char.getDayZhi(), 'day_ss': '日主', 'day_hide': "".join(eight_char.getDayHideGan()), 'hour_tg': eight_char.getTimeGan(), 'hour_dz': eight_char.getTimeZhi(), 'hour_ss': eight_char.getTimeShiShenGan(), 'hour_hide': "".join(eight_char.getTimeHideGan()), 'full': {'year': eight_char.getYear(), 'month': eight_char.getMonth(), 'day': eight_char.getDay(), 'hour': eight_char.getTime()}}
     except: return None
 
-sheet = init_gsheets()
-
-st.set_page_config(page_title="HUGO 天命智庫", page_icon="🔮", layout="wide")
-
-# --- 1. 頂部 Hero 區 (包含 Logo 與 標題) ---
-logo_html = ""
-if os.path.exists("logo.JPG"):
-    with open("logo.JPG", "rb") as f:
-        logo_base64 = base64.b64encode(f.read()).decode()
-    logo_html = f'<div class="logo-box"><img src="data:image/jpeg;base64,{logo_base64}" class="logo-img"></div>'
-else:
-    logo_html = '<div class="logo-box"><h1 style="color:#9A7A38; margin:0;">HUGO 天命智庫</h1></div>'
-
+# --- Main App Logic ---
 if 'analysis_mode' not in st.session_state:
-    st.markdown(f"""
-    <div class="main-card" style="margin-top: 0; padding-top: 20px; padding-bottom: 25px;">
-        {logo_html}
-        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 30px;">
-            <div style="flex: 1; min-width: 300px;">
-                <h1 style="font-size: 32px; font-weight: 900; color: #2F2F2F; margin-bottom: 15px; line-height: 1.2;">你不是不順，是你還沒看懂自己的命盤。</h1>
-                <h3 style="font-size: 18px; color: #444; margin-bottom: 15px; line-height: 1.4;">當感情卡住、人生停滯、選擇變得困難——<br>不是你不夠努力，而是你還沒看懂「局」。</h3>
-                <p style="font-size: 15px; line-height: 1.6; color: #555;">
-                    HUGO 天命智庫結合傳統命理經典與現代 AI 大數據分析，協助你看清人生方向、關係狀態與下一步選擇。
-                </p>
-            </div>
-            <div style="flex: 0 0 220px; text-align: center;">
-                <div style="width: 180px; height: 180px; background: #E2E2CC; border-radius: 50%; margin: 0 auto; display: flex; align-items: center; justify-content: center; border: 4px solid #9A7A38; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
-                    <span style="font-size: 60px;">🔮</span>
-                </div>
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # --- 2. 四大功能入口 (2x2) ---
-    st.markdown('<div class="section-bar" style="margin-top: 0;">四大核心功能入口</div>', unsafe_allow_html=True)
-    col_f1, col_f2 = st.columns(2)
-    with col_f1:
-        st.markdown('<div class="feature-card"><div><div class="feature-icon">📜</div><div class="feature-title">八字命理分析</div><div class="feature-desc">解析你的先天性格、事業走向、財運基礎與感情模式。</div></div></div>', unsafe_allow_html=True)
-        if st.button("開始八字分析", key="nav_bazi"): st.session_state.analysis_mode = "八字"; st.rerun()
-        st.markdown('<div class="feature-card"><div><div class="feature-icon">♾️</div><div class="feature-title">八字 × 紫微交叉分析</div><div class="feature-desc">將兩套命理系統交叉比對，提升判斷深度與準確度。</div></div></div>', unsafe_allow_html=True)
-        if st.button("啟動交叉分析", key="nav_cross"): st.session_state.analysis_mode = "交叉"; st.rerun()
-    with col_f2:
-        st.markdown('<div class="feature-card"><div><div class="feature-icon">✨</div><div class="feature-title">紫微斗數分析</div><div class="feature-desc">從命宮、夫妻宮、財帛宮與事業宮，看見人生不同面向的細節。</div></div></div>', unsafe_allow_html=True)
-        if st.button("開始紫微分析", key="nav_ziwei"): st.session_state.analysis_mode = "紫微"; st.rerun()
-        st.markdown('<div class="feature-card"><div><div class="feature-icon">👩‍❤️‍👨</div><div class="feature-title">兩人合盤分析</div><div class="feature-desc">分析你與對象、伴侶或配偶的吸引力、衝突點與相處方式。</div></div></div>', unsafe_allow_html=True)
-        if st.button("開始合盤分析", key="nav_dual"): st.session_state.analysis_mode = "合盤"; st.session_state.enable_dual = True; st.rerun()
-
-    # --- 3. 三大命理經典 ---
-    st.markdown('<div class="section-bar">系統推算依據｜三大命理核心經典</div>', unsafe_allow_html=True)
-    st.markdown("""<div class="main-card"><div class="classic-grid">
-        <div class="classic-card"><div class="classic-header">1. 三命通會</div><p>命格結構、十神關係、事業財運。<b>重點：看人生基本設定。</b></p></div>
-        <div class="classic-card"><div class="classic-header">2. 滴天髓</div><p>五行流動、旺衰平衡、運勢轉折。<b>重點：看起伏與卡點。</b></p></div>
-        <div class="classic-card"><div class="classic-header">3. 淵海子平</div><p>日主強弱、月令格局、五行生剋。<b>重點：精準實戰判斷。</b></p></div>
-    </div></div>""", unsafe_allow_html=True)
-
-    # --- 4. 兩人合盤重點區 ---
-    st.markdown('<div class="section-bar">兩人關係深度解析｜最受歡迎功能</div>', unsafe_allow_html=True)
-    st.markdown('<div class="main-card"><h4>不只是看「合不合」，而是幫你看懂「該怎麼做」。</h4><p>透過雙方命盤交叉比對，解析吸引力、衝突點與相處節奏。</p></div>', unsafe_allow_html=True)
-    if st.button("【立即開始兩人合盤分析】", key="cta_dual"): st.session_state.analysis_mode = "合盤"; st.session_state.enable_dual = True; st.rerun()
-
-    # --- 5. 第二層感情心理諮詢入口 ---
-    st.markdown('<div class="section-bar">兩性情感心理諮詢</div>', unsafe_allow_html=True)
-    if st.button("【進入感情心理分析】", key="cta_love"): st.switch_page("pages/02_love_analysis.py")
-
-    # --- 6. 方案引流區 ---
-    st.markdown('<div class="section-bar">專業諮詢方案</div>', unsafe_allow_html=True)
-    col_p1, col_p2, col_p3 = st.columns(3)
-    with col_p1: st.markdown('<div class="price-card"><div class="price-title">免費體驗</div><div class="price-val">$0</div><p>基礎命盤解析</p></div>', unsafe_allow_html=True); st.button("開始免費分析", key="p_free")
-    with col_p2: st.markdown('<div class="price-card featured"><div class="price-title">299 深度分析</div><div class="price-val">$299</div><p>單一感情問題深入分析</p></div>', unsafe_allow_html=True); st.button("了解 299 方案", key="p_299")
-    with col_p3: st.markdown('<div class="price-card"><div class="price-title">699 完整追蹤</div><div class="price-val">$699</div><p>命盤+互動+心理策略</p></div>', unsafe_allow_html=True); st.button("了解 699 方案", key="p_699")
-
+    if 'visited_home' not in st.session_state:
+        st.session_state.visited_home = True
+        # log_site_visit("home") # 已封印
+    st.title("HUGO 天命智庫")
+    col1, col2 = st.columns(2)
+    if col1.button("開始八字分析"): st.session_state.analysis_mode = "八字命理分析"; st.rerun()
+    if col2.button("開始紫微分析"): st.session_state.analysis_mode = "紫微斗數分析"; st.rerun()
     st.stop()
 
-# --- 後端邏輯區 (當選擇模式後) ---
 if 'analysis_mode' in st.session_state:
-    st.markdown(f"### 📋 填寫資料 - {st.session_state.analysis_mode}模式")
+    mode = st.session_state.analysis_mode
+    # log_site_visit(mode) # 已封印
+    st.write(f"模式：{mode}")
     if st.button("⬅️ 返回首頁"): del st.session_state.analysis_mode; st.rerun()
     
-    col1, col2, col3 = st.columns(3)
-    name = col1.text_input("姓名/暱稱")
-    gender = col2.selectbox("性別", ["男", "女"])
-    occupation = col3.text_input("職業/狀態")
+    name = st.text_input("姓名")
+    b_year = st.selectbox("年", range(1930, 2027), index=50)
+    b_month = st.selectbox("月", range(1, 13))
+    b_day = st.selectbox("日", range(1, 32))
+    b_hour = st.selectbox("時", range(0, 24), index=12)
+    b_min = st.selectbox("分", range(0, 60))
+    question = st.text_area("問題")
     
-    st.markdown("#### 📅 出生時間 (國曆)")
-    c1, c2, c3, c4, c5 = st.columns(5)
-    b_year = c1.selectbox("年", range(1930, 2027), index=50)
-    b_month = c2.selectbox("月", range(1, 13))
-    b_day = c3.selectbox("日", range(1, 32))
-    b_hour = c4.selectbox("時", range(0, 24), index=12)
-    b_min = c5.selectbox("分", range(0, 60))
-    
-    enable_dual = st.toggle("💑 啟用雙人合盤", value=st.session_state.get('enable_dual', False))
-    if enable_dual:
-        st.subheader("💞 對象資料")
-        name2 = st.text_input("對象姓名")
-        relation_type = st.selectbox("關係", ["情侶/夫妻", "合作夥伴", "其他"])
-        # ... (簡化對象時間輸入以節省空間)
-    
-    question = st.text_area("您的問題", placeholder="例如：這段感情還有救嗎？")
-    
-    if st.button("🚀 開始 AI 命理分析"):
-        with st.spinner("大師發功中..."):
+    if st.button("🚀 開始分析"):
+        if name and question:
+            # submission_data = {...} # 已封印
+            # append_user_submission(submission_data) # 已封印
+            
             bazi = calculate_bazi(b_year, b_month, b_day, b_hour, b_min)
-            if bazi:
-                prompt = f"你是一位命理大師。命主：{name}, {gender}, {b_year}/{b_month}/{b_day}. 問題：{question}. 命盤：{bazi['full']}"
-                result = ai_reply(prompt)
-                st.markdown(render_bazi_table(bazi), unsafe_allow_html=True)
-                st.markdown(result)
-                if sheet: sheet.append_row([str(datetime.datetime.now()), name, f"{b_year}-{b_month}-{b_day}", question, result[:5000]])
-            else: st.error("排盤失敗")
+            if mode == "紫微斗數分析":
+                ziwei_data = get_ziwei_data(b_year, b_month, b_day, b_hour)
+                components.html(render_ziwei_chart(ziwei_data, {'name': name}), height=1000, scrolling=True)
+                result = ai_reply(f"分析：{question}，命盤：{ziwei_data}")
+            else:
+                result = ai_reply(f"分析：{question}，八字：{bazi}")
+            
+            st.markdown(f'<div class="main-card">{result}</div>', unsafe_allow_html=True)
+            # analysis_data = {...} # 已封印
+            # append_analysis_result(analysis_data) # 已封印
