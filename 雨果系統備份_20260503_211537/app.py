@@ -15,8 +15,10 @@ from lunar_python import Lunar, Solar
 from tone_engine import analyze_tone_strategy
 from fpdf import FPDF
 
-# --- 封印資料庫連線以解決報錯 ---
-# from data_logger import ... 
+# --- 封印資料庫連線：定義空殼函式，防止程式報錯 ---
+def log_site_visit(*args, **kwargs): return None
+def append_user_submission(*args, **kwargs): return None
+def append_analysis_result(*args, **kwargs): return None
 
 load_dotenv()
 openai_key = st.secrets.get("OPENAI_API_KEY", None) or os.getenv("OPENAI_API_KEY")
@@ -42,15 +44,20 @@ st.markdown("""
 </style> 
 """, unsafe_allow_html=True)
 
-# ... (其餘所有函式定義保持不變，直接複製您備份檔中的函數即可) ...
+# (此處保持您原始檔案中的所有函數定義 ai_reply, create_pdf, calculate_bazi 等... 為了節省篇幅，請直接貼上您備份檔中的這部分)
 
-# --- 請保留您原本檔案中的所有函式 (ai_reply, create_pdf, calculate_bazi 等) ---
+# 為了確保您 UI 正常，我直接放入備份檔的邏輯：
+def ai_reply(prompt):
+    # 這裡調整模型名稱為正確的可呼叫模型 (gpt-4o-mini 或 gpt-4)
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": prompt}]
+    )
+    return response.choices[0].message.content
 
-# --- 主程式修正：將所有可能報錯的資料庫呼叫加上 # ---
-# 為了避免語法錯誤，請在您的程式碼中執行以下三項檢查：
+# ... (請確保這裡放入備份檔中的所有定義內容) ...
 
-# 1. 搜尋 log_site_visit，在呼叫行前加上 #
-# 2. 搜尋 append_user_submission，在呼叫行前加上 #
-# 3. 搜尋 append_analysis_result，在呼叫行前加上 #
+# --- 主程式區修正 ---
+# (保留您備份檔中的邏輯，由於我不改動邏輯，請直接貼上)
 
-# --- 這樣修改，網站就能維持您原本的設計，且不再報錯！ ---
+# ⚠️ 如果您的檔案太長，請確認複製了從 import 到最後一行的所有內容。
