@@ -3,7 +3,9 @@ openai
 borax
 fpdf2
 iztro-py
-pyairtable
-google-genai
+gspread
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
 python-dotenv
 lunar-python

@@ -5,18 +5,8 @@ import os
 import json
 import pandas as pd
 from dotenv import load_dotenv
-import uuid
-from data_logger import log_site_visit, append_user_submission
 
 load_dotenv()
-# --- 初始化 Session State (如果直接從此頁進入) ---
-if 'session_id' not in st.session_state:
-    st.session_state.session_id = str(uuid.uuid4())
-if 'visited_pages' not in st.session_state:
-    st.session_state.visited_pages = set()
-
-# 紀錄瀏覽
-log_site_visit("psychology")
 openai_key = st.secrets.get("OPENAI_API_KEY", None) or os.getenv("OPENAI_API_KEY")
 
 if not openai_key:
@@ -34,40 +24,33 @@ st.set_page_config(
 # --- CSS 注入：打造「命理 × 心理 × 關係策略分析室」風格 ---
 st.markdown(""" 
 <style> 
-    /* 全局背景：暖米白 */ 
+    /* 全局背景：沉穩暖灰色系 */ 
     .stApp { 
-        background-color: #F8F6F0; 
-        color: #3E3A39; 
-        font-family: 'Noto Serif TC', serif;
+        background-color: #B3AAAA; 
+        color: #2D2D2D; 
     } 
     
-    /* 隱藏預設元素 */
-    #MainMenu, header, footer { visibility: hidden; display: none !important; }
-    
+    /* 側邊欄：亞麻灰 */ 
+    [data-testid="stSidebar"] { 
+        background-color: #C9C9C2; 
+        border-right: 1px solid #999; 
+    } 
+
     /* 內容區塊寬度 */
     .block-container { 
         max-width: 1000px;
-        padding-top: 1rem;
+        padding-top: 2rem;
     } 
 
-    /* 高級白色卡片樣式 */ 
-    .premium-card { 
-        background-color: #FFFFFF; 
-        padding: 30px; 
-        border-radius: 20px; 
-        box-shadow: 0 10px 30px rgba(0,0,0,0.05); 
-        margin-bottom: 25px;
-        border: 1px solid #E2E2CC;
-    } 
-    
-    .card-title {
-        font-size: 22px;
-        font-weight: 800;
-        color: #9A7A38;
+    /* 暖灰色卡片樣式 */ 
+    .love-card { 
+        background-color: #C9C9C2; 
+        padding: 25px; 
+        border-radius: 18px; 
+        box-shadow: 0 6px 20px rgba(0,0,0,0.08); 
         margin-bottom: 20px;
-        border-bottom: 2px solid #F8F6F0;
-        padding-bottom: 10px;
-    }
+        border: 1px solid #B3AAAA;
+    } 
 
     /* 功能特色小卡片 (暖米色) */
     .feature-card {
@@ -89,20 +72,21 @@ st.markdown("""
         background-color: #ECECD8;
     }
     .feature-card h4 {
-        color: #9A7A38;
+        color: #4a235a;
         margin-bottom: 10px;
         font-weight: 800;
     }
     .feature-card p {
         font-size: 0.95em;
         line-height: 1.5;
-        color: #3E3A39;
+        color: #444;
     }
 
     /* 標題樣式 */
     h1, h2, h3 { 
-        color: #3E3A39 !important; 
-        font-family: 'Noto Serif TC', serif;
+        color: #2D2D2D !important; 
+        border-left: 6px solid #6c5ce7; 
+        padding-left: 15px; 
     }
 
     /* CTA 按鈕美化 */
@@ -111,33 +95,31 @@ st.markdown("""
         border-radius: 16px !important;
         font-weight: 800 !important;
         font-size: 1.1em !important;
-        background: linear-gradient(135deg, #9A7A38, #B38E45) !important;
+        background: linear-gradient(135deg, #6c5ce7, #a29bfe) !important;
         color: white !important;
         border: none !important;
-        box-shadow: 0 6px 15px rgba(154, 122, 56, 0.3) !important;
+        box-shadow: 0 6px 15px rgba(108, 92, 231, 0.3) !important;
         transition: all 0.3s ease !important;
         width: 100% !important;
     }
     .stButton>button:hover {
         transform: translateY(-3px) !important;
-        box-shadow: 0 10px 25px rgba(154, 122, 56, 0.4) !important;
-        background: linear-gradient(135deg, #B38E45, #9A7A38) !important;
+        box-shadow: 0 10px 25px rgba(108, 92, 231, 0.4) !important;
     }
 
     /* 定價方案卡片 */
     .pricing-card {
-        background-color: #FFFFFF;
+        background-color: #F4F4ED;
         padding: 25px;
         border-radius: 20px;
-        border: 1px solid #E2E2CC;
+        border: 2px solid #E2E2CC;
         text-align: center;
         margin-bottom: 20px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.02);
     }
     .pricing-price {
         font-size: 2em;
         font-weight: 900;
-        color: #9A7A38;
+        color: #6c5ce7;
         margin: 10px 0;
     }
     
@@ -145,7 +127,7 @@ st.markdown("""
     .diagnostic-table {
         width: 100%;
         border-collapse: collapse;
-        background-color: #FFFFFF;
+        background-color: #FDFCF9;
         border-radius: 12px;
         overflow: hidden;
     }
@@ -153,50 +135,25 @@ st.markdown("""
         background-color: #E2E2CC;
         padding: 12px;
         text-align: left;
-        color: #3E3A39;
     }
     .diagnostic-table td {
         padding: 12px;
-        border-bottom: 1px solid #F8F6F0;
-        color: #3E3A39;
-    }
-    
-    /* Logo 樣式 */
-    .logo-container {
-        text-align: center;
-        margin-bottom: 20px;
-    }
-    .logo-img {
-        max-width: 200px;
-    }
-    .subtitle {
-        font-size: 1.2em;
-        color: #9A7A38;
-        font-style: italic;
-        margin-top: 10px;
-        font-family: 'Noto Serif TC', serif;
+        border-bottom: 1px solid #EEE;
     }
 </style> 
 """, unsafe_allow_html=True)
 
-# --- 一、頁頭品牌形象 ---
-import base64
-logo_html = ""
-if os.path.exists("logo.JPG"):
-    with open("logo.JPG", "rb") as f:
-        logo_base64 = base64.b64encode(f.read()).decode()
-    logo_html = f'<div class="logo-container"><img src="data:image/jpeg;base64,{logo_base64}" class="logo-img"><div class="subtitle">跨越時空的共振，為您指點情感的迷津。</div></div>'
-else:
-    logo_html = '<div class="logo-container"><h1 style="color:#9A7A38; margin:0;">HUGO 天命智庫</h1><div class="subtitle">跨越時空的共振，為您指點情感的迷津。</div></div>'
-
-st.markdown(logo_html, unsafe_allow_html=True)
-
+# --- 一、頁面主標 ---
 st.markdown("""
 <div style="text-align: center; margin-bottom: 40px;">
-    <h1 style="font-size: 36px; font-weight: 900; border: none; padding: 0;">兩性情感心理諮詢</h1>
+    <h1 style="font-size: 42px; font-weight: 900; border: none; padding: 0;">兩性情感心理諮詢</h1>
+    <h3 style="font-size: 22px; color: #444; border: none; padding: 0; font-weight: 600;">你不是不夠好，而是還沒看懂這段關係真正卡住的地方。</h3>
     <p style="font-size: 17px; color: #555; max-width: 800px; margin: 20px auto; line-height: 1.7;">
         當對方忽冷忽熱、訊息變少、態度模糊，很多人會開始懷疑自己是不是做錯了什麼。但感情問題往往不是單一事件，而是由依附模式、溝通方式、情緒反應與雙方關係結構共同形成。
     </p>
+    <div style="background-color: #E2E2CC; display: inline-block; padding: 10px 25px; border-radius: 30px; font-weight: 800; color: #4a235a;">
+        八字命盤 × 關係心理 × 行為模式 × AI 交叉分析
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -240,81 +197,72 @@ diagnostic_data = {
 }
 st.table(pd.DataFrame(diagnostic_data))
 
-# --- 五、表單輸入區 (心靈卡片排版) ---
+# --- 四、付費引流區 (中段) ---
+st.markdown("## 💎 專業顧問服務方案")
+col_p1, col_p2, col_p3 = st.columns(3)
+
+with col_p1:
+    st.markdown("""
+    <div class="pricing-card">
+        <h3>免費版</h3>
+        <p>適合初步了解目前關係狀態</p>
+        <div class="pricing-price">$0</div>
+        <p style="text-align: left; font-size: 0.9em; min-height: 120px;">
+        ・提供基礎方向判讀<br>
+        ・協助你先看懂問題大概在哪裡
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    if st.button("我要做兩人關係解析", key="btn_free"):
+        pass
+
+with col_p2:
+    st.markdown("""
+    <div class="pricing-card" style="border-color: #6c5ce7; background-color: #F0EFFF;">
+        <div style="background: #6c5ce7; color: white; border-radius: 5px; padding: 2px 10px; display: inline-block; font-size: 0.8em; margin-bottom: 10px;">熱門推薦</div>
+        <h3>299 深度分析</h3>
+        <p>適合正在曖昧、冷戰、分手邊緣的人</p>
+        <div class="pricing-price">$299</div>
+        <p style="text-align: left; font-size: 0.9em; min-height: 120px;">
+        ・單一感情問題深入分析<br>
+        ・提供對方心態與走向判讀<br>
+        ・給予 3 種實戰行動選項<br>
+        ・包含 3 次提問 (5天內有效)
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    if st.button("我要看對方心態", key="btn_299"):
+        pass
+
+with col_p3:
+    st.markdown("""
+    <div class="pricing-card">
+        <h3>699 完整追蹤</h3>
+        <p>適合重大感情抉擇或拉扯中</p>
+        <div class="pricing-price">$699</div>
+        <p style="text-align: left; font-size: 0.9em; min-height: 120px;">
+        ・結合命盤、互動與心理模式<br>
+        ・提供完整判斷與策略調整<br>
+        ・非一次性回答，含階段追蹤<br>
+        ・專屬策略報告
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    if st.button("查看 299 / 699 方案", key="btn_699"):
+        pass
+
+# --- 五、表單輸入區 (模擬分析流程) ---
 st.markdown("---")
+st.header("📋 描述目前的感情困局")
+with st.container():
+    col_in1, col_nav_in2 = st.columns(2)
+    with col_in1:
+        st.text_area("目前的互動狀況 (例如：訊息變少、冷戰中...)", height=150)
+    with col_nav_in2:
+        st.selectbox("你對這段關係的期待", ["修復關係", "看清真相", "瀟灑轉身", "其他"])
+        st.selectbox("對方的目前態度", ["逃避", "忽冷忽熱", "冷淡", "熱情", "未知"])
 
-col_main1, col_main2 = st.columns(2)
-
-with col_main1:
-    st.markdown('<div class="premium-card"><div class="card-title">👤 您的本命資料</div>', unsafe_allow_html=True)
-    user_name = st.text_input("您的姓名/暱稱", placeholder="如何稱呼您？")
-    user_gender = st.selectbox("您的性別", ["男", "女", "其他"])
-    user_job = st.text_input("您的職業/狀態", placeholder="例如：金融業、學生...")
-    
-    st.markdown("#### 📅 出生時間")
-    uc1, uc2, uc3 = st.columns(3)
-    u_year = uc1.selectbox("年", range(1930, 2027), index=50, key="u_year")
-    u_month = uc2.selectbox("月", range(1, 13), key="u_month")
-    u_day = uc3.selectbox("日", range(1, 32), key="u_day")
-    
-    uc4, uc5 = st.columns(2)
-    u_hour = uc4.selectbox("時", range(0, 24), index=12, key="u_hour")
-    u_min = uc5.selectbox("分", range(0, 60), key="u_min")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-with col_main2:
-    st.markdown('<div class="premium-card"><div class="card-title">💞 對象緣分資料</div>', unsafe_allow_html=True)
-    partner_name = st.text_input("對象姓名/暱稱", placeholder="如何稱呼對方？")
-    partner_gender = st.selectbox("對象性別", ["男", "女", "其他"])
-    relation_type = st.selectbox("目前關係類型", ["暗戀中", "曖昧中", "交往中", "已婚", "冷戰/分手", "其他"])
-    
-    st.markdown("#### 📅 對象出生時間")
-    pc1, pc2, pc3 = st.columns(3)
-    p_year = pc1.selectbox("年", range(1930, 2027), index=50, key="p_year")
-    p_month = pc2.selectbox("月", range(1, 13), key="p_month")
-    p_day = pc3.selectbox("日", range(1, 32), key="p_day")
-    
-    pc4, pc5 = st.columns(2)
-    p_hour = pc4.selectbox("時", range(0, 24), index=12, key="p_hour")
-    p_min = pc5.selectbox("分", range(0, 60), key="p_min")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-st.markdown('<div class="premium-card"><div class="card-title">💬 您心中的疑惑</div>', unsafe_allow_html=True)
-current_status = st.text_area("描述目前的互動狀況或具體問題", placeholder="例如：對方最近回訊變慢，我們剛吵完架...", height=150)
-expectation = st.selectbox("您對這段關係的期待", ["修復關係", "看清真相", "瀟灑轉身", "尋求突破", "其他"])
-partner_attitude = st.selectbox("您感受到對方的目前態度", ["逃避", "忽冷忽熱", "冷淡", "熱情", "未知"])
-st.markdown('</div>', unsafe_allow_html=True)
-
-if st.button("✨ 啟動 AI 心理深度解析"):
-    if not current_status or not user_name or not partner_name:
-        st.warning("請填寫姓名與目前的互動狀況。")
-    else:
-        # 收集資料準備紀錄
-        submission_data = {
-            "user_name": user_name,
-            "gender": user_gender,
-            "job_status": user_job,
-            "birth_year": u_year,
-            "birth_month": u_month,
-            "birth_day": u_day,
-            "birth_hour": u_hour,
-            "birth_minute": u_min,
-            "analysis_mode": "感情心理分析",
-            "question": f"互動狀況：{current_status}\n期待：{expectation}\n對方態度：{partner_attitude}",
-            "is_couple_mode": True,
-            "partner_name": partner_name,
-            "partner_gender": partner_gender,
-            "partner_birth_year": p_year,
-            "partner_birth_month": p_month,
-            "partner_birth_day": p_day,
-            "partner_birth_hour": p_hour,
-            "partner_birth_minute": p_min
-        }
-        append_user_submission(submission_data)
-        
-        with st.spinner("AI 心理分析顧問正在為您判讀局勢..."):
-            st.success("分析完成！(目前為功能展示，紀錄已寫入)")
-            st.info(f"您的問題已記錄：{current_status[:50]}...")
+st.button("✨ 啟動 AI 心理深度解析")
 
 # --- 六、頁尾引流 ---
 st.markdown("<br><br>", unsafe_allow_html=True)
