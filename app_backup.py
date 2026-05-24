@@ -14,6 +14,8 @@ from lunar_python import Lunar, Solar
 from tone_engine import analyze_tone_strategy
 from fpdf import FPDF
 
+st.set_page_config(page_title="雨果大師｜命理 AI", page_icon="🔮", layout="wide")
+
 load_dotenv()
 openai_key = st.secrets.get("OPENAI_API_KEY", None) or os.getenv("OPENAI_API_KEY")
 
@@ -364,8 +366,6 @@ def calculate_bazi(y, m, d, h, minute):
     except Exception as e:
         st.error(f"命盤計算發生系統錯誤：{e}")
         return None
-
-st.set_page_config(page_title="雨果大師｜命理 AI", page_icon="🔮", layout="wide")
 
 # --- 基礎 UI 隱藏樣式 ---
 st.markdown("""
