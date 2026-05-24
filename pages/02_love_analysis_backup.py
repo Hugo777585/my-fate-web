@@ -11,100 +11,168 @@ st.set_page_config(
 
 st.title("🧠 AI感情心理分析")
 
-# CSS 注入 (與 app.py 同步)
 st.markdown("""
 <style>
-    .plan-card {
-        background: white;
-        border: 2px solid #E0E0E0;
-        border-radius: 20px;
-        padding: 30px;
-        text-align: center;
-        transition: all 0.3s ease;
-        height: 100%;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-    }
-    .plan-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 12px 30px rgba(108, 52, 131, 0.15);
-    }
-    .plan-card.popular {
-        border: 3px solid #A569BD;
-        background: linear-gradient(180deg, #FFFFFF 0%, #F5EEF8 100%);
-        position: relative;
-    }
-    .popular-badge {
-        position: absolute;
-        top: -15px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: #A569BD;
-        color: white;
-        padding: 4px 15px;
-        border-radius: 20px;
-        font-size: 0.8em;
-        font-weight: 700;
-        letter-spacing: 1px;
-        z-index: 10;
-    }
-    .plan-title {
-        font-size: 1.5em;
-        font-weight: 800;
-        color: #4A235A;
-        margin-bottom: 10px;
-    }
-    .plan-price {
-        font-size: 2.2em;
-        font-weight: 900;
-        color: #6C3483;
-        margin-bottom: 20px;
-    }
-    .plan-price span {
-        font-size: 0.5em;
-        color: #7B7B7B;
-        font-weight: 400;
-    }
-    .plan-features {
-        text-align: left;
-        margin-bottom: 25px;
-        list-style: none;
-        padding: 0;
-    }
-    .plan-features li {
-        margin-bottom: 12px;
-        color: #4D5656;
-        font-size: 0.95em;
-        display: flex;
-        align-items: center;
-    }
-    .plan-features li:before {
-        content: "✅";
-        margin-right: 10px;
-        font-size: 0.8em;
-    }
-    .plan-features li.locked {
-        color: #ABB2B9;
-    }
-    .plan-features li.locked:before {
-        content: "🔒";
-    }
-    .stButton>button {
-        background: linear-gradient(135deg, #8E44AD, #A569BD);
-        color: white;
-        font-weight: 700;
-        font-size: 1.1em;
-        padding: 0.6em 2em;
-        border-radius: 12px;
-        border: none;
-        box-shadow: 0 4px 15px rgba(142, 68, 173, 0.4);
-        transition: all 0.3s ease;
-        width: 100%;
-    }
-    .stButton>button:hover {
-        background: linear-gradient(135deg, #9B59B6, #BB8FCE);
-        box-shadow: 0 6px 20px rgba(142, 68, 173, 0.5);
-        transform: translateY(-2px);
-    }
+:root {
+  --bg: #0b0c0f;
+  --panel: #101219;
+  --card: #141824;
+  --text: #ece7dd;
+  --muted: rgba(236, 231, 221, 0.72);
+  --accent: #c8a96a;
+  --accent2: #9b7b44;
+  --border: rgba(200, 169, 106, 0.28);
+  --shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+}
+
+.stApp {
+  background: radial-gradient(1200px 700px at 20% -10%, rgba(200, 169, 106, 0.10), rgba(0,0,0,0) 60%),
+              radial-gradient(900px 600px at 95% 10%, rgba(108, 92, 231, 0.08), rgba(0,0,0,0) 55%),
+              linear-gradient(180deg, var(--bg), #07080b);
+  color: var(--text);
+}
+
+section[data-testid="stSidebar"] {
+  background: linear-gradient(180deg, #0c0d12, var(--panel));
+  border-right: 1px solid rgba(255,255,255,0.06);
+}
+
+.block-container {
+  max-width: 1120px;
+  padding-top: 2.2rem;
+  padding-bottom: 2.2rem;
+}
+
+h1, h2, h3, h4 {
+  color: var(--text) !important;
+  letter-spacing: 0.02em;
+}
+
+.plan-card,
+div[data-testid="stVerticalBlock"] > div,
+div[data-testid="stMarkdownContainer"],
+div.element-container {
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.015));
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+}
+
+.plan-card {
+  padding: 28px;
+  text-align: center;
+  height: 100%;
+}
+
+.plan-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(200,169,106,0.22);
+}
+
+.plan-card.popular {
+  border-color: rgba(200,169,106,0.45);
+  position: relative;
+}
+
+.popular-badge {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, rgba(200,169,106,0.95), rgba(155,123,68,0.95));
+  color: #0b0c0f;
+  padding: 4px 14px;
+  border-radius: 999px;
+  font-size: 0.8em;
+  font-weight: 900;
+  letter-spacing: 0.10em;
+  z-index: 10;
+}
+
+.plan-title {
+  font-size: 1.5em;
+  font-weight: 900;
+  color: var(--text);
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+}
+
+.plan-price {
+  font-size: 2.2em;
+  font-weight: 900;
+  color: var(--accent);
+  margin-bottom: 18px;
+  letter-spacing: 0.04em;
+}
+
+.plan-price span {
+  font-size: 0.5em;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.plan-features {
+  text-align: left;
+  margin-bottom: 24px;
+  list-style: none;
+  padding: 0;
+}
+
+.plan-features li {
+  margin-bottom: 12px;
+  color: var(--muted);
+  font-size: 0.98em;
+  display: flex;
+  align-items: center;
+}
+
+.plan-features li:before {
+  content: "✓";
+  margin-right: 10px;
+  color: var(--accent);
+  font-weight: 900;
+}
+
+.plan-features li.locked {
+  color: rgba(236,231,221,0.35);
+}
+
+.plan-features li.locked:before {
+  content: "•";
+  color: rgba(236,231,221,0.35);
+}
+
+.stButton > button {
+  background: linear-gradient(135deg, rgba(200,169,106,0.95), rgba(155,123,68,0.95)) !important;
+  color: #0b0c0f !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.04em !important;
+  font-size: 1.05em !important;
+  padding: 0.6em 2em !important;
+  border-radius: 14px !important;
+  border: 1px solid rgba(255,255,255,0.10) !important;
+  box-shadow: 0 12px 30px rgba(200,169,106,0.22) !important;
+  transition: all 0.2s ease !important;
+  width: 100% !important;
+}
+
+.stButton > button:hover {
+  transform: translateY(-1px) !important;
+  filter: brightness(1.03);
+  box-shadow: 0 16px 36px rgba(200,169,106,0.26) !important;
+}
+
+div[data-baseweb="input"] input,
+div[data-baseweb="textarea"] textarea,
+div[data-baseweb="select"] > div {
+  background-color: rgba(255,255,255,0.04) !important;
+  color: var(--text) !important;
+  border-color: rgba(255,255,255,0.10) !important;
+}
+
+label, p, span {
+  color: var(--text);
+}
 </style>
 """, unsafe_allow_html=True)
 

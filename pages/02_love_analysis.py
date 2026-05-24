@@ -22,125 +22,130 @@ st.set_page_config(
 )
 
 # --- CSS 注入：打造「命理 × 心理 × 關係策略分析室」風格 ---
-st.markdown(""" 
-<style> 
-    /* 全局背景：沉穩暖灰色系 */ 
-    .stApp { 
-        background-color: #B3AAAA; 
-        color: #2D2D2D; 
-    } 
-    
-    /* 側邊欄：亞麻灰 */ 
-    [data-testid="stSidebar"] { 
-        background-color: #C9C9C2; 
-        border-right: 1px solid #999; 
-    } 
+st.markdown("""
+<style>
+:root {
+  --bg: #0b0c0f;
+  --panel: #101219;
+  --card: #141824;
+  --text: #ece7dd;
+  --muted: rgba(236, 231, 221, 0.72);
+  --accent: #c8a96a;
+  --accent2: #9b7b44;
+  --border: rgba(200, 169, 106, 0.28);
+  --shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+}
 
-    /* 內容區塊寬度 */
-    .block-container { 
-        max-width: 1000px;
-        padding-top: 2rem;
-    } 
+.stApp {
+  background: radial-gradient(1200px 700px at 20% -10%, rgba(200, 169, 106, 0.10), rgba(0,0,0,0) 60%),
+              radial-gradient(900px 600px at 95% 10%, rgba(108, 92, 231, 0.08), rgba(0,0,0,0) 55%),
+              linear-gradient(180deg, var(--bg), #07080b);
+  color: var(--text);
+}
 
-    /* 暖灰色卡片樣式 */ 
-    .love-card { 
-        background-color: #C9C9C2; 
-        padding: 25px; 
-        border-radius: 18px; 
-        box-shadow: 0 6px 20px rgba(0,0,0,0.08); 
-        margin-bottom: 20px;
-        border: 1px solid #B3AAAA;
-    } 
+section[data-testid="stSidebar"] {
+  background: linear-gradient(180deg, #0c0d12, var(--panel));
+  border-right: 1px solid rgba(255,255,255,0.06);
+}
 
-    /* 功能特色小卡片 (暖米色) */
-    .feature-card {
-        background-color: #E2E2CC;
-        padding: 20px;
-        border-radius: 14px;
-        height: 180px;
-        text-align: center;
-        border: 1px solid #D1D1B8;
-        transition: all 0.3s ease;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        margin-bottom: 15px;
-    }
-    .feature-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
-        background-color: #ECECD8;
-    }
-    .feature-card h4 {
-        color: #4a235a;
-        margin-bottom: 10px;
-        font-weight: 800;
-    }
-    .feature-card p {
-        font-size: 0.95em;
-        line-height: 1.5;
-        color: #444;
-    }
+.block-container {
+  max-width: 1100px;
+  padding-top: 2.2rem;
+}
 
-    /* 標題樣式 */
-    h1, h2, h3 { 
-        color: #2D2D2D !important; 
-        border-left: 6px solid #6c5ce7; 
-        padding-left: 15px; 
-    }
+h1, h2, h3, h4 {
+  color: var(--text) !important;
+  letter-spacing: 0.02em;
+}
 
-    /* CTA 按鈕美化 */
-    .stButton>button {
-        height: 58px !important;
-        border-radius: 16px !important;
-        font-weight: 800 !important;
-        font-size: 1.1em !important;
-        background: linear-gradient(135deg, #6c5ce7, #a29bfe) !important;
-        color: white !important;
-        border: none !important;
-        box-shadow: 0 6px 15px rgba(108, 92, 231, 0.3) !important;
-        transition: all 0.3s ease !important;
-        width: 100% !important;
-    }
-    .stButton>button:hover {
-        transform: translateY(-3px) !important;
-        box-shadow: 0 10px 25px rgba(108, 92, 231, 0.4) !important;
-    }
+.feature-card,
+.pricing-card,
+div[data-testid="stVerticalBlock"] > div,
+div[data-testid="stMarkdownContainer"],
+div.element-container {
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.015));
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+}
 
-    /* 定價方案卡片 */
-    .pricing-card {
-        background-color: #F4F4ED;
-        padding: 25px;
-        border-radius: 20px;
-        border: 2px solid #E2E2CC;
-        text-align: center;
-        margin-bottom: 20px;
-    }
-    .pricing-price {
-        font-size: 2em;
-        font-weight: 900;
-        color: #6c5ce7;
-        margin: 10px 0;
-    }
-    
-    /* 診斷表樣式 */
-    .diagnostic-table {
-        width: 100%;
-        border-collapse: collapse;
-        background-color: #FDFCF9;
-        border-radius: 12px;
-        overflow: hidden;
-    }
-    .diagnostic-table th {
-        background-color: #E2E2CC;
-        padding: 12px;
-        text-align: left;
-    }
-    .diagnostic-table td {
-        padding: 12px;
-        border-bottom: 1px solid #EEE;
-    }
-</style> 
+.feature-card {
+  padding: 22px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin-bottom: 16px;
+  min-height: 170px;
+}
+
+.feature-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(200,169,106,0.22);
+}
+
+.feature-card h4 {
+  color: var(--text) !important;
+  margin-bottom: 10px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+}
+
+.feature-card p {
+  color: var(--muted);
+  font-size: 0.98em;
+  line-height: 1.6;
+}
+
+.pricing-card {
+  padding: 26px;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.pricing-price {
+  font-size: 2.1em;
+  font-weight: 900;
+  color: var(--accent);
+  margin: 10px 0;
+  letter-spacing: 0.04em;
+}
+
+.stButton > button {
+  height: 58px !important;
+  border-radius: 14px !important;
+  font-weight: 800 !important;
+  font-size: 1.05em !important;
+  background: linear-gradient(135deg, rgba(200,169,106,0.95), rgba(155,123,68,0.95)) !important;
+  color: #0b0c0f !important;
+  border: 1px solid rgba(255,255,255,0.10) !important;
+  box-shadow: 0 12px 30px rgba(200,169,106,0.22) !important;
+  transition: all 0.2s ease !important;
+  width: 100% !important;
+}
+
+.stButton > button:hover {
+  transform: translateY(-1px) !important;
+  filter: brightness(1.03);
+  box-shadow: 0 16px 36px rgba(200,169,106,0.26) !important;
+}
+
+div[data-baseweb="input"] input,
+div[data-baseweb="textarea"] textarea,
+div[data-baseweb="select"] > div {
+  background-color: rgba(255,255,255,0.04) !important;
+  color: var(--text) !important;
+  border-color: rgba(255,255,255,0.10) !important;
+}
+
+label, p, span {
+  color: var(--text);
+}
+
+hr {
+  border-color: rgba(255,255,255,0.08);
+}
+</style>
 """, unsafe_allow_html=True)
 
 # --- 一、頁面主標 ---

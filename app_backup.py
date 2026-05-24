@@ -16,6 +16,105 @@ from fpdf import FPDF
 
 st.set_page_config(page_title="雨果大師｜命理 AI", page_icon="🔮", layout="wide")
 
+st.markdown(
+    """
+<style>
+:root {
+  --bg: #0b0c0f;
+  --panel: #101219;
+  --card: #141824;
+  --card2: #0f121a;
+  --text: #ece7dd;
+  --muted: rgba(236, 231, 221, 0.72);
+  --accent: #c8a96a;
+  --accent2: #9b7b44;
+  --border: rgba(200, 169, 106, 0.28);
+  --shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+}
+
+.stApp {
+  background: radial-gradient(1200px 700px at 20% -10%, rgba(200, 169, 106, 0.10), rgba(0,0,0,0) 60%),
+              radial-gradient(900px 600px at 95% 10%, rgba(108, 92, 231, 0.08), rgba(0,0,0,0) 55%),
+              linear-gradient(180deg, var(--bg), #07080b);
+  color: var(--text);
+}
+
+section[data-testid="stSidebar"] {
+  background: linear-gradient(180deg, #0c0d12, var(--panel));
+  border-right: 1px solid rgba(255,255,255,0.06);
+}
+
+.block-container {
+  max-width: 1120px;
+  padding-top: 2.2rem;
+  padding-bottom: 2.2rem;
+}
+
+h1, h2, h3, h4 {
+  color: var(--text) !important;
+  letter-spacing: 0.02em;
+}
+
+div[data-testid="stVerticalBlock"] > div,
+div[data-testid="stMarkdownContainer"],
+div[data-testid="stTable"],
+div.element-container {
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.015));
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+}
+
+.main-title {
+  margin: 0.2rem 0 0.2rem 0;
+  font-weight: 900;
+  font-size: 46px;
+  letter-spacing: 0.10em;
+}
+
+.sub-title {
+  margin: 0 0 1rem 0;
+  color: var(--muted);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+.stButton > button {
+  background: linear-gradient(135deg, rgba(200,169,106,0.95), rgba(155,123,68,0.95)) !important;
+  color: #0b0c0f !important;
+  border: 1px solid rgba(255,255,255,0.10) !important;
+  border-radius: 14px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.04em !important;
+  box-shadow: 0 12px 30px rgba(200,169,106,0.22) !important;
+}
+
+.stButton > button:hover {
+  filter: brightness(1.03);
+  transform: translateY(-1px);
+  box-shadow: 0 16px 36px rgba(200,169,106,0.26) !important;
+}
+
+div[data-baseweb="input"] input,
+div[data-baseweb="textarea"] textarea,
+div[data-baseweb="select"] > div {
+  background-color: rgba(255,255,255,0.04) !important;
+  color: var(--text) !important;
+  border-color: rgba(255,255,255,0.10) !important;
+}
+
+label, .stMarkdown, .stText, p, span {
+  color: var(--text);
+}
+
+hr {
+  border-color: rgba(255,255,255,0.08);
+}
+</style>
+""",
+    unsafe_allow_html=True,
+)
+
 load_dotenv()
 openai_key = st.secrets.get("OPENAI_API_KEY", None) or os.getenv("OPENAI_API_KEY")
 
@@ -274,15 +373,15 @@ def render_bazi_table(bazi):
             .bazi-table {{
                 border-collapse: collapse; 
                 width: 100%; 
-                min-width: 450px; /* 確保在手機上不會縮到看不見 */
+                min-width: 450px;
                 font-size: 18px; 
                 font-weight: bold; 
                 text-align: center; 
-                border: 2px solid #6C3483;
+                border: 1px solid rgba(200, 169, 106, 0.50);
             }}
             @media (max-width: 600px) {{
                 .bazi-table {{
-                    font-size: 14px; /* 手機版字體調小 */
+                    font-size: 14px;
                 }}
                 .bazi-table td, .bazi-table th {{
                     padding: 6px !important;
@@ -290,40 +389,40 @@ def render_bazi_table(bazi):
             }}
         </style>
         <table class="bazi-table" border="1">
-            <tr style="background-color: #6C3483; color: white;">
+            <tr style="background-color: #101219; color: #ece7dd;">
                 <th style="padding: 10px;">四柱</th>
                 <th style="padding: 10px;">天干</th>
                 <th style="padding: 10px;">十神</th>
                 <th style="padding: 10px;">地支</th>
                 <th style="padding: 10px;">藏干</th>
             </tr>
-            <tr style="background-color: {y_color}; color: #1A1A1A; font-weight: 600;">
-                <td style="padding: 10px; border: 1px solid #6C3483;">年柱</td>
-                <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['year_tg']}</td>
-                <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['year_ss']}</td>
-                <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['year_dz']}</td>
-                <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['year_hide']}</td>
+            <tr style="background-color: {y_color}; color: #0b0c0f; font-weight: 700;">
+                <td style="padding: 10px; border: 1px solid rgba(200, 169, 106, 0.45);">年柱</td>
+                <td style="padding: 10px; border: 1px solid rgba(200, 169, 106, 0.45);">{bazi['year_tg']}</td>
+                <td style="padding: 10px; border: 1px solid rgba(200, 169, 106, 0.45);">{bazi['year_ss']}</td>
+                <td style="padding: 10px; border: 1px solid rgba(200, 169, 106, 0.45);">{bazi['year_dz']}</td>
+                <td style="padding: 10px; border: 1px solid rgba(200, 169, 106, 0.45);">{bazi['year_hide']}</td>
             </tr>
-            <tr style="background-color: {m_color}; color: #1A1A1A; font-weight: 600;">
-                <td style="padding: 10px; border: 1px solid #6C3483;">月柱</td>
-                <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['month_tg']}</td>
-                <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['month_ss']}</td>
-                <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['month_dz']}</td>
-                <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['month_hide']}</td>
+            <tr style="background-color: {m_color}; color: #0b0c0f; font-weight: 700;">
+                <td style="padding: 10px; border: 1px solid rgba(200, 169, 106, 0.45);">月柱</td>
+                <td style="padding: 10px; border: 1px solid rgba(200, 169, 106, 0.45);">{bazi['month_tg']}</td>
+                <td style="padding: 10px; border: 1px solid rgba(200, 169, 106, 0.45);">{bazi['month_ss']}</td>
+                <td style="padding: 10px; border: 1px solid rgba(200, 169, 106, 0.45);">{bazi['month_dz']}</td>
+                <td style="padding: 10px; border: 1px solid rgba(200, 169, 106, 0.45);">{bazi['month_hide']}</td>
             </tr>
-            <tr style="background-color: {d_color}; color: #1A1A1A; font-weight: 600;">
-                <td style="padding: 10px; border: 1px solid #6C3483;">日柱 (日主)</td>
-                <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['day_tg']}【日主】</td>
-                <td style="padding: 10px; border: 1px solid #6C3483;">日主</td>
-                <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['day_dz']}</td>
-                <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['day_hide']}</td>
+            <tr style="background-color: {d_color}; color: #0b0c0f; font-weight: 700;">
+                <td style="padding: 10px; border: 1px solid rgba(200, 169, 106, 0.45);">日柱 (日主)</td>
+                <td style="padding: 10px; border: 1px solid rgba(200, 169, 106, 0.45);">{bazi['day_tg']}【日主】</td>
+                <td style="padding: 10px; border: 1px solid rgba(200, 169, 106, 0.45);">日主</td>
+                <td style="padding: 10px; border: 1px solid rgba(200, 169, 106, 0.45);">{bazi['day_dz']}</td>
+                <td style="padding: 10px; border: 1px solid rgba(200, 169, 106, 0.45);">{bazi['day_hide']}</td>
             </tr>
-            <tr style="background-color: {h_color}; color: #1A1A1A; font-weight: 600;">
-                <td style="padding: 10px; border: 1px solid #6C3483;">時柱</td>
-                <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['hour_tg']}</td>
-                <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['hour_ss']}</td>
-                <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['hour_dz']}</td>
-                <td style="padding: 10px; border: 1px solid #6C3483;">{bazi['hour_hide']}</td>
+            <tr style="background-color: {h_color}; color: #0b0c0f; font-weight: 700;">
+                <td style="padding: 10px; border: 1px solid rgba(200, 169, 106, 0.45);">時柱</td>
+                <td style="padding: 10px; border: 1px solid rgba(200, 169, 106, 0.45);">{bazi['hour_tg']}</td>
+                <td style="padding: 10px; border: 1px solid rgba(200, 169, 106, 0.45);">{bazi['hour_ss']}</td>
+                <td style="padding: 10px; border: 1px solid rgba(200, 169, 106, 0.45);">{bazi['hour_dz']}</td>
+                <td style="padding: 10px; border: 1px solid rgba(200, 169, 106, 0.45);">{bazi['hour_hide']}</td>
             </tr>
         </table>
     </div>
@@ -632,9 +731,11 @@ if is_master:
 # 當使用者狀態為「單身」或「個人工作/事業」時，完全隱藏第二位對象的輸入區塊
 is_personal = (st.session_state.sub_cat == "單身求緣") or (st.session_state.main_cat == "事業")
 
-enable_dual = False
-if not is_personal:
-    enable_dual = st.checkbox("💞 啟用雙人合盤 (感情/合夥)")
+if is_personal:
+    st.session_state["enable_dual"] = False
+    enable_dual = False
+else:
+    enable_dual = st.checkbox("💞 啟用雙人合盤 (感情/合夥)", key="enable_dual")
 
 # 初始化對象變數，避免未啟用時報錯
 name2 = "無"
@@ -665,7 +766,7 @@ if enable_dual and not is_personal:
     with col_p2_5:
         mins = list(range(0, 60))
         b_min2 = st.selectbox("分", options=mins, index=0, key="b_min2")
-    relation_type = st.selectbox("雙方關係", ["情侶/夫妻", "事業合夥", "家人/朋友"])
+    relation_type = st.selectbox("雙方關係", ["情侶/夫妻", "事業合夥", "家人/朋友"], key="relation_type")
 
 st.markdown("---")
 
