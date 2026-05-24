@@ -20,12 +20,13 @@ load_dotenv()
 openai_key = st.secrets.get("OPENAI_API_KEY", None) or os.getenv("OPENAI_API_KEY")
 
 if not openai_key:
-    st.error("尚未設定 OPENAI_API_KEY，請先到 Streamlit Cloud Secrets 加入金鑰。")
-    st.stop()
+    st.warning("尚未設定 OPENAI_API_KEY（Streamlit Cloud Secrets）。目前可正常瀏覽介面，但 AI 分析功能會停用。")
 
-client = OpenAI(api_key=openai_key)
+client = OpenAI(api_key=openai_key) if openai_key else None
 
 def ai_reply(prompt):
+    if not client:
+        return "AI 功能尚未啟用：尚未設定 OPENAI_API_KEY。"
     response = client.responses.create(
         model="gpt-4.1-mini",
         input=prompt
@@ -36,6 +37,8 @@ def ai_love_consult_reply(context_prompt, is_master=False):
     """
     第二層 AI 感情心理諮詢回覆函數 (優化轉單版)
     """
+    if not client:
+        return "AI 諮詢暫時無法使用：尚未設定 OPENAI_API_KEY。"
     system_role = """你是一位結合命理分析、感情心理諮詢與關係策略的顧問。請用沉穩、理性、具同理心的方式分析，像是在理解人、有洞察力。不要鐵口直斷，不要恐嚇使用者。"""
     
     # 根據權限調整輸出要求
@@ -366,17 +369,6 @@ def calculate_bazi(y, m, d, h, minute):
     except Exception as e:
         st.error(f"命盤計算發生系統錯誤：{e}")
         return None
-
-# --- 基礎 UI 隱藏樣式 ---
-st.markdown("""
-<style>
-    /* 隱藏 Streamlit 預設元素 */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    [data-testid="stHeader"] {display: none;}
-</style>
-""", unsafe_allow_html=True)
 
 # --- 0. 頂部動態橫幅 (HTML 嵌入) ---
 # 這裡讀取位於 static/ 資料夾下的 HTML 檔案
