@@ -103,6 +103,14 @@ div[data-baseweb="select"] > div {
   border-color: rgba(255,255,255,0.10) !important;
 }
 
+div.stTextInput > div > div > input,
+div.stTextArea > div > div > textarea,
+div[data-testid="stTextInput"] input,
+div[data-testid="stTextArea"] textarea {
+  color: #000000 !important;
+  background-color: #ffffff !important;
+}
+
 label, .stMarkdown, .stText, p, span {
   color: var(--text);
 }
