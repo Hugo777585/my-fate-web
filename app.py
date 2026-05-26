@@ -28,6 +28,12 @@ def _ensure_hugo_key_json():
     if isinstance(service_account_info, str):
         service_account_info = json.loads(service_account_info)
 
+    if service_account_info is not None:
+        if hasattr(service_account_info, "to_dict"):
+            service_account_info = service_account_info.to_dict()
+        else:
+            service_account_info = dict(service_account_info)
+
     key_file_path.write_text(
         json.dumps(service_account_info, ensure_ascii=False, indent=2),
         encoding="utf-8",
