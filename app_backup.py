@@ -124,7 +124,10 @@ hr {
 )
 
 load_dotenv()
-openai_key = st.secrets.get("OPENAI_API_KEY", None) or os.getenv("OPENAI_API_KEY")
+try:
+    openai_key = st.secrets["OPENAI_API_KEY"]
+except (FileNotFoundError, KeyError):
+    openai_key = os.getenv("OPENAI_API_KEY")
 
 if not openai_key:
     st.warning("尚未設定 OPENAI_API_KEY（Streamlit Cloud Secrets）。目前可正常瀏覽介面，但 AI 分析功能會停用。")

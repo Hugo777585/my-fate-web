@@ -21,7 +21,10 @@ def append_user_submission(*args, **kwargs): return None
 def append_analysis_result(*args, **kwargs): return None
 
 load_dotenv()
-openai_key = st.secrets.get("OPENAI_API_KEY", None) or os.getenv("OPENAI_API_KEY")
+try:
+    openai_key = st.secrets["OPENAI_API_KEY"]
+except (FileNotFoundError, KeyError):
+    openai_key = os.getenv("OPENAI_API_KEY")
 
 if not openai_key:
     st.error("尚未設定 OPENAI_API_KEY，請先到 Streamlit Cloud Secrets 加入金鑰。")

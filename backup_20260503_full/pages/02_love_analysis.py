@@ -7,7 +7,10 @@ import pandas as pd
 from dotenv import load_dotenv
 
 load_dotenv()
-openai_key = st.secrets.get("OPENAI_API_KEY", None) or os.getenv("OPENAI_API_KEY")
+try:
+    openai_key = st.secrets["OPENAI_API_KEY"]
+except (FileNotFoundError, KeyError):
+    openai_key = os.getenv("OPENAI_API_KEY")
 
 if not openai_key:
     st.error("尚未設定 OPENAI_API_KEY，請先到 Streamlit Cloud Secrets 加入金鑰。")
