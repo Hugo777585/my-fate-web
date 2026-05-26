@@ -37,6 +37,13 @@ def _ensure_hugo_key_json():
         else:
             service_account_info = dict(service_account_info)
 
+    if (
+        isinstance(service_account_info, dict)
+        and "private_key" in service_account_info
+        and isinstance(service_account_info["private_key"], str)
+    ):
+        service_account_info["private_key"] = service_account_info["private_key"].replace("\\n", "\n")
+
     key_file_path.write_text(
         json.dumps(service_account_info, ensure_ascii=False, indent=2),
         encoding="utf-8",
