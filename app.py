@@ -3,9 +3,12 @@ import json
 import os
 import pathlib
 import runpy
+import warnings
 
 import streamlit as st
 import streamlit.components.v1 as components
+
+warnings.filterwarnings("ignore", message=".*Unable to load P12 key.*")
 
 
 def _ensure_hugo_key_json():
