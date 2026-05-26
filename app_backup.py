@@ -129,6 +129,13 @@ try:
 except (FileNotFoundError, KeyError):
     openai_key = os.getenv("OPENAI_API_KEY")
 
+if isinstance(openai_key, str):
+    openai_key = openai_key.strip()
+    if (openai_key.startswith('"') and openai_key.endswith('"')) or (
+        openai_key.startswith("'") and openai_key.endswith("'")
+    ):
+        openai_key = openai_key[1:-1].strip()
+
 if not openai_key:
     st.warning("尚未設定 OPENAI_API_KEY（Streamlit Cloud Secrets）。目前可正常瀏覽介面，但 AI 分析功能會停用。")
 

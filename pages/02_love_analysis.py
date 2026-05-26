@@ -12,11 +12,17 @@ try:
 except (FileNotFoundError, KeyError):
     openai_key = os.getenv("OPENAI_API_KEY")
 
-if not openai_key:
-    st.error("尚未設定 OPENAI_API_KEY，請先到 Streamlit Cloud Secrets 加入金鑰。")
-    st.stop()
+if isinstance(openai_key, str):
+    openai_key = openai_key.strip()
+    if (openai_key.startswith('"') and openai_key.endswith('"')) or (
+        openai_key.startswith("'") and openai_key.endswith("'")
+    ):
+        openai_key = openai_key[1:-1].strip()
 
-client = OpenAI(api_key=openai_key)
+if not openai_key:
+    st.warning("尚未設定 OPENAI_API_KEY（Streamlit Cloud Secrets）。AI 功能會停用，但頁面可正常瀏覽。")
+
+client = OpenAI(api_key=openai_key) if openai_key else None
 
 st.set_page_config(
     page_title="兩性情感心理諮詢｜雨果天命智庫",
