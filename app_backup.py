@@ -899,8 +899,9 @@ with col_btn_right:
 """
                 
                 # 附加原始資料與盤位資訊供 AI 參考，但不強制 AI 輸出格式（由上面的架構要求決定）
-                prompt += f"\n\n【參考資料】\n命主資料：{name}, {gender}, {b_year}/{b_month}/{b_day} {b_hour}:{b_min}, 職業:{occupation}\n提問：{question}\n詳細卡關：{user_detailed_question}\n{pillar_info}"
-                
+                prompt += f"\n\n【參考資料】\n命主資料：{name}, {gender}, {b_year}/{b_month}/{b_day} {b_hour}:{b_min}, 職業:{occupation}\n詳細卡關：{user_detailed_question}"
+                prompt += f"\n\n【必須讀取的輸入資料】\n提問：{question}\n{pillar_info}"
+
                 if enable_dual:
                     bazi2 = calculate_bazi(b_year2, b_month2, b_day2, b_hour2, b_min2)
                     if bazi2:
