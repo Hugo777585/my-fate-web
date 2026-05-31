@@ -1,0 +1,909 @@
+<!doctype html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" />
+    <link rel="icon"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3CradialGradient id='g' cx='30%25' cy='25%25' r='80%25'%3E%3Cstop offset='0%25' stop-color='%23ffd870' stop-opacity='1'/%3E%3Cstop offset='55%25' stop-color='%231d2b55' stop-opacity='1'/%3E%3Cstop offset='100%25' stop-color='%23050a14' stop-opacity='1'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='14' fill='url(%23g)'/%3E%3Cpath d='M32 12l5.2 12.4L50 26.2l-10 8.6L43 48 32 40.8 21 48l3-13.2-10-8.6 12.8-1.8z' fill='%23ffd870' fill-opacity='.9'/%3E%3C/svg%3E" />
+    <title>HUGO 天命智庫 · 雙盤交叉密算系統</title>
+    <style>
+        :root {
+            --bg0: #050a14;
+            --bg1: #06162a;
+            --bg2: #091c34;
+            --card: rgba(10, 20, 36, 0.72);
+            --card2: rgba(12, 26, 48, 0.7);
+            --line: rgba(255, 216, 112, 0.18);
+            --line2: rgba(255, 216, 112, 0.28);
+            --gold: #ffd870;
+            --gold2: #ffbf2f;
+            --text: rgba(255, 255, 255, 0.92);
+            --muted: rgba(255, 255, 255, 0.68);
+            --muted2: rgba(255, 255, 255, 0.56);
+            --glow: rgba(255, 191, 47, 0.38);
+            --ok: #58ffc6;
+            --danger: #ff6b6b;
+            --shadow: 0 22px 60px rgba(0, 0, 0, 0.55);
+            --radius: 22px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            height: 100%;
+        }
+
+        body {
+            margin: 0;
+            font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans TC",
+                "PingFang TC", "Microsoft JhengHei", Arial, sans-serif;
+            color: var(--text);
+            background: radial-gradient(1100px 700px at 15% 10%, rgba(70, 128, 255, 0.16), transparent 60%),
+                radial-gradient(900px 680px at 85% 18%, rgba(255, 191, 47, 0.12), transparent 58%),
+                radial-gradient(700px 550px at 55% 75%, rgba(88, 255, 198, 0.09), transparent 62%),
+                linear-gradient(180deg, var(--bg0), var(--bg1) 45%, var(--bg2));
+            overflow-x: hidden;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .page {
+            position: relative;
+            min-height: 100%;
+        }
+
+        .stars {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0.9;
+            background-image: radial-gradient(1px 1px at 10% 15%, rgba(255, 255, 255, 0.85), transparent 55%),
+                radial-gradient(1px 1px at 22% 34%, rgba(255, 255, 255, 0.65), transparent 55%),
+                radial-gradient(1px 1px at 35% 12%, rgba(255, 255, 255, 0.75), transparent 55%),
+                radial-gradient(1px 1px at 48% 44%, rgba(255, 255, 255, 0.65), transparent 55%),
+                radial-gradient(1px 1px at 62% 18%, rgba(255, 255, 255, 0.7), transparent 55%),
+                radial-gradient(1px 1px at 71% 52%, rgba(255, 255, 255, 0.6), transparent 55%),
+                radial-gradient(1px 1px at 83% 28%, rgba(255, 255, 255, 0.72), transparent 55%),
+                radial-gradient(1px 1px at 92% 61%, rgba(255, 255, 255, 0.62), transparent 55%),
+                radial-gradient(1px 1px at 14% 72%, rgba(255, 255, 255, 0.64), transparent 55%),
+                radial-gradient(1px 1px at 40% 80%, rgba(255, 255, 255, 0.62), transparent 55%),
+                radial-gradient(1px 1px at 58% 88%, rgba(255, 255, 255, 0.58), transparent 55%),
+                radial-gradient(1px 1px at 77% 83%, rgba(255, 255, 255, 0.6), transparent 55%);
+            mix-blend-mode: screen;
+            filter: drop-shadow(0 0 6px rgba(200, 235, 255, 0.16));
+        }
+
+        .gridlines {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0.9;
+            background-image: linear-gradient(90deg, var(--line) 1px, transparent 1px),
+                linear-gradient(0deg, var(--line) 1px, transparent 1px);
+            background-size: 64px 64px;
+            mask-image: radial-gradient(900px 540px at 50% 18%, rgba(0, 0, 0, 1), transparent 72%);
+        }
+
+        .gold-sweep {
+            position: absolute;
+            inset: -180px -40px auto -40px;
+            height: 420px;
+            pointer-events: none;
+            background: radial-gradient(650px 260px at 50% 40%, rgba(255, 216, 112, 0.18), transparent 60%),
+                radial-gradient(520px 210px at 72% 48%, rgba(255, 191, 47, 0.12), transparent 60%),
+                linear-gradient(90deg, transparent, rgba(255, 216, 112, 0.1), transparent);
+            transform: rotate(-6deg);
+            filter: blur(0.2px);
+        }
+
+        .container {
+            width: min(1120px, calc(100% - 44px));
+            margin: 0 auto;
+        }
+
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            backdrop-filter: blur(14px);
+            background: linear-gradient(180deg, rgba(5, 10, 20, 0.78), rgba(5, 10, 20, 0.32));
+            border-bottom: 1px solid rgba(255, 216, 112, 0.14);
+        }
+
+        .nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            padding: 14px 0;
+        }
+
+        .brand {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            line-height: 1.1;
+        }
+
+        .brand strong {
+            font-size: 14px;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: rgba(255, 216, 112, 0.92);
+        }
+
+        .brand span {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.62);
+            letter-spacing: 0.08em;
+        }
+
+        .navlinks {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .chip {
+            padding: 10px 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 216, 112, 0.2);
+            background: rgba(10, 20, 36, 0.5);
+            color: rgba(255, 255, 255, 0.76);
+            font-size: 13px;
+            transition: transform 0.12s ease, border-color 0.12s ease;
+        }
+
+        .chip:hover {
+            transform: translateY(-1px);
+            border-color: rgba(255, 216, 112, 0.34);
+        }
+
+        .hero {
+            position: relative;
+            padding: 58px 0 32px;
+        }
+
+        .hero h1 {
+            margin: 0;
+            font-size: clamp(28px, 4.2vw, 44px);
+            letter-spacing: 0.02em;
+            text-shadow: 0 0 18px rgba(255, 216, 112, 0.12);
+        }
+
+        .hero .subtitle {
+            margin-top: 12px;
+            font-size: 15px;
+            color: rgba(255, 255, 255, 0.72);
+            letter-spacing: 0.02em;
+        }
+
+        .motto {
+            margin-top: 18px;
+            padding: 16px 18px;
+            border-radius: 18px;
+            border: 1px solid rgba(255, 216, 112, 0.18);
+            background: linear-gradient(180deg, rgba(10, 20, 36, 0.62), rgba(10, 20, 36, 0.38));
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .motto::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(460px 160px at 18% 50%, rgba(255, 216, 112, 0.12), transparent 60%),
+                radial-gradient(380px 140px at 86% 28%, rgba(88, 255, 198, 0.08), transparent 60%);
+            opacity: 0.9;
+            pointer-events: none;
+        }
+
+        .motto p {
+            margin: 0;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.78);
+            line-height: 1.75;
+            position: relative;
+        }
+
+        .hero-actions {
+            margin-top: 22px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 12px 16px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 216, 112, 0.26);
+            background: rgba(10, 20, 36, 0.54);
+            color: rgba(255, 255, 255, 0.86);
+            font-size: 14px;
+            cursor: pointer;
+            transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+            user-select: none;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            border-color: rgba(255, 216, 112, 0.42);
+        }
+
+        .btn-primary {
+            background: linear-gradient(180deg, rgba(255, 216, 112, 0.22), rgba(255, 191, 47, 0.1));
+            border-color: rgba(255, 216, 112, 0.55);
+            box-shadow: 0 18px 44px rgba(255, 191, 47, 0.08), 0 0 0 1px rgba(255, 216, 112, 0.2) inset;
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 20px 56px rgba(255, 191, 47, 0.12), 0 0 0 1px rgba(255, 216, 112, 0.26) inset;
+        }
+
+        .btn-ghost {
+            border-color: rgba(255, 255, 255, 0.16);
+            color: rgba(255, 255, 255, 0.72);
+        }
+
+        section {
+            padding: 22px 0;
+        }
+
+        .section-title {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 14px;
+        }
+
+        .section-title h2 {
+            margin: 0;
+            font-size: 18px;
+            letter-spacing: 0.04em;
+        }
+
+        .section-title p {
+            margin: 0;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.62);
+        }
+
+        .products {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 14px;
+        }
+
+        .card {
+            grid-column: span 12;
+            background: linear-gradient(180deg, var(--card), var(--card2));
+            border: 1px solid rgba(255, 216, 112, 0.18);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .card::before {
+            content: "";
+            position: absolute;
+            inset: -1px;
+            background: radial-gradient(420px 220px at 18% 22%, rgba(255, 216, 112, 0.16), transparent 55%),
+                radial-gradient(420px 220px at 84% 20%, rgba(88, 255, 198, 0.1), transparent 55%),
+                linear-gradient(90deg, transparent, rgba(255, 216, 112, 0.08), transparent);
+            opacity: 0.9;
+            pointer-events: none;
+        }
+
+        .card-body {
+            position: relative;
+            padding: 18px;
+            display: grid;
+            gap: 12px;
+        }
+
+        .badge {
+            align-self: start;
+            width: fit-content;
+            padding: 7px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            letter-spacing: 0.08em;
+            border: 1px solid rgba(255, 216, 112, 0.28);
+            background: rgba(255, 216, 112, 0.08);
+            color: rgba(255, 216, 112, 0.92);
+        }
+
+        .product-title {
+            margin: 0;
+            font-size: 17px;
+            line-height: 1.4;
+            letter-spacing: 0.02em;
+        }
+
+        .product-desc {
+            margin: 0;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.66);
+            line-height: 1.7;
+        }
+
+        .price-row {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .price {
+            font-size: 22px;
+            letter-spacing: 0.02em;
+            color: rgba(255, 216, 112, 0.95);
+            text-shadow: 0 0 14px rgba(255, 191, 47, 0.16);
+        }
+
+        .price small {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+            letter-spacing: 0.08em;
+            margin-left: 6px;
+        }
+
+        .buy-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .meta {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.56);
+        }
+
+        .form-wrap {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 14px;
+            align-items: start;
+        }
+
+        .panel {
+            grid-column: span 12;
+            background: linear-gradient(180deg, rgba(10, 20, 36, 0.72), rgba(10, 20, 36, 0.48));
+            border: 1px solid rgba(255, 216, 112, 0.18);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .panel-inner {
+            padding: 18px;
+        }
+
+        .panel h3 {
+            margin: 0 0 10px;
+            font-size: 16px;
+            letter-spacing: 0.04em;
+        }
+
+        .panel p {
+            margin: 0 0 14px;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.64);
+            line-height: 1.7;
+        }
+
+        form {
+            display: grid;
+            gap: 12px;
+        }
+
+        .fields {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 12px;
+        }
+
+        .field {
+            grid-column: span 12;
+            display: grid;
+            gap: 7px;
+        }
+
+        label {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.68);
+            letter-spacing: 0.06em;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 11px 12px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            background: rgba(0, 0, 0, 0.22);
+            color: rgba(255, 255, 255, 0.88);
+            outline: none;
+            transition: border-color 0.12s ease, box-shadow 0.12s ease;
+        }
+
+        input:focus,
+        select:focus {
+            border-color: rgba(255, 216, 112, 0.55);
+            box-shadow: 0 0 0 4px rgba(255, 191, 47, 0.12);
+        }
+
+        .grid-6 {
+            grid-column: span 12;
+        }
+
+        .grid-4 {
+            grid-column: span 12;
+        }
+
+        .grid-3 {
+            grid-column: span 12;
+        }
+
+        .notice {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            padding: 12px 12px;
+            border-radius: 16px;
+            background: rgba(255, 216, 112, 0.08);
+            border: 1px solid rgba(255, 216, 112, 0.2);
+            color: rgba(255, 255, 255, 0.76);
+            font-size: 13px;
+            line-height: 1.65;
+        }
+
+        .notice b {
+            color: rgba(255, 216, 112, 0.92);
+        }
+
+        .fineprint {
+            margin-top: 10px;
+            color: rgba(255, 255, 255, 0.56);
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        footer {
+            padding: 26px 0 40px;
+            border-top: 1px solid rgba(255, 216, 112, 0.14);
+            margin-top: 30px;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 14px;
+            align-items: start;
+        }
+
+        .foot {
+            grid-column: span 12;
+            padding: 14px 16px;
+            border-radius: 18px;
+            background: rgba(10, 20, 36, 0.44);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .foot h4 {
+            margin: 0 0 8px;
+            font-size: 13px;
+            letter-spacing: 0.06em;
+            color: rgba(255, 216, 112, 0.9);
+        }
+
+        .foot p {
+            margin: 0;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.62);
+            line-height: 1.7;
+        }
+
+        .toast {
+            position: fixed;
+            left: 50%;
+            bottom: 18px;
+            transform: translateX(-50%) translateY(12px);
+            background: rgba(6, 16, 30, 0.88);
+            border: 1px solid rgba(255, 216, 112, 0.24);
+            border-radius: 999px;
+            padding: 10px 14px;
+            color: rgba(255, 255, 255, 0.82);
+            font-size: 13px;
+            box-shadow: 0 18px 60px rgba(0, 0, 0, 0.6);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.18s ease, transform 0.18s ease;
+            z-index: 50;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        @media (min-width: 840px) {
+            .products .card {
+                grid-column: span 4;
+            }
+
+            .grid-6 {
+                grid-column: span 6;
+            }
+
+            .grid-4 {
+                grid-column: span 4;
+            }
+
+            .grid-3 {
+                grid-column: span 3;
+            }
+
+            .panel {
+                grid-column: span 7;
+            }
+
+            .panel.panel-side {
+                grid-column: span 5;
+            }
+
+            .foot {
+                grid-column: span 4;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page">
+        <div class="stars"></div>
+        <div class="gridlines"></div>
+        <div class="gold-sweep"></div>
+
+        <header>
+            <div class="container">
+                <div class="nav">
+                    <a class="brand" href="#top" aria-label="回到頂部">
+                        <strong>HUGO</strong>
+                        <span>天命智庫 · 命理 SaaS 門面</span>
+                    </a>
+                    <nav class="navlinks" aria-label="頁面導覽">
+                        <a class="chip" href="#products">服務與標價</a>
+                        <a class="chip" href="#form">生辰輸入</a>
+                        <a class="chip" href="#audit">審核資訊</a>
+                    </nav>
+                </div>
+            </div>
+        </header>
+
+        <main id="top">
+            <section class="hero">
+                <div class="container">
+                    <h1>HUGO 天命智庫 · 雙盤交叉密算系統</h1>
+                    <div class="subtitle">
+                        深邃星空科技風的命理 SaaS 前端門面（適用於綠界金流審核：服務項目清楚、標價明確、可對應訂單內容）。
+                    </div>
+                    <div class="motto" role="note" aria-label="品牌座右銘">
+                        <p>
+                            「經歷了人生的高低起伏後明白一件事，上面有上面的風景與壓力，然而下面有道不盡的人間酸甜苦辣。」
+                        </p>
+                    </div>
+                    <div class="hero-actions">
+                        <a class="btn btn-primary" href="#products">查看服務與標價</a>
+                        <a class="btn btn-ghost" href="#form">填寫生辰開始測算</a>
+                    </div>
+                </div>
+            </section>
+
+            <section id="products">
+                <div class="container">
+                    <div class="section-title">
+                        <h2>測算服務與明碼標價區</h2>
+                        <p>審核重點：商品名稱、價格、購買入口清晰呈現</p>
+                    </div>
+
+                    <div class="products">
+                        <article class="card" aria-label="商品一">
+                            <div class="card-body">
+                                <div class="badge">商品一</div>
+                                <h3 class="product-title">【2026 流年流月運勢大詳批】</h3>
+                                <p class="product-desc">
+                                    以流年主軸搭配流月節奏，聚焦事業、財運、感情、健康與關鍵轉折點；以「可執行」的節點建議呈現。
+                                </p>
+                                <div class="price-row">
+                                    <div class="price">NT$ 888 <small>新台幣</small></div>
+                                    <div class="meta">交付：線上結果頁 + PDF 摘要</div>
+                                </div>
+                                <div class="buy-row">
+                                    <button class="btn btn-primary buy-btn" type="button" data-product="2026 流年流月運勢大詳批"
+                                        data-price="888">
+                                        立即購買
+                                    </button>
+                                    <a class="btn btn-ghost" href="#form">先填生辰</a>
+                                </div>
+                            </div>
+                        </article>
+
+                        <article class="card" aria-label="商品二">
+                            <div class="card-body">
+                                <div class="badge">商品二</div>
+                                <h3 class="product-title">【企業主與九大職業 · 商戰逆襲指引】</h3>
+                                <p class="product-desc">
+                                    以命盤格局與職涯象意交叉判讀，提供「策略選擇、資源配置、時機卡位」的清晰決策路徑。
+                                </p>
+                                <div class="price-row">
+                                    <div class="price">NT$ 1,200 <small>新台幣</small></div>
+                                    <div class="meta">適用：企業主 / 自營商 / 職涯轉型</div>
+                                </div>
+                                <div class="buy-row">
+                                    <button class="btn btn-primary buy-btn" type="button"
+                                        data-product="企業主與九大職業 · 商戰逆襲指引" data-price="1200">
+                                        立即購買
+                                    </button>
+                                    <a class="btn btn-ghost" href="#form">先填生辰</a>
+                                </div>
+                            </div>
+                        </article>
+
+                        <article class="card" aria-label="商品三">
+                            <div class="card-body">
+                                <div class="badge">商品三</div>
+                                <h3 class="product-title">【真命正緣 · 雙人合盤密算法】</h3>
+                                <p class="product-desc">
+                                    以雙盤交叉、互補與衝突點為核心，解析關係能量流向與相處模式，給出具體磨合與加分策略。
+                                </p>
+                                <div class="price-row">
+                                    <div class="price">NT$ 1,688 <small>新台幣</small></div>
+                                    <div class="meta">交付：雙人合盤重點 + 溝通建議</div>
+                                </div>
+                                <div class="buy-row">
+                                    <button class="btn btn-primary buy-btn" type="button" data-product="真命正緣 · 雙人合盤密算法"
+                                        data-price="1688">
+                                        立即購買
+                                    </button>
+                                    <a class="btn btn-ghost" href="#form">先填生辰</a>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+                </div>
+            </section>
+
+            <section id="form">
+                <div class="container">
+                    <div class="section-title">
+                        <h2>使用者生辰輸入表單</h2>
+                        <p>姓名、性別、出生年月日、時、分與職業下拉選單（審核可見）</p>
+                    </div>
+
+                    <div class="form-wrap">
+                        <div class="panel">
+                            <div class="panel-inner">
+                                <h3>填寫測算資料</h3>
+                                <p>此頁為審核用前端門面示意：不會呼叫任何外部 API，也不會在此頁直接扣款。</p>
+                                <form id="birthForm" novalidate>
+                                    <input type="hidden" name="selected_product" id="selectedProduct"
+                                        value="2026 流年流月運勢大詳批" />
+                                    <div class="fields">
+                                        <div class="field grid-6">
+                                            <label for="name">姓名</label>
+                                            <input id="name" name="name" type="text" placeholder="例如：王小明"
+                                                autocomplete="name" required />
+                                        </div>
+                                        <div class="field grid-6">
+                                            <label for="gender">性別</label>
+                                            <select id="gender" name="gender" required>
+                                                <option value="" selected disabled>請選擇</option>
+                                                <option value="male">男</option>
+                                                <option value="female">女</option>
+                                                <option value="other">其他 / 不透露</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="field grid-4">
+                                            <label for="birthDate">出生年月日</label>
+                                            <input id="birthDate" name="birth_date" type="date" required />
+                                        </div>
+                                        <div class="field grid-4">
+                                            <label for="birthHour">出生時（24 小時制）</label>
+                                            <select id="birthHour" name="birth_hour" required></select>
+                                        </div>
+                                        <div class="field grid-4">
+                                            <label for="birthMinute">出生分</label>
+                                            <select id="birthMinute" name="birth_minute" required></select>
+                                        </div>
+
+                                        <div class="field grid-6">
+                                            <label for="occupation">目前身份 / 職業</label>
+                                            <select id="occupation" name="occupation" required>
+                                                <option value="" selected disabled>請選擇</option>
+                                                <option value="學生">學生</option>
+                                                <option value="上班族">上班族</option>
+                                                <option value="公家機關">公家機關</option>
+                                                <option value="待業家管">待業家管</option>
+                                                <option value="銀髮退休族">銀髮退休族</option>
+                                                <option value="八大行業">八大行業</option>
+                                                <option value="企業主自營商">企業主自營商</option>
+                                            </select>
+                                        </div>
+                                        <div class="field grid-6">
+                                            <label for="email">聯絡 Email（審核用示意）</label>
+                                            <input id="email" name="email" type="email" placeholder="you@example.com"
+                                                autocomplete="email" />
+                                        </div>
+                                    </div>
+
+                                    <div class="notice" aria-live="polite">
+                                        <div aria-hidden="true">✦</div>
+                                        <div>
+                                            <b>已選商品：</b><span id="selectedProductText">2026 流年流月運勢大詳批</span>
+                                            <div class="fineprint">
+                                                提醒：此頁為審核展示。正式串接綠界後，會在「購買」流程中建立訂單、導向付款並以回呼更新付款狀態。
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="buy-row">
+                                        <button class="btn btn-primary" type="submit">送出資料（示意）</button>
+                                        <button class="btn btn-ghost" type="button" id="resetBtn">清除重填</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <aside class="panel panel-side" id="audit">
+                            <div class="panel-inner">
+                                <h3>綠界審核資訊（前端門面）</h3>
+                                <p>
+                                    本頁清楚呈現：服務項目、明碼標價、購買按鈕與使用者輸入表單。正式串接時，金流扣款將於後端建立訂單後進行。
+                                </p>
+                                <div class="notice">
+                                    <div aria-hidden="true">✓</div>
+                                    <div>
+                                        <b>付款方式（預計）</b><br />
+                                        信用卡 / LINE Pay / 全支付 / 超商代碼 / WebATM
+                                    </div>
+                                </div>
+                                <div class="fineprint">
+                                    客服信箱：support@example.com<br />
+                                    服務時間：每日 10:00–22:00（示意）<br />
+                                    退款政策：未開始解析前可申請取消（示意）
+                                </div>
+                            </div>
+                        </aside>
+                    </div>
+                </div>
+            </section>
+
+            <footer>
+                <div class="container">
+                    <div class="footer-grid">
+                        <div class="foot">
+                            <h4>品牌</h4>
+                            <p>HUGO 天命智庫 · 雙盤交叉密算系統（命理 SaaS）</p>
+                        </div>
+                        <div class="foot">
+                            <h4>服務項目</h4>
+                            <p>流年流月詳批 / 商戰逆襲指引 / 雙人合盤密算法（皆為線上數位服務）</p>
+                        </div>
+                        <div class="foot">
+                            <h4>審核說明</h4>
+                            <p>此頁不串外部資源、不呼叫外部 API；可作為金流審核用的正式前端門面。</p>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+        </main>
+
+        <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    </div>
+
+    <script>
+        const toastEl = document.getElementById("toast");
+        const selectedProductEl = document.getElementById("selectedProduct");
+        const selectedProductTextEl = document.getElementById("selectedProductText");
+        const formEl = document.getElementById("birthForm");
+        const resetBtn = document.getElementById("resetBtn");
+        const hourEl = document.getElementById("birthHour");
+        const minuteEl = document.getElementById("birthMinute");
+
+        const toast = (text) => {
+            toastEl.textContent = text;
+            toastEl.classList.add("show");
+            window.clearTimeout(toastEl._t);
+            toastEl._t = window.setTimeout(() => toastEl.classList.remove("show"), 2200);
+        };
+
+        const pad2 = (n) => String(n).padStart(2, "0");
+
+        const fillSelect = (el, start, end, formatter) => {
+            const frag = document.createDocumentFragment();
+            for (let i = start; i <= end; i += 1) {
+                const opt = document.createElement("option");
+                opt.value = String(i);
+                opt.textContent = formatter ? formatter(i) : String(i);
+                frag.appendChild(opt);
+            }
+            el.appendChild(frag);
+        };
+
+        fillSelect(hourEl, 0, 23, (n) => `${pad2(n)} 時`);
+        fillSelect(minuteEl, 0, 59, (n) => `${pad2(n)} 分`);
+
+        const setProduct = (name, price) => {
+            selectedProductEl.value = name;
+            selectedProductTextEl.textContent = name;
+            toast(`已選擇：${name}（NT$ ${price}）`);
+        };
+
+        document.querySelectorAll(".buy-btn").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                const name = btn.getAttribute("data-product") || "";
+                const price = btn.getAttribute("data-price") || "";
+                setProduct(name, price);
+                document.getElementById("form").scrollIntoView({ behavior: "smooth", block: "start" });
+            });
+        });
+
+        resetBtn.addEventListener("click", () => {
+            formEl.reset();
+            setProduct("2026 流年流月運勢大詳批", "888");
+        });
+
+        formEl.addEventListener("submit", (e) => {
+            e.preventDefault();
+            const requiredIds = ["name", "gender", "birthDate", "birthHour", "birthMinute", "occupation"];
+            const missing = requiredIds.filter((id) => {
+                const el = document.getElementById(id);
+                return !el || !String(el.value || "").trim();
+            });
+
+            if (missing.length) {
+                toast("請先完整填寫必填欄位");
+                const first = document.getElementById(missing[0]);
+                if (first) first.focus({ preventScroll: true });
+                return;
+            }
+
+            const fd = new FormData(formEl);
+            const summary = {
+                selected_product: fd.get("selected_product"),
+                name: fd.get("name"),
+                gender: fd.get("gender"),
+                birth_date: fd.get("birth_date"),
+                birth_hour: fd.get("birth_hour"),
+                birth_minute: fd.get("birth_minute"),
+                occupation: fd.get("occupation"),
+            };
+
+            toast(`已送出（示意）：${summary.name} / ${summary.selected_product}`);
+        });
+    </script>
+</body>
+
+</html>
