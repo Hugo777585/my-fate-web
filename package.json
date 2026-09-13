@@ -1,9 +1,9 @@
 {
   "name": "hugo-tianming-web2-deployer",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "scripts": {
-    "build": "rm -rf app components lib supabase docs public .agents && rm -f next.config.ts next.config.js next.config.mjs proxy.ts tsconfig.json postcss.config.mjs postcss.config.js eslint.config.mjs eslint.config.js lunar-javascript.d.ts next-env.d.ts && tar -xzf WEB2_SOURCE_20260912.tgz && sed -i 's/typedRoutes: true/typedRoutes: false/' next.config.ts && next build"
+    "build": "rm -rf app components lib supabase docs public .agents && rm -f next.config.ts next.config.js next.config.mjs proxy.ts tsconfig.json postcss.config.mjs postcss.config.js eslint.config.mjs eslint.config.js lunar-javascript.d.ts next-env.d.ts && tar -xzf WEB2_SOURCE_20260912.tgz && node patch-build.mjs && next build"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.3",
