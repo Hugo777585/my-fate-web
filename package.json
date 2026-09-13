@@ -1,5 +1,28 @@
 {
+  "name": "hugo-tianming-web2-deployer",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "rm -rf app components lib supabase docs public .agents && rm -f next.config.ts next.config.js next.config.mjs proxy.ts tsconfig.json postcss.config.mjs postcss.config.js eslint.config.mjs eslint.config.js lunar-javascript.d.ts next-env.d.ts && tar -xzf WEB2_SOURCE_20260912.tgz && next build"
+  },
   "dependencies": {
-    "@supabase/supabase-js": "^2.105.3"
+    "@supabase/ssr": "^0.12.3",
+    "@supabase/supabase-js": "^2.110.7",
+    "iztro": "^2.5.8",
+    "lucide-react": "^0.540.0",
+    "lunar-javascript": "^1.7.7",
+    "next": "16.2.10",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.10",
+    "tailwindcss": "^4",
+    "typescript": "^5"
   }
 }
